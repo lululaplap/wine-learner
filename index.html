@@ -11,6 +11,7 @@
   --bg:#f6f4ef; --surface:#fffefb; --ink:#191d1a; --ink-2:#353b37; --ink-3:#474e49; --line:#cfd3cc;
   --accent:#6b1d3c; --on-accent:#ffffff; --warn:#7a3b00; --ok:#1d5a33;
   --t-sparkling:#2a6fc4; --t-white:#d99400; --t-red:#d23c3b; --t-sweet:#15936a;
+  --term:#0645ad;
   --font:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
   color-scheme:light;
 }
@@ -19,6 +20,7 @@
     --bg:#121513; --surface:#1a1e1b; --ink:#eef0ec; --ink-2:#cdd3ce; --ink-3:#b4bcb6; --line:#363f39;
     --accent:#f2b3cc; --on-accent:#2a0d19; --warn:#ffc58a; --ok:#9be0b3;
     --t-sparkling:#4a93ea; --t-white:#d79a1c; --t-red:#ea5a59; --t-sweet:#28b585;
+    --term:#9ec5ff;
     color-scheme:dark;
   }
 }
@@ -26,6 +28,7 @@
   --bg:#121513; --surface:#1a1e1b; --ink:#eef0ec; --ink-2:#cdd3ce; --ink-3:#b4bcb6; --line:#363f39;
   --accent:#f2b3cc; --on-accent:#2a0d19; --warn:#ffc58a; --ok:#9be0b3;
   --t-sparkling:#4a93ea; --t-white:#d79a1c; --t-red:#ea5a59; --t-sweet:#28b585;
+  --term:#9ec5ff;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -234,6 +237,17 @@ body.fullmap main{max-width:none;padding:0}
   .card h2{font-size:24px}
   .search{max-width:none;min-width:180px}
 }
+/* ---------- glossary links ---------- */
+/* Wikipedia-style: blue words with a dotted underline (so it is not colour alone). Hover or tap shows the definition. */
+.term{display:inline;font:inherit;font-weight:inherit;color:var(--term);background:none;border:0;padding:0;margin:0;cursor:help;
+  text-decoration:underline dotted;text-decoration-thickness:1px;text-underline-offset:3px;text-align:inherit;-webkit-tap-highlight-color:transparent}
+.term:hover,.term[aria-expanded="true"]{text-decoration-style:solid}
+.term[aria-expanded="true"]{background:color-mix(in srgb,var(--term) 14%,transparent);border-radius:3px}
+.termpop{position:fixed;z-index:80;max-width:min(340px,calc(100vw - 24px));background:var(--surface);color:var(--ink);border:1px solid var(--line);
+  border-top:3px solid var(--term);border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.22);font-size:16px;line-height:1.45}
+.termpop[hidden]{display:none}
+.tp-term{display:block;font-size:17px;margin-bottom:2px}
+.tp-def{display:block;color:var(--ink-2)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>

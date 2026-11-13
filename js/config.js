@@ -3,7 +3,8 @@
 export const SHEETS = {
   wine: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSH5PMPgMOSJTzJ3FnKJmZxY3lI0loTNugZsmD6_U7PeT4LHiYJY75BtW-mFIgpeVbuDoZ8x724M6i1/pub?gid=652214147&single=true&output=csv",
   study: "sheets/study.csv",
-  lists: "sheets/lists.csv"
+  lists: "sheets/lists.csv",
+  glossary: "sheets/glossary.csv"
 };
 
 // The copy in sheets/, used for local testing (add ?local to the address) and as a last resort

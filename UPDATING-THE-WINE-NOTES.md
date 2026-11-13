@@ -27,6 +27,7 @@ The wine study tool reads two sheets. Change either sheet and the tool updates b
 | --- | --- |
 | **Wine study** | One row per wine: the notes the tool shows |
 | **Wine lists** | The fixed words for *Flavours*, *Making* and *If you like*, one per row, so the quiz and the Finder use the same words as you |
+| **Wine glossary** | Wine jargon and what it means. The tool turns these words into blue links in the notes; hover or tap one to read the definition |
 
 ## Column guide
 
@@ -69,11 +70,23 @@ The wine study tool reads two sheets. Change either sheet and the tool updates b
 
 **Wine lists**: two columns, *List* (`Flavours`, `Making` or `If you like`) and *Value*. Add a row to add a word.
 
+**Wine glossary**
+
+| Column | What to type | Example |
+| --- | --- | --- |
+| Term | The word as the definition's heading shows it | Pét-nat |
+| Also matches | Other forms to link, separated by `;`: plurals, spellings with and without accents, French or German versions | pet-nat; pétillant naturel |
+| Definition | One or two plain sentences for a new starter | A sparkling wine bottled before its first fermentation finishes… |
+
+Capitals, accents and hyphens don't matter: `pet nat` also finds "Pét-nat". Only whole words are linked, and only the first mention on a screen. Keep forms specific: a form like `orange` would also link "orange peel", so the glossary uses `orange wine` instead.
+
+**Add a term.** Add a row. It is linked everywhere it appears from the next time the tool loads.
+
 ## Setting up the study sheet (once)
 
-1. In the **Apricity menus** Google Sheet, add two tabs, **Wine study** and **Wine lists**.
-2. Import `sheets/study.csv` into *Wine study* and `sheets/lists.csv` into *Wine lists* (File → Import → Upload → *Replace current sheet*).
+1. In the **Apricity menus** Google Sheet, add three tabs: **Wine study**, **Wine lists** and **Wine glossary**.
+2. Import `sheets/study.csv` into *Wine study*, `sheets/lists.csv` into *Wine lists* and `sheets/glossary.csv` into *Wine glossary* (File → Import → Upload → *Replace current sheet*).
 3. File → Share → Publish to web. Publish each tab as *Comma-separated values (.csv)* and copy its link.
-4. Paste the links into `STUDY_CSV` and `LISTS_CSV` in `build.sh`, run `./build.sh`, and commit.
+4. Paste the links into `STUDY_CSV`, `LISTS_CSV` and `GLOSSARY_CSV` in `build.sh`, run `./build.sh`, and commit.
 
 Until then the tool reads the copies in `sheets/`, which only change when someone edits them in the repo.

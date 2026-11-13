@@ -3,7 +3,8 @@
 export const SHEETS = {
   wine: "sheets/wine.csv",
   study: "sheets/study.csv",
-  lists: "sheets/lists.csv"
+  lists: "sheets/lists.csv",
+  glossary: "sheets/glossary.csv"
 };
 
 // The copy in sheets/, used for local testing (add ?local to the address) and as a last resort

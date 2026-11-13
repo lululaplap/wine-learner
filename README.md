@@ -9,6 +9,7 @@ A web tool that helps the floor team learn the wine list quickly, then answers g
 - **Wine card.** Name, price, grapes, region, style note, comparisons and a badge: *Estimate*, *Tasted* or *Needs notes*. In Service mode the internal fields (Check, Source, Story) are hidden.
 - **Wine list.** By the glass first, then bottles by style, with one-tap type chips.
 - **Map.** The prototype network map, on the live data, grouped by connections, style, grape, region, country, producer or price.
+- **Glossary links.** Wine jargon in the notes is a blue, Wikipedia-style link. Hover with a mouse, or tap on an iPad or phone, to read a short definition. The 72 terms live in `sheets/glossary.csv` (the *Wine glossary* tab).
 - **Data check.** Wines with no notes, study rows that match no wine, broken comparison links, duplicate rows, and the wines flagged "check with supplier".
 - **Saved copy.** Each sheet is saved on the device when it loads. If a sheet cannot be loaded, the tool shows the saved copy with its time and a "may be out of date" notice. On a device with no saved copy, it falls back to the copy in `sheets/`.
 

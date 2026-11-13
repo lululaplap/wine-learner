@@ -2,6 +2,7 @@
 // D3 is loaded only when the map opens (vendor/d3-map.js holds just the modules it uses).
 import { esc, glyph, money, notesBadge, typeLabel } from "../ui.js";
 import { store } from "../store.js";
+import { linkTerms } from "../glossary.js";
 
 const SHAPES = { sparkling: "symbolDiamond", white: "symbolCircle", rose: "symbolCircle", orange: "symbolSquare", red: "symbolCircle", sweet: "symbolTriangle" };
 const TYPES = ["sparkling", "white", "rose", "orange", "red", "sweet"];
@@ -79,7 +80,8 @@ export async function mountMap(root, ctx) {
   const svg = d3.select(root.querySelector("#map")), g0 = svg.append("g");
   const gGroups = g0.append("g"), gLinks = g0.append("g").attr("class", "links"), gNodes = g0.append("g"), gLabels = g0.append("g");
   let K = 1, VW = 900, VH = 700, groups = [], lastW = 0;
-  const zoom = d3.zoom().scaleExtent([0.25, 10]).on("zoom", e => { g0.attr("transform", e.transform); K = e.transform.k; onZoom(); });
+  // The zoom's extent comes from the stage's size, not the SVG's, which cannot be read once the map is off screen.
+  const zoom = d3.zoom().scaleExtent([0.25, 10]).extent(() => { const r = stage.getBoundingClientRect(); return [[0, 0], [Math.max(1, r.width), Math.max(1, r.height)]]; }).on("zoom", e => { g0.attr("transform", e.transform); K = e.transform.k; onZoom(); });
   svg.call(zoom).on("dblclick.zoom", null);
   svg.on("click", e => { if (e.target === svg.node()) select(null); });
 
@@ -236,7 +238,7 @@ export async function mountMap(root, ctx) {
       <h2><a class="winelink" href="#/wine/${encodeURIComponent(w.id)}">${esc(w.name)}</a>${w.vintage ? " " + esc(w.vintage) : ""}</h2>
       <p class="meta">${esc([w.grapes || w.leadGrape, [w.regionGroup, w.country].filter(Boolean).join(", ")].filter(Boolean).join(" · "))}</p>
       <p class="prices">${[w.bottle != null ? money(w.bottle) + ' <span class="unit">bottle</span>' : "", w.glass != null ? money(w.glass) + ' <span class="unit">glass</span>' : ""].filter(Boolean).join(" · ")}</p>
-      ${w.note ? `<p class="note">${esc(w.note)}</p>` : ""}
+      ${w.note ? `<p class="note">${linkTerms(ctx.glossary, w.note)}</p>` : ""}
       <p><a class="btn" href="#/wine/${encodeURIComponent(w.id)}">Open the wine card</a></p>
       ${cmp.length ? `<h3>Compare with</h3><div class="cmp">${cmp.map(wineButton).join("")}</div>` : ""}
       <h3>See its group</h3><div class="chips">${chip("grape", "Grape", w.leadGrape)}${chip("region", "Region", w.regionGroup)}${prodCount.get(w.producer) > 1 ? chip("producer", "Producer", w.producer) : ""}${chip("price", "Price", band(w.bottle))}</div>`;

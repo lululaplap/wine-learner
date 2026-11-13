@@ -9,6 +9,7 @@ import { renderCard } from "./views/card.js";
 import { renderList, toggleType } from "./views/list.js";
 import { renderCheck } from "./views/check.js";
 import { renderMapShell, mountMap } from "./views/map.js";
+import { buildGlossary, useGlossary } from "./glossary.js";
 
 const MODES = {
   learn: { label: "Learn", home: "map", theme: "auto" },
@@ -61,7 +62,7 @@ function go(hash) {
 
 // ---------- loading ----------
 async function load() {
-  const names = [["wine", "Wine sheet"], ["study", "Study sheet"]];
+  const names = [["wine", "Wine sheet"], ["study", "Study sheet"], ["glossary", "Glossary"]];
   const local = new URLSearchParams(location.search).has("local");
   const url = n => (local ? localCopy(n) : SHEETS[n]);
   const results = await Promise.allSettled(names.map(([n]) => loadSheet(n, url(n), localCopy(n))));
@@ -72,6 +73,8 @@ async function load() {
     : { label: names[i][1], fresh: false, at: Date.now(), error: String(r.reason.message || r.reason), missing: true });
   const wineRows = toRows(results[0].value.text);
   const studyRows = results[1].status === "fulfilled" ? toRows(results[1].value.text) : [];
+  ctx.glossary = buildGlossary(results[2].status === "fulfilled" ? toRows(results[2].value.text) : []);
+  useGlossary(ctx.glossary);
   ctx.data = buildWines(wineRows, studyRows);
   ctx.byId = new Map(ctx.data.wines.map(w => [w.id, w]));
   ctx.loadedAt = Date.now();
