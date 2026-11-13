@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Apricity Wines</title>
+<style>
+/* Text contrast is at least 6.7:1 in both themes, the bar the menu site sets. Text is 16px or larger. */
+:root{
+  --bg:#f6f4ef; --surface:#fffefb; --ink:#191d1a; --ink-2:#353b37; --ink-3:#474e49; --line:#cfd3cc;
+  --accent:#6b1d3c; --on-accent:#ffffff; --warn:#7a3b00; --ok:#1d5a33;
+  --t-sparkling:#2a6fc4; --t-white:#d99400; --t-red:#d23c3b; --t-sweet:#15936a;
+  --font:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121513; --surface:#1a1e1b; --ink:#eef0ec; --ink-2:#cdd3ce; --ink-3:#b4bcb6; --line:#363f39;
+    --accent:#f2b3cc; --on-accent:#2a0d19; --warn:#ffc58a; --ok:#9be0b3;
+    --t-sparkling:#4a93ea; --t-white:#d79a1c; --t-red:#ea5a59; --t-sweet:#28b585;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121513; --surface:#1a1e1b; --ink:#eef0ec; --ink-2:#cdd3ce; --ink-3:#b4bcb6; --line:#363f39;
+  --accent:#f2b3cc; --on-accent:#2a0d19; --warn:#ffc58a; --ok:#9be0b3;
+  --t-sparkling:#4a93ea; --t-white:#d79a1c; --t-red:#ea5a59; --t-sweet:#28b585;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.5}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{line-height:1.2;margin:0}
+code{font-size:16px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 6px;overflow-wrap:anywhere}
+
+/* ---------- header ---------- */
+.top{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--line);padding:8px 16px}
+.toprow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;max-width:1280px;margin:0 auto}
+.brand{font-weight:700;font-size:20px;white-space:nowrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:22px;padding:2px;gap:2px;background:var(--bg)}
+.seg button{border:0;background:transparent;border-radius:20px;min-height:44px;padding:0 16px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+nav#nav{display:flex;gap:2px}
+nav#nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;border-radius:10px;text-decoration:none;color:var(--ink-2);font-weight:600;white-space:nowrap}
+nav#nav a[aria-current="page"]{color:var(--ink);background:var(--bg);box-shadow:inset 0 -3px 0 var(--accent)}
+.status{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-left:auto;color:var(--ink-3)}
+.asof{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--ink-2);white-space:nowrap}
+.stale{color:var(--warn);font-weight:600}
+.status .stale{flex-basis:100%;text-align:right}
+@media (max-width:640px){
+  .top{padding:6px 12px}
+  .toprow{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"brand switch theme" "nav nav status";gap:6px 8px}
+  .brand{grid-area:brand;font-size:18px} .b-long{display:none}
+  #modeSwitch{grid-area:switch;justify-self:center}
+  #modeSwitch button{padding:0 12px}
+  #themeBtn{grid-area:theme}
+  nav#nav{grid-area:nav}
+  nav#nav a{padding:0 8px}
+  .status{grid-area:status;margin-left:0;justify-content:flex-end}
+  .asof .asof-label{display:none}
+  .status .stale{grid-column:1 / -1}
+}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);font-weight:600;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.small{min-height:44px;padding:0 12px}
+
+main{max-width:1280px;margin:0 auto;padding:16px}
+.loading,.intro{color:var(--ink-2)}
+.errorbox{max-width:640px;margin:40px auto;padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.errorbox h1{font-size:24px;margin-bottom:8px}
+
+/* ---------- choose a mode ---------- */
+.choose{max-width:720px;margin:24px auto}
+.choose h1{font-size:28px;margin-bottom:16px}
+.choices{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.choice{display:flex;flex-direction:column;gap:6px;text-align:left;padding:20px;border-radius:16px;border:1px solid var(--line);background:var(--surface);min-height:120px}
+.choice:hover{border-color:var(--ink-3)}
+.c-title{font-size:24px;font-weight:700}
+.c-sub{color:var(--ink-2)}
+
+/* ---------- badges, chips, rows ---------- */
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:16px;font-weight:600;border:1px solid var(--line);border-radius:10px;padding:2px 10px;color:var(--ink-2);white-space:nowrap}
+.badge.estimate{border-color:var(--warn);color:var(--warn);border-style:dashed}
+.badge.tasted{border-color:var(--ok);color:var(--ok)}
+.badge.needs{border-color:var(--accent);color:var(--accent);border-width:2px}
+.badge.warn{border-color:var(--warn);color:var(--warn)}
+.glyph{flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:22px;border:1px solid var(--line);background:var(--surface);font-weight:600;color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.chip b{color:inherit}
+.rows{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.winerow{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"g m p" "g m b";align-items:center;column-gap:12px;min-height:56px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none}
+.winerow:hover{border-color:var(--ink-3)}
+.winerow .glyph{grid-area:g}
+.wr-main{grid-area:m;display:flex;flex-direction:column;min-width:0}
+.wr-name{font-weight:600}
+.wr-sub{color:var(--ink-3);font-size:16px}
+.wr-price{grid-area:p;font-variant-numeric:tabular-nums;font-weight:600;text-align:right;white-space:nowrap}
+.wr-badges{grid-area:b;justify-self:end}
+.wr-badges .badge{font-size:16px;padding:0 8px}
+.listsec{margin-bottom:24px}
+.listsec h2,.checksec h2{font-size:21px;margin:0 0 10px}
+.n{color:var(--ink-3);font-weight:500}
+
+/* ---------- wine card ---------- */
+.card{max-width:760px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 20px 24px}
+.card .back{margin:0 0 10px}
+.card h2{font-size:28px;text-wrap:balance}
+.vintage{color:var(--ink-3);font-weight:500}
+.card h3{font-size:16px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:20px 0 6px}
+.say{margin:6px 0 0;color:var(--ink-2)}
+.meta{color:var(--ink-2);margin:6px 0 0}
+.prices{font-variant-numeric:tabular-nums;font-weight:700;font-size:20px;margin:8px 0 0}
+.unit{font-weight:500;color:var(--ink-3);font-size:16px}
+.guestline{font-size:20px;margin:0;max-width:60ch}
+.note{margin:0;max-width:62ch}
+.tags{margin:10px 0 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag-label{color:var(--ink-3);font-weight:600;margin-right:4px}
+.tag{border:1px solid var(--line);border-radius:10px;padding:0 8px}
+.scores{display:grid;gap:6px}
+.score{display:grid;grid-template-columns:7.5em auto 1fr;gap:10px;align-items:center}
+.sc-name{font-weight:600}
+.dots{display:flex;gap:4px}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink-3)}
+.dot.on{background:var(--ink)}
+.sc-word{color:var(--ink-2)}
+.cmp{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.cmpbtn{display:flex;align-items:center;gap:10px;text-align:left;min-height:52px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);text-decoration:none}
+.cmpbtn:hover{border-color:var(--ink-3)}
+.cmpbtn > span{display:flex;flex-direction:column}
+.nm{font-weight:600;line-height:1.25}
+.ds{color:var(--ink-3);font-size:16px;line-height:1.3}
+.checkq{border-left:4px solid var(--warn);padding-left:10px;margin:0}
+.source{margin:20px 0 0;color:var(--ink-2);border-top:1px solid var(--line);padding-top:12px}
+.listline{margin:6px 0 0;color:var(--ink-3);font-size:16px}
+body[data-mode="service"] .listline{display:none}
+
+/* ---------- data check ---------- */
+.checkview{max-width:960px;margin:0 auto}
+.viewtitle{font-size:28px;margin-bottom:8px}
+.summary{font-size:19px;margin:0 0 8px}
+.sources{margin:0 0 20px;padding-left:20px;color:var(--ink-2)}
+.checksec{margin:0 0 28px}
+.checksec .intro{margin:0 0 10px}
+.ok{color:var(--ok);font-weight:600;margin:0}
+.checkrow{display:flex;flex-direction:column;gap:4px}
+.checkrow .key{align-self:flex-start}
+ul.plain{margin:0;padding-left:20px}
+ul.plain li{margin:4px 0}
+.winelink{font-weight:600}
+
+/* ---------- map ---------- */
+body.fullmap main{max-width:none;padding:0}
+.mapview{display:flex;flex-direction:column;height:calc(100dvh - var(--top-h, 120px))}
+.mapbar{padding:8px 16px;border-bottom:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:6px}
+.mapbar .row{display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none}
+.mapbar .row::-webkit-scrollbar{display:none}
+.rowlabel{font-size:16px;font-weight:600;color:var(--ink-3);white-space:nowrap}
+.mapbar .seg button{min-height:44px;padding:0 12px}
+.key{display:flex;gap:4px}
+.key button{display:flex;align-items:center;gap:6px;min-height:44px;border:1px solid transparent;background:transparent;border-radius:14px;padding:0 8px;white-space:nowrap;color:var(--ink-2)}
+.key button[aria-pressed="false"]{opacity:.5;text-decoration:line-through}
+.toggle{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--ink-2);white-space:nowrap;padding:0 8px;border-left:1px solid var(--line)}
+.toggle input{accent-color:var(--accent);width:20px;height:20px;margin:0}
+.search{position:relative;flex:1;min-width:220px;max-width:340px;margin-left:auto}
+.search input{width:100%;min-height:44px;border:1px solid var(--line);border-radius:22px;background:var(--bg);padding:0 16px}
+.results{position:fixed;z-index:60;width:min(360px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:4px;display:none;max-height:340px;overflow:auto}
+.results.open{display:block}
+.results button{display:flex;gap:8px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:8px;min-height:44px}
+.results button:hover,.results button:focus-visible{background:var(--bg)}
+.results .sub{color:var(--ink-3);font-size:16px}
+.results .none{padding:10px;color:var(--ink-2)}
+.mapbody{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+.stage{position:relative;min-height:0;overflow:hidden}
+#map{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.maploading{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:var(--ink-2)}
+.gcirc{fill:var(--surface);stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke;cursor:zoom-in}
+.glabel{font-weight:700;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-linejoin:round;cursor:zoom-in}
+.glabel .n{font-weight:500;fill:var(--ink-3)}
+.link{stroke:var(--ink-3);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.16;pointer-events:none}
+.links.strong .link{opacity:.38}
+.links.off .link{opacity:0}
+.links.hassel .link{opacity:.04}
+.links .link.on{stroke:var(--accent);stroke-width:2;opacity:.95}
+.node{cursor:pointer}
+.node .hit{fill:transparent}
+.node .mark{stroke:var(--surface);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.node.t-sparkling .mark{fill:var(--t-sparkling)}
+.node.t-white .mark,.node.t-orange .mark{fill:var(--t-white)}
+.node.t-red .mark{fill:var(--t-red)}
+.node.t-sweet .mark{fill:var(--t-sweet)}
+.node.t-rose .mark{fill:var(--surface);stroke:var(--t-red);stroke-width:3}
+.node .glassring{fill:none;stroke:var(--ink);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.node .nlabel{fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-linejoin:round;pointer-events:none;font-weight:600}
+.node.dim{opacity:.13}
+.node.off{opacity:.05;pointer-events:none}
+.node.sel .mark{stroke:var(--ink);stroke-width:3}
+.zoomctl{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px}
+.zoomctl button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:20px;line-height:1;display:grid;place-items:center}
+.zoomctl button.fit{font-size:16px;font-weight:600}
+.legendnote{position:absolute;left:12px;bottom:10px;font-size:16px;color:var(--ink-2);background:color-mix(in srgb,var(--bg) 85%,transparent);padding:3px 8px;border-radius:8px;display:flex;gap:12px;align-items:center;pointer-events:none}
+.legendnote span{display:flex;gap:6px;align-items:center}
+.mappanel{background:var(--surface);border-top:1px solid var(--line);max-height:44dvh;overflow:auto;padding:12px 16px 16px;position:relative}
+.mappanel h2{font-size:22px;margin:0 44px 4px 0;text-wrap:balance}
+.mappanel .badges{padding-right:48px}
+.mappanel h3{font-size:16px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:16px 0 6px}
+.mappanel .note{margin:8px 0}
+.mappanel .prices{font-size:18px}
+.mappanel .intro p{margin:0 0 10px}
+.mappanel .foot{color:var(--ink-2)}
+.close{position:absolute;right:10px;top:8px;width:44px;height:44px;border-radius:22px;border:1px solid var(--line);background:var(--bg);font-size:22px;line-height:1}
+@media (min-width:900px){
+  .mapbody{grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:minmax(0,1fr)}
+  .mappanel{border-top:0;border-left:1px solid var(--line);max-height:none;padding:16px 18px 20px}
+  .mappanel .cmp{grid-template-columns:1fr}
+  .mapbar .row{flex-wrap:wrap;overflow:visible}
+}
+@media (max-width:899px){
+  .mappanel{max-height:38dvh}
+  .anchors{display:flex;overflow-x:auto}
+  .anchors .cmpbtn{flex:none;width:240px}
+}
+@media (max-width:560px){
+  .brand{font-size:18px}
+  .rows{grid-template-columns:1fr}
+  .card{padding:14px 16px 20px;border-radius:14px}
+  .card h2{font-size:24px}
+  .search{max-width:none;min-width:180px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top" id="top">
+  <div class="toprow">
+    <span class="brand">Apricity<span class="b-long"> Wines</span></span>
+    <div class="seg" id="modeSwitch" role="group" aria-label="Mode">
+      <button type="button" data-mode="learn" aria-pressed="false">Learn</button>
+      <button type="button" data-mode="service" aria-pressed="false">Service</button>
+    </div>
+    <nav id="nav" aria-label="Screens"></nav>
+    <div class="status" id="status" aria-live="polite"></div>
+    <button type="button" class="btn ghost small" id="themeBtn">Dark</button>
+  </div>
+</header>
+<main id="main" tabindex="-1"></main>
+<script>
+// The map fills the screen below the header; keep its height in step with the header's.
+(function () {
+  var top = document.getElementById("top");
+  function set() { document.documentElement.style.setProperty("--top-h", top.offsetHeight + "px"); }
+  new ResizeObserver(set).observe(top); set();
+})();
+</script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apricity Wine Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one-screen tool. Controls on top, the map fills the middle, the selected wine reads in a sheet (bottom on phones, right on desktop). */
+:root{
+  --bg:#f1f3ef; --surface:#fbfcfa; --ink:#17201b; --ink-2:#4c5851; --ink-3:#78837c; --line:#d7dcd4;
+  --accent:#7a2748; --on-accent:#ffffff;
+  --t-sparkling:#2a78d6; --t-white:#eda100; --t-red:#e34948; --t-sweet:#1baf7a;
+  --font-display:"Bricolage Grotesque","Avenir Next","Segoe UI",sans-serif;
+  --font-body:"Figtree","Avenir Next","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131715; --surface:#1b201d; --ink:#edf0eb; --ink-2:#bac3bc; --ink-3:#8a948d; --line:#313a34;
+    --accent:#e596b6; --on-accent:#2a0d19;
+    --t-sparkling:#3987e5; --t-white:#c98500; --t-red:#e34948; --t-sweet:#199e70;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131715; --surface:#1b201d; --ink:#edf0eb; --ink-2:#bac3bc; --ink-3:#8a948d; --line:#313a34;
+  --accent:#e596b6; --on-accent:#2a0d19;
+  --t-sparkling:#3987e5; --t-white:#c98500; --t-red:#e34948; --t-sweet:#199e70;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{height:100%;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto}
+.top{padding:10px 16px 8px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line);background:var(--surface)}
+.titlerow{display:flex;align-items:center;gap:12px}
+h1{font-family:var(--font-display);font-weight:700;font-size:20px;line-height:1.1;margin:0;letter-spacing:-.01em;white-space:nowrap}
+.count{color:var(--ink-3);font-size:12.5px;white-space:nowrap}
+.search{position:relative;flex:1;min-width:0;margin-left:auto;max-width:300px}
+.search input{width:100%;height:36px;border:1px solid var(--line);border-radius:18px;background:var(--bg);padding:0 14px;font-size:14px}
+.results{position:absolute;z-index:30;top:40px;right:0;left:0;min-width:240px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:4px;display:none;max-height:300px;overflow:auto}
+.results.open{display:block}
+.results button{display:flex;gap:8px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:8px}
+.results button:hover,.results button:focus-visible{background:var(--bg)}
+.results .sub{color:var(--ink-3);font-size:12.5px}
+.results .none{padding:10px;color:var(--ink-3);font-size:13.5px}
+
+.row{display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.row::-webkit-scrollbar{display:none}
+.rowlabel{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.seg{display:flex;gap:4px}
+.seg button{border:1px solid var(--line);background:transparent;border-radius:16px;height:32px;padding:0 12px;white-space:nowrap;font-weight:500;font-size:13.5px;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.key{display:flex;gap:4px}
+.key button{display:flex;align-items:center;gap:6px;border:1px solid transparent;background:transparent;border-radius:14px;height:28px;padding:0 8px;white-space:nowrap;font-size:12.5px;color:var(--ink-2)}
+.key button[aria-pressed="false"]{opacity:.38;text-decoration:line-through}
+.key svg{flex:none}
+.toggle{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2);white-space:nowrap;padding-left:8px;border-left:1px solid var(--line)}
+.toggle input{accent-color:var(--accent);width:16px;height:16px;margin:0}
+
+.stage{position:relative;min-height:0;overflow:hidden}
+#map{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#map:active{cursor:grabbing}
+.gcirc{fill:var(--surface);stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke;cursor:zoom-in}
+.glabel{font-family:var(--font-display);font-weight:700;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round;cursor:zoom-in}
+.glabel .n{font-family:var(--font-body);font-weight:500;fill:var(--ink-3)}
+.link{stroke:var(--ink-3);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.16;pointer-events:none}
+.links.strong .link{opacity:.38}
+.links.off .link{opacity:0}
+.links.hassel .link{opacity:.04}
+.links .link.on{stroke:var(--accent);stroke-width:2;opacity:.95}
+.node{cursor:pointer}
+.node .hit{fill:transparent}
+.node .mark{stroke:var(--surface);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.node.t-sparkling .mark{fill:var(--t-sparkling)}
+.node.t-white .mark,.node.t-orange .mark{fill:var(--t-white)}
+.node.t-red .mark{fill:var(--t-red)}
+.node.t-sweet .mark{fill:var(--t-sweet)}
+.node.t-rose .mark{fill:var(--surface);stroke:var(--t-red);stroke-width:3}
+.node .glassring{fill:none;stroke:var(--ink);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.node .nlabel{font-size:11px;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round;pointer-events:none;font-weight:500}
+.node.dim{opacity:.13}
+.node.off{opacity:.05;pointer-events:none}
+.node.sel .mark{stroke:var(--ink);stroke-width:3}
+.node.sel .nlabel{font-weight:600}
+.tip{position:absolute;z-index:20;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 9px;border-radius:8px;font-size:12.5px;line-height:1.3;max-width:240px;display:none}
+.tip b{font-weight:600}
+.zoomctl{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px}
+.zoomctl button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:18px;line-height:1;display:grid;place-items:center}
+.zoomctl button.fit{font-size:11px;font-weight:600}
+.legendnote{position:absolute;left:12px;bottom:10px;font-size:11.5px;color:var(--ink-3);background:color-mix(in srgb,var(--bg) 80%,transparent);padding:3px 8px;border-radius:8px;display:flex;gap:10px;align-items:center;pointer-events:none}
+.legendnote span{display:flex;gap:5px;align-items:center}
+
+.panel{background:var(--surface);border-top:1px solid var(--line);max-height:46vh;overflow:auto;padding:12px 16px 16px;position:relative}
+.panel h2{font-family:var(--font-display);font-weight:700;font-size:19px;line-height:1.15;margin:0 34px 2px 0;text-wrap:balance}
+.panel .meta{color:var(--ink-2);font-size:13.5px;margin:0}
+.panel .price{font-variant-numeric:tabular-nums;font-weight:600;margin:6px 0 0}
+.panel .price small{font-weight:400;color:var(--ink-3)}
+.panel .note{margin:8px 0 0;max-width:62ch}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin:0 34px 8px 0}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:10px;padding:2px 8px;color:var(--ink-2)}
+.pill.warn{border-color:var(--accent);color:var(--accent)}
+.close{position:absolute;right:10px;top:8px;width:34px;height:34px;border-radius:17px;border:1px solid var(--line);background:var(--bg);font-size:18px;line-height:1}
+.sub{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:14px 0 6px}
+.cmp{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px}
+.cmp button,.anchors button{display:flex;align-items:center;gap:9px;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;min-height:44px}
+.cmp button:hover,.anchors button:hover{border-color:var(--ink-3)}
+.cmp .nm,.anchors .nm{font-weight:600;font-size:13.5px;line-height:1.2}
+.cmp .ds,.anchors .ds{color:var(--ink-3);font-size:12px;line-height:1.25}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:transparent;border-radius:14px;padding:4px 10px;font-size:12.5px;color:var(--ink-2)}
+.chips button b{color:var(--ink);font-weight:600}
+.intro p{margin:0 0 8px;color:var(--ink-2);max-width:62ch}
+.anchors{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px}
+.foot{margin-top:12px;font-size:12.5px;color:var(--ink-3)}
+.foot a{color:var(--accent)}
+
+@media (min-width:880px){
+  .app{grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:auto minmax(0,1fr)}
+  .top{grid-column:1 / -1}
+  .panel{border-top:0;border-left:1px solid var(--line);max-height:none;padding:16px 18px 20px}
+  .cmp,.anchors{grid-template-columns:1fr}
+  .row{overflow:visible;flex-wrap:wrap}
+}
+@media (max-width:879px){
+  .anchors{display:flex;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+  .anchors::-webkit-scrollbar{display:none}
+  .anchors button{flex:none;width:230px}
+  .panel{max-height:44vh}
+}
+@media (max-width:520px){
+  .count{display:none}
+  h1{font-size:18px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="titlerow">
+      <h1>Apricity Wine Map</h1>
+      <span class="count" id="count"></span>
+      <div class="search">
+        <input id="q" type="search" placeholder="Find a wine, grape or region" autocomplete="off" aria-label="Find a wine, grape or region">
+        <div class="results" id="results" role="listbox"></div>
+      </div>
+    </div>
+    <div class="row">
+      <span class="rowlabel">Group by</span>
+      <div class="seg" id="modes"></div>
+    </div>
+    <div class="row">
+      <span class="rowlabel">Show</span>
+      <div class="key" id="key"></div>
+      <label class="toggle" for="linksToggle"><input type="checkbox" id="linksToggle" checked> Comparison lines</label>
+    </div>
+  </header>
+  <main class="stage" id="stage">
+    <svg id="map" role="img" aria-label="Network of the wine list. Each mark is a wine; lines join wines worth comparing."></svg>
+    <div class="zoomctl">
+      <button id="zin" aria-label="Zoom in">+</button>
+      <button id="zout" aria-label="Zoom out">−</button>
+      <button id="zfit" class="fit" aria-label="Show the whole map">All</button>
+    </div>
+    <div class="legendnote"><span>Bigger = pricier</span><span><svg width="16" height="16" viewBox="-8 -8 16 16"><circle r="3.5" fill="var(--ink-3)"/><circle r="6.5" fill="none" stroke="var(--ink)" stroke-width="1.5"/></svg>by the glass</span></div>
+    <div class="tip" id="tip"></div>
+  </main>
+  <aside class="panel" id="panel" aria-live="polite"></aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const DATA = {"wines":[{"id":"funambul","producer":"Entre Vinyes","cuvee":"Funambul Brut Nature","short":"Funambul","vintage":"2021","grapes":"Macabeo, Parellada, Xarel-lo","grape":"Macabeo (Viura)","region":"Catalonia","country":"Spain","section":"Sparkling","type":"sparkling","price":75,"glass":null,"glassNote":"","unique":false,"note":"The Cava grapes with no added sugar: apple, fennel, almond, very dry. The best-value bottle of fizz.","check":false,"cmp":["roebuck","clarete","roc"],"prodGroup":"Entre Vinyes"},{"id":"kamara","producer":"Kamara Estate","cuvee":"Blooming Island","short":"Blooming Island","vintage":"2022","grapes":"Assyrtiko, Malagousia & Xinomavro","grape":"Assyrtiko","region":"Northern Greece","country":"Greece","section":"Sparkling","type":"sparkling","price":95,"glass":null,"glassNote":"","unique":true,"note":"Greek natural sparkling. Expect Malagousia's floral, peachy aroma with Assyrtiko's citrus and salt.","check":true,"cmp":["funambul","ligas"],"prodGroup":"Kamara Estate"},{"id":"rietschcremant","producer":"Domaine Rietsch","cuvee":"Crémant d'Alsace","short":"Rietsch Crémant","vintage":"2023/2024","grapes":"Auxerrois, Chardonnay & Pinot Gris","grape":"Auxerrois","region":"Alsace","country":"France","section":"Sparkling","type":"sparkling","price":110,"glass":null,"glassNote":"","unique":true,"note":"Natural, very low or no added sugar: ripe apple and pear, creamy, softer acidity than the English wines.","check":false,"cmp":["roebuck","sylvaner","josmeyer"],"prodGroup":"Domaine Rietsch"},{"id":"roebuck","producer":"Roebuck Estates","cuvee":"Classic Cuvée","short":"Roebuck Classic","vintage":"2020","grapes":"Chardonnay, Pinot Noir & Pinot Meunier","grape":"Champagne blend","region":"Sussex","country":"England","section":"Sparkling","type":"sparkling","price":130,"glass":22,"glassNote":"","unique":false,"note":"Traditional method, the Champagne recipe grown in England: green apple, lemon, brioche, high acidity. The reference fizz.","check":false,"cmp":["langham","brocard","roebuck19"],"prodGroup":"Roebuck Estates"},{"id":"langham","producer":"Langham Estate","cuvee":"Culver","short":"Culver","vintage":"NV","grapes":"Pinot Noir, Chardonnay & Pinot Meunier","grape":"Champagne blend","region":"Dorset","country":"England","section":"Sparkling","type":"sparkling","price":130,"glass":null,"glassNote":"","unique":false,"note":"Chalk-grown, partly barrel-fermented, low dosage: red apple, stone fruit, pastry. Broader than Roebuck.","check":false,"cmp":["roebuck","brocard","lavalcum"],"prodGroup":"Langham Estate"},{"id":"sekt","producer":"Staffelter Hof","cuvee":"Brut Sekt","short":"Riesling Sekt","vintage":"2015","grapes":"Riesling","grape":"Riesling","region":"Mosel","country":"Germany","section":"Sparkling","type":"sparkling","price":140,"glass":null,"glassNote":"","unique":false,"note":"Aged Riesling fizz: lime, honey, a petrol note, toast.","check":false,"cmp":["rieslingplus","trossen","auslese"],"prodGroup":"Staffelter Hof"},{"id":"roebuck19","producer":"Roebuck Estates","cuvee":"Rare Expressions No.19","short":"Roebuck No.19","vintage":"2015","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Sussex","country":"England","section":"Sparkling","type":"sparkling","price":190,"glass":null,"glassNote":"","unique":false,"note":"A long-aged blanc de noirs: richer, with red fruit, toast and nuttiness.","check":false,"cmp":["roebuck","selosse","brocard"],"prodGroup":"Roebuck Estates"},{"id":"brocard","producer":"Thibaud Brocard","cuvee":"Dits-Lieux","short":"Dits-Lieux","vintage":"2022","grapes":"Pinot Noir, Pinot Blanc & Chardonnay","grape":"Champagne blend","region":"Champagne","country":"France","section":"Champagne","type":"sparkling","price":170,"glass":29,"glassNote":"","unique":false,"note":"A young grower from southern Champagne. Pinot Blanc adds soft, pear-like fruit. Ripe, fruity, dry. The entry Champagne.","check":false,"cmp":["roebuck","lavalcum","langham"],"prodGroup":"Thibaud Brocard"},{"id":"pascal","producer":"Franck Pascal","cuvee":"Tolérance Rosé","short":"Tolérance Rosé","vintage":"2018","grapes":"Chardonnay & Pinot Meunier","grape":"Champagne blend","region":"Champagne","country":"France","section":"Champagne","type":"sparkling","price":220,"glass":null,"glassNote":"","unique":false,"note":"Biodynamic rosé Champagne from the Marne Valley: red berries, chalk, fine bubbles, dry.","check":false,"cmp":["roc","brocard","courreges"],"prodGroup":"Franck Pascal"},{"id":"fournois","producer":"Domaine Les Monts Fournois","cuvee":"Côte","short":"Monts Fournois","vintage":"NV","grapes":"Chardonnay","grape":"Chardonnay","region":"Champagne","country":"France","section":"Champagne","type":"sparkling","price":230,"glass":null,"glassNote":"","unique":false,"note":"Blanc de blancs from top chalk villages: precise, lemony, chalky, fine. The lean, pure end of the Champagnes.","check":false,"cmp":["rogerie","galerne","lavalcum"],"prodGroup":"Domaine Les Monts Fournois"},{"id":"rogerie","producer":"La Rogerie","cuvee":"Le Burgh Sud","short":"La Rogerie","vintage":"NV","grapes":"Chardonnay","grape":"Chardonnay","region":"Champagne","country":"France","section":"Champagne","type":"sparkling","price":245,"glass":null,"glassNote":"","unique":false,"note":"Blanc de blancs from Avize, raised in oak: broader and more wine-like than Monts Fournois.","check":true,"cmp":["fournois","lavalcum"],"prodGroup":"La Rogerie"},{"id":"lavalcum","producer":"Georges Laval","cuvee":"Cumières Premier Cru Brut Nature","short":"Laval Cumières","vintage":"2023","grapes":"Pinot Noir, Chardonnay & Pinot Meunier","grape":"Champagne blend","region":"Champagne","country":"France","section":"Champagne","type":"sparkling","price":260,"glass":null,"glassNote":"","unique":false,"note":"Organic since 1971, barrel-fermented, no added sugar. Rich, vinous and intense, like a white wine with bubbles.","check":false,"cmp":["brocard","vlaval","selosse"],"prodGroup":"Laval (Georges & Vincent)"},{"id":"vlaval","producer":"Vincent Laval","cuvee":"Les Vignes de mon Oncle","short":"Vignes de mon Oncle","vintage":"NV","grapes":"Pinot Noir, Chardonnay & Pinot Meunier","grape":"Champagne blend","region":"Champagne","country":"France","section":"Champagne","type":"sparkling","price":340,"glass":null,"glassNote":"","unique":false,"note":"Made by Vincent Laval, who runs Georges Laval, from his uncle's vines. Ask your supplier what sets it apart.","check":true,"cmp":["lavalcum","selosse"],"prodGroup":"Laval (Georges & Vincent)"},{"id":"selosse","producer":"Guillaume Selosse","cuvee":"Largillier","short":"Selosse Largillier","vintage":"NV (2019 base)","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Champagne","country":"France","section":"Champagne","type":"sparkling","price":475,"glass":null,"glassNote":"","unique":false,"note":"Son of Champagne's most famous grower. Pinot Noir from the Aube: powerful, nutty, oxidative in style. The richest sparkling wine here.","check":false,"cmp":["roebuck19","lavalcum","miroirs"],"prodGroup":"Guillaume Selosse"},{"id":"rieslingplus","producer":"Apricity × Wasted Wine Club","cuvee":"Riesling+","short":"Riesling+","vintage":"NV","grapes":"","grape":"Riesling","region":"Mosel","country":"Germany","section":"White: fresh","type":"white","price":68,"glass":14,"glassNote":"","unique":true,"note":"The house collaboration, made from wine that would otherwise go unused. Riesling-led: lime, green apple, light body. Confirm how dry it is.","check":true,"cmp":["trossen","sekt","auslese"],"prodGroup":"Apricity × Wasted Wine Club"},{"id":"gindl","producer":"Michael Gindl","cuvee":"Michi's Farm","short":"Michi's Farm","vintage":"2023","grapes":"Grüner Veltliner","grape":"Grüner Veltliner","region":"Weinviertel","country":"Austria","section":"White: fresh","type":"white","price":72,"glass":null,"glassNote":"","unique":true,"note":"Biodynamic Grüner Veltliner: green apple, white pepper, herbs, light. A peppery alternative to Sauvignon.","check":false,"cmp":["zillinger","bourgeois","davenport"],"prodGroup":"Michael Gindl"},{"id":"davenport","producer":"Davenport","cuvee":"Horsmonden","short":"Horsmonden","vintage":"2023","grapes":"Bacchus, Ortega+","grape":"Bacchus","region":"Sussex","country":"England","section":"White: fresh","type":"white","price":77,"glass":15,"glassNote":"","unique":false,"note":"Organic English white: elderflower, hedgerow, grapefruit, dry and light. England's answer to Sauvignon.","check":false,"cmp":["bourgeois","hamstreet","tueboeuf"],"prodGroup":"Davenport"},{"id":"tueboeuf","producer":"Clos du Tue-Boeuf","cuvee":"Vin Blanc","short":"Tue-Boeuf Blanc","vintage":"2025","grapes":"Sauvignon Blanc","grape":"Sauvignon Blanc","region":"Loire","country":"France","section":"White: fresh","type":"white","price":78,"glass":null,"glassNote":"","unique":false,"note":"Natural Sauvignon from the Puzelat family: riper and softer than Sancerre, less grassy, more orchard fruit.","check":false,"cmp":["bourgeois","graf","davenport"],"prodGroup":"Clos du Tue-Boeuf"},{"id":"ecu","producer":"Vignoble de l'Écu","cuvee":"Classic","short":"Écu Muscadet","vintage":"2023","grapes":"Melon Blanc","grape":"Melon","region":"Loire","country":"France","section":"White: fresh","type":"white","price":88,"glass":null,"glassNote":"","unique":false,"note":"Biodynamic Muscadet: lemon, sea salt, lean and neutral, made for oysters.","check":false,"cmp":["monfarina","galerne"],"prodGroup":"Vignoble de l'Écu"},{"id":"frantz","producer":"Frantz Saumon","cuvee":"Vin de Frantz","short":"Vin de Frantz","vintage":"2023","grapes":"Chenin Blanc","grape":"Chenin Blanc","region":"Loire","country":"France","section":"White: fresh","type":"white","price":93,"glass":null,"glassNote":"","unique":false,"note":"Loire Chenin: apple, quince, a honeyed edge, bright acidity. The entry Chenin.","check":false,"cmp":["pouches","tessier"],"prodGroup":"Frantz Saumon"},{"id":"josmeyer","producer":"Josmeyer","cuvee":"Mise du Printemps","short":"Mise du Printemps","vintage":"2025","grapes":"Pinot Blanc","grape":"Pinot Blanc","region":"Alsace","country":"France","section":"White: fresh","type":"white","price":95,"glass":null,"glassNote":"","unique":false,"note":"Soft, floral, pear and apple, gentle acidity. Easy and friendly.","check":false,"cmp":["sylvaner","frickchasselas","galerne"],"prodGroup":"Josmeyer"},{"id":"yeye","producer":"Titerok-Akaet","cuvee":"Ye-Ye","short":"Ye-Ye","vintage":"2023","grapes":"Malvasia Volcánica","grape":"Malvasia","region":"Canary Islands","country":"Spain","section":"White: fresh","type":"white","price":95,"glass":null,"glassNote":"","unique":true,"note":"Vines grown in pits of black volcanic ash on Lanzarote. Floral, citrus, salty, smoky.","check":false,"cmp":["paloblanco","villo"],"prodGroup":"Titerok-Akaet"},{"id":"sylvaner","producer":"Domaine Rietsch","cuvee":"Sylvaner Vieille Vigne","short":"Rietsch Sylvaner","vintage":"2023","grapes":"Sylvaner","grape":"Sylvaner","region":"Alsace","country":"France","section":"White: fresh","type":"white","price":105,"glass":null,"glassNote":"","unique":false,"note":"Old-vine Sylvaner, natural: herbal, green apple, lightly textured.","check":false,"cmp":["josmeyer","rietschcremant"],"prodGroup":"Domaine Rietsch"},{"id":"hamstreet","producer":"Ham Street","cuvee":"White","short":"Ham Street White","vintage":"2023","grapes":"Chardonnay, Bacchus","grape":"Chardonnay","region":"Kent","country":"England","section":"White: fresh","type":"white","price":105,"glass":null,"glassNote":"","unique":true,"note":"A small natural farm in Kent. Expect Bacchus aroma with Chardonnay body.","check":true,"cmp":["davenport","kitscoty","hamfield"],"prodGroup":"Ham Street"},{"id":"azimut","producer":"Alice et Olivier De Moor","cuvee":"Le Même Azimut","short":"Le Même Azimut","vintage":"2024","grapes":"Riesling, Gewurztraminer, Muscat, Pinot Blanc","grape":"Riesling","region":"Alsace","country":"France","section":"White: fresh","type":"white","price":100,"glass":null,"glassNote":"","unique":true,"note":"Chablis growers working with Alsace fruit. Very aromatic (rose, lychee, grape) but dry. The most perfumed dry white.","check":false,"cmp":["marguerite","trossen","josmeyer"],"prodGroup":"Alice et Olivier De Moor"},{"id":"galerne","producer":"Montanet-Thoden","cuvee":"Vézelay Galerne","short":"Vézelay Galerne","vintage":"2023","grapes":"Chardonnay","grape":"Chardonnay","region":"Burgundy","country":"France","section":"White: fresh","type":"white","price":110,"glass":20,"glassNote":"","unique":false,"note":"Unoaked northern Burgundy: orchard fruit, citrus, oyster shell. Your anchor for a lean, mineral white.","check":false,"cmp":["faure","kitscoty","ecu","loiseau"],"prodGroup":"Montanet-Thoden"},{"id":"token","producer":"Token","cuvee":"Ribolla Gialla","short":"Token Ribolla","vintage":"2022","grapes":"","grape":"Ribolla Gialla","region":"Friuli","country":"Italy","section":"White: fresh","type":"white","price":110,"glass":null,"glassNote":"","unique":true,"note":"Ribolla gives lemon, green apple and high acidity. Check whether this one has skin contact.","check":true,"cmp":["radikon"],"prodGroup":"Token"},{"id":"bourgeois","producer":"Domaine Henri Bourgeois","cuvee":"Sancerre La Vigne Blanche","short":"Sancerre","vintage":"2024","grapes":"Sauvignon Blanc","grape":"Sauvignon Blanc","region":"Loire","country":"France","section":"White: fresh","type":"white","price":110,"glass":null,"glassNote":"","unique":false,"note":"Textbook Sancerre: gooseberry, citrus, a flinty edge. The most familiar white on the list.","check":false,"cmp":["tueboeuf","graf","davenport"],"prodGroup":"Domaine Henri Bourgeois"},{"id":"monfarina","producer":"Domaine Giachino","cuvee":"Monfarina","short":"Monfarina","vintage":"2024","grapes":"Jacquère","grape":"Jacquère","region":"Savoie","country":"France","section":"White: fresh","type":"white","price":110,"glass":null,"glassNote":"","unique":false,"note":"Alpine and light, about 11%: white flowers, pear, hay, mouthwatering.","check":false,"cmp":["galerne","altesse","brova","ecu"],"prodGroup":"Domaine Giachino"},{"id":"ouille","producer":"Marie-Pierre Chevassu-Fassenet","cuvee":"Savagnin Ouillé","short":"Savagnin Ouillé","vintage":"2023","grapes":"Savagnin","grape":"Savagnin","region":"Jura","country":"France","section":"White: fresh","type":"white","price":115,"glass":null,"glassNote":"","unique":false,"note":"Topped-up Jura Savagnin, so fresh, not sherry-like: lemon, green apple, a nutty hint, piercing acidity.","check":false,"cmp":["bornard","trossen","ganevatchard"],"prodGroup":"Marie-Pierre Chevassu-Fassenet"},{"id":"furmint","producer":"Bott Frigyes","cuvee":"Furmint","short":"Bott Furmint","vintage":"2023","grapes":"","grape":"Furmint","region":"Slovakia","country":"Slovakia","section":"White: fresh","type":"white","price":115,"glass":null,"glassNote":"","unique":true,"note":"Volcanic soils near the Hungarian border: quince, pear, smoke, firm acidity.","check":false,"cmp":["kekfrankos","szolo","frantz"],"prodGroup":"Bott Frigyes"},{"id":"coolmoon","producer":"Domaine Les Enfants Sauvages","cuvee":"Cool Moon","short":"Cool Moon","vintage":"2024","grapes":"Grenache Blanc, Maccabeu, Vermentino","grape":"Southern white blend","region":"Languedoc-Roussillon","country":"France","section":"White: fresh","type":"white","price":120,"glass":null,"glassNote":"","unique":false,"note":"Biodynamic, near the Mediterranean: stone fruit, herbs, salt. Fresh for a southern white.","check":false,"cmp":["loiseau","barralblanc"],"prodGroup":"Domaine Les Enfants Sauvages"},{"id":"altesse","producer":"Corentin Houillon","cuvee":"Force of Nature","short":"Force of Nature","vintage":"2023","grapes":"Altesse","grape":"Altesse","region":"Savoie","country":"France","section":"White: fresh","type":"white","price":130,"glass":null,"glassNote":"","unique":false,"note":"Savoie Altesse: quince, honey and almond with firm acidity. Richer than Monfarina.","check":false,"cmp":["monfarina","arcane"],"prodGroup":"Corentin Houillon"},{"id":"paloblanco","producer":"Envínate","cuvee":"Palo Blanco","short":"Palo Blanco","vintage":"2024","grapes":"Listan Bianco (Palomino)","grape":"Listán Blanco","region":"Canary Islands","country":"Spain","section":"White: fresh","type":"white","price":140,"glass":null,"glassNote":"","unique":false,"note":"Old vines on Tenerife's volcanic soil, aged in large old casks. Smoky, salty, lemony, struck-match.","check":false,"cmp":["yeye","madeira","nanclares"],"prodGroup":"Envínate"},{"id":"nanclares","producer":"Alberto Nanclares","cuvee":"Albariño","short":"Nanclares Albariño","vintage":"2024","grapes":"","grape":"Albariño","region":"Galicia","country":"Spain","section":"White: fresh","type":"white","price":140,"glass":null,"glassNote":"","unique":false,"note":"Atlantic and intense: lime, sea spray, very high acidity.","check":false,"cmp":["leirana","paloblanco"],"prodGroup":"Alberto Nanclares"},{"id":"aligorhythm","producer":"Vignes du Maynes","cuvee":"Aligo-Rhythm","short":"Aligo-Rhythm","vintage":"2022","grapes":"Aligoté","grape":"Aligoté","region":"Burgundy","country":"France","section":"White: fresh","type":"white","price":140,"glass":null,"glassNote":"","unique":false,"note":"Natural Aligoté, Burgundy's other white grape: sharper, lemony, lighter than Chardonnay.","check":false,"cmp":["basdesees","galerne"],"prodGroup":"Vignes du Maynes"},{"id":"graf","producer":"Maria & Sepp Muster","cuvee":"Graf","short":"Muster Graf","vintage":"2021","grapes":"Sauvignon Blanc","grape":"Sauvignon Blanc","region":"Styria","country":"Austria","section":"White: fresh","type":"white","price":140,"glass":null,"glassNote":"","unique":true,"note":"Biodynamic, long barrel ageing, no added sulfur. Not typical Sauvignon: nutty, herbal, stony and textured.","check":false,"cmp":["gluck","zillinger","bourgeois"],"prodGroup":"Maria & Sepp Muster"},{"id":"trossen","producer":"R&R Trossen","cuvee":"Madonna Purus","short":"Madonna Purus","vintage":"2023","grapes":"Riesling","grape":"Riesling","region":"Mosel","country":"Germany","section":"White: fresh","type":"white","price":150,"glass":null,"glassNote":"","unique":false,"note":"Biodynamic pioneers on steep slate, no added sulfur. Dry, lime and apple, stony, a little wild.","check":false,"cmp":["rieslingplus","ouille","sekt"],"prodGroup":"R&R Trossen"},{"id":"faure","producer":"Simon Faure","cuvee":"Saint-Véran","short":"Saint-Véran","vintage":"2024","grapes":"Chardonnay","grape":"Chardonnay","region":"Burgundy","country":"France","section":"White: fresh","type":"white","price":155,"glass":null,"glassNote":"","unique":false,"note":"Southern Burgundy, so riper and rounder: yellow apple, peach.","check":true,"cmp":["galerne","yume"],"prodGroup":"Simon Faure"},{"id":"bornard","producer":"Tony Bornard","cuvee":"Au Fil des Générations","short":"Bornard Chardonnay","vintage":"2021","grapes":"Chardonnay","grape":"Chardonnay","region":"Jura","country":"France","section":"White: fresh","type":"white","price":165,"glass":null,"glassNote":"","unique":true,"note":"Natural Jura Chardonnay: lemon, a nutty and savoury edge, high acidity. Wilder than any Burgundy here.","check":false,"cmp":["ganevatchard","miroirs","ouille"],"prodGroup":"Tony Bornard"},{"id":"yume","producer":"Chanterêves","cuvee":"Yume Utai","short":"Yume Utai","vintage":"2024","grapes":"Chardonnay","grape":"Chardonnay","region":"Burgundy","country":"France","section":"White: fresh","type":"white","price":170,"glass":null,"glassNote":"","unique":true,"note":"A small, precise, low-sulfur Burgundy house. Their entry Chardonnay: purity and tension.","check":true,"cmp":["mainbey","fussey","faure"],"prodGroup":"Chanterêves"},{"id":"basdesees","producer":"Chanterêves","cuvee":"Bas des Ees","short":"Bas des Ees","vintage":"2024","grapes":"Aligote","grape":"Aligoté","region":"Burgundy","country":"France","section":"White: fresh","type":"white","price":180,"glass":null,"glassNote":"","unique":true,"note":"Serious Aligoté: citrus, chalk, real length.","check":false,"cmp":["aligorhythm","yume"],"prodGroup":"Chanterêves"},{"id":"ladoix","producer":"Philippe Pacalet","cuvee":"Ladoix","short":"Pacalet Ladoix","vintage":"2023","grapes":"Chardonnay","grape":"Chardonnay","region":"Burgundy","country":"France","section":"White: fresh","type":"white","price":255,"glass":null,"glassNote":"","unique":false,"note":"A famous low-intervention Burgundy name. Village-level white: ripe fruit, some oak, mineral finish.","check":false,"cmp":["fussey","nsg","cornas"],"prodGroup":"Philippe Pacalet"},{"id":"valbianco","producer":"Valdibella Cooperative","cuvee":"Bianco","short":"Valdibella Bianco","vintage":"2023","grapes":"Cataratto","grape":"Catarratto","region":"Sicily","country":"Italy","section":"White: round","type":"white","price":45,"glass":null,"glassNote":"","unique":false,"note":"An organic Sicilian co-operative. Lemon, almond, herbs, easy. The cheapest white.","check":false,"cmp":["bislacco","valrosso"],"prodGroup":"Valdibella Cooperative"},{"id":"loiseau","producer":"Mas Foulaquier","cuvee":"L'Oiseau","short":"L'Oiseau","vintage":"2025","grapes":"Clairette, Grenache Gris, Grenache Blanc & Bourboulenc","grape":"Southern white blend","region":"Languedoc-Roussillon","country":"France","section":"White: round","type":"white","price":87,"glass":18,"glassNote":"","unique":false,"note":"Biodynamic Languedoc blend: peach, fennel, soft and round, gentle acidity. Your anchor for a rounder white.","check":false,"cmp":["galerne","coolmoon","barralblanc","envie"],"prodGroup":"Mas Foulaquier"},{"id":"tessier","producer":"Domaine Tessier","cuvee":"Sables","short":"Tessier Romorantin","vintage":"2023","grapes":"Romarantin","grape":"Romorantin","region":"Loire","country":"France","section":"White: round","type":"white","price":90,"glass":null,"glassNote":"","unique":false,"note":"A rare grape from one small Loire appellation: high acidity, quince, honey, waxy. Like a sharper Chenin.","check":false,"cmp":["frantz","pouches"],"prodGroup":"Domaine Tessier"},{"id":"kitscoty","producer":"Chapel Down","cuvee":"Kit's Coty","short":"Kit's Coty","vintage":"2020","grapes":"Chardonnay","grape":"Chardonnay","region":"Kent","country":"England","section":"White: round","type":"white","price":90,"glass":null,"glassNote":"","unique":false,"note":"Barrel-fermented on Kent chalk: apple, citrus, toast. The oaked contrast to the Vézelay.","check":false,"cmp":["galerne","blackbookchard"],"prodGroup":"Chapel Down"},{"id":"bislacco","producer":"Gili","cuvee":"Bislacco","short":"Bislacco","vintage":"2024","grapes":"Catarratto","grape":"Catarratto","region":"Sicily","country":"Italy","section":"White: round","type":"white","price":95,"glass":null,"glassNote":"","unique":false,"note":"Natural Sicilian white with more character than the Valdibella.","check":true,"cmp":["valbianco","n5","villo"],"prodGroup":"Gili"},{"id":"envie","producer":"Domaine Les Bruyères","cuvee":"L'Envie","short":"L'Envie","vintage":"2024","grapes":"Marsanne","grape":"Marsanne","region":"Rhône & Ardèche","country":"France","section":"White: round","type":"white","price":95,"glass":null,"glassNote":"","unique":false,"note":"Biodynamic Rhône Marsanne: apricot, honeysuckle, almond; broad and low in acid.","check":false,"cmp":["loiseau","barralblanc"],"prodGroup":"Domaine Les Bruyères"},{"id":"moraza","producer":"Bodegas Moraza","cuvee":"Día Sol","short":"Moraza Viura","vintage":"2021","grapes":"Viura","grape":"Macabeo (Viura)","region":"Rioja & Navarra","country":"Spain","section":"White: round","type":"white","price":98,"glass":null,"glassNote":"","unique":false,"note":"White Rioja from an organic family estate: apple, fennel, waxy texture.","check":true,"cmp":["ganko","rufo","leirana"],"prodGroup":"Bodegas Moraza"},{"id":"leirana","producer":"Forjas del Salnés","cuvee":"Leirana","short":"Leirana","vintage":"2025","grapes":"Albariño","grape":"Albariño","region":"Galicia","country":"Spain","section":"White: round","type":"white","price":98,"glass":null,"glassNote":"","unique":false,"note":"Peach, lemon, saline, generous. The softer, rounder Albariño.","check":false,"cmp":["nanclares"],"prodGroup":"Forjas del Salnés"},{"id":"strekov","producer":"Strekov 1075","cuvee":"Richard","short":"Strekov Richard","vintage":"2022","grapes":"Chardonnay","grape":"Chardonnay","region":"Slovakia","country":"Slovakia","section":"White: round","type":"white","price":105,"glass":null,"glassNote":"","unique":true,"note":"Natural Slovak Chardonnay, no added sulfur. Expect savoury, slightly nutty and unconventional.","check":true,"cmp":["bornard","furmint"],"prodGroup":"Strekov 1075"},{"id":"decarlino","producer":"De Fermo","cuvee":"Don Carlino","short":"Don Carlino","vintage":"2023","grapes":"Pecorino","grape":"Pecorino","region":"Abruzzo","country":"Italy","section":"White: round","type":"white","price":110,"glass":null,"glassNote":"","unique":false,"note":"Biodynamic Abruzzo Pecorino: citrus, mountain herbs, salty, with grip.","check":false,"cmp":["pepe","selvadolce"],"prodGroup":"De Fermo"},{"id":"frickchasselas","producer":"Pierre Frick","cuvee":"Chasselas sans soufre","short":"Frick Chasselas","vintage":"2023","grapes":"Chasselas","grape":"Chasselas","region":"Alsace","country":"France","section":"White: round","type":"white","price":115,"glass":null,"glassNote":"","unique":true,"note":"Biodynamic pioneer, no sulfur. Soft, low acid, yellow apple, nutty, a cidery edge.","check":false,"cmp":["josmeyer","frickpinot"],"prodGroup":"Pierre Frick"},{"id":"madeira","producer":"António Madeira","cuvee":"Vinhas Velhas Branco","short":"Madeira Branco","vintage":"2023","grapes":"Native Varieties","grape":"Field blend","region":"Dão","country":"Portugal","section":"White: round","type":"white","price":120,"glass":null,"glassNote":"","unique":true,"note":"Old-vine field blend from granite mountains in the Dão: citrus, stone, textured but taut.","check":false,"cmp":["paloblanco","galerne"],"prodGroup":"António Madeira"},{"id":"blackbookchard","producer":"Blackbook","cuvee":"Painter of Light","short":"Painter of Light","vintage":"2022","grapes":"Chardonnay","grape":"Chardonnay","region":"Essex & London","country":"England","section":"White: round","type":"white","price":120,"glass":null,"glassNote":"","unique":false,"note":"Essex fruit made in London. Barrel-fermented, Burgundy-style, ripe and creamy.","check":false,"cmp":["kitscoty","rebel","pyramidchard"],"prodGroup":"Blackbook"},{"id":"selvadolce","producer":"Selvadolce","cuvee":"Crescendo","short":"Crescendo Pigato","vintage":"2023","grapes":"Pigato","grape":"Vermentino (Pigato)","region":"Liguria","country":"Italy","section":"White: round","type":"white","price":130,"glass":null,"glassNote":"","unique":false,"note":"Ligurian Pigato, the local Vermentino: herbs, peach, sea salt, a little skin texture.","check":false,"cmp":["ariento","decarlino"],"prodGroup":"Selvadolce"},{"id":"zillinger","producer":"Johannes Zillinger","cuvee":"Numen Fumé Blanc","short":"Numen Fumé Blanc","vintage":"2021","grapes":"Sauvignon Blanc","grape":"Sauvignon Blanc","region":"Weinviertel","country":"Austria","section":"White: round","type":"white","price":140,"glass":null,"glassNote":"","unique":false,"note":"Oak and amphora aged Sauvignon: smoky, textured, ripe. The bridge between Sancerre and Muster Graf.","check":false,"cmp":["bourgeois","graf","gindl"],"prodGroup":"Johannes Zillinger"},{"id":"barralblanc","producer":"Léon Barral","cuvee":"Le Blanc","short":"Barral Blanc","vintage":"2021","grapes":"Terret Blanc, Terret Gris & Roussane","grape":"Southern white blend","region":"Languedoc-Roussillon","country":"France","section":"White: round","type":"white","price":150,"glass":null,"glassNote":"","unique":true,"note":"A natural-wine icon from Faugères. Rich, nutty, apricot, deliberately oxidative.","check":false,"cmp":["fantine","loiseau"],"prodGroup":"Léon Barral"},{"id":"rufo","producer":"Matassa","cuvee":"Rufo","short":"Rufo","vintage":"2024","grapes":"Macabeo","grape":"Macabeo (Viura)","region":"Languedoc-Roussillon","country":"France","section":"White: round","type":"white","price":150,"glass":null,"glassNote":"","unique":true,"note":"Matassa wines are light, low in alcohol, salty and wild.","check":true,"cmp":["marguerite","river","disko","moraza"],"prodGroup":"Matassa"},{"id":"pyramidchard","producer":"Pyramid Valley","cuvee":"Chardonnay","short":"Pyramid Chardonnay","vintage":"2022","grapes":"","grape":"Chardonnay","region":"New Zealand","country":"New Zealand","section":"White: round","type":"white","price":160,"glass":null,"glassNote":"","unique":false,"note":"Biodynamic New Zealand Chardonnay on limestone: concentrated citrus, oak, bright fruit.","check":false,"cmp":["snake","blackbookchard","fussey"],"prodGroup":"Pyramid Valley"},{"id":"ganevatchard","producer":"Anne et Jean-François Ganevat","cuvee":"Victor de la Combe","short":"Ganevat Chardonnay","vintage":"2021","grapes":"Chardonnay","grape":"Chardonnay","region":"Jura","country":"France","section":"White: round","type":"white","price":180,"glass":null,"glassNote":"","unique":false,"note":"The Jura's star grower: long barrel ageing, intense, struck-match, mineral. Check the cuvée name.","check":true,"cmp":["bornard","miroirs","batailles"],"prodGroup":"Anne et Jean-François Ganevat"},{"id":"pouches","producer":"La Porte Saint Jean","cuvee":"Les Pouches","short":"Les Pouches","vintage":"2023","grapes":"Chenin Blanc","grape":"Chenin Blanc","region":"Loire","country":"France","section":"White: round","type":"white","price":190,"glass":null,"glassNote":"","unique":true,"note":"Barrel-aged Saumur Chenin: quince, chalk, tension, length. The grown-up Vin de Frantz.","check":false,"cmp":["frantz","saumurchamp"],"prodGroup":"La Porte Saint Jean"},{"id":"mainbey","producer":"Chanterêves","cuvee":"Mainbey","short":"Mainbey","vintage":"2023","grapes":"Chardonnay","grape":"Chardonnay","region":"Burgundy","country":"France","section":"White: round","type":"white","price":230,"glass":null,"glassNote":"","unique":true,"note":"Single-vineyard Chardonnay: precise, pure, built to age.","check":true,"cmp":["fussey","yume","ladoix"],"prodGroup":"Chanterêves"},{"id":"fussey","producer":"Chanterêves","cuvee":"Les Monts de Fussey","short":"Monts de Fussey","vintage":"2023","grapes":"Chardonnay","grape":"Chardonnay","region":"Burgundy","country":"France","section":"White: round","type":"white","price":240,"glass":null,"glassNote":"","unique":true,"note":"Single-vineyard Chardonnay from the hills above Beaune: precise, pure, built to age.","check":true,"cmp":["mainbey","ladoix"],"prodGroup":"Chanterêves"},{"id":"pepe","producer":"Emidio Pepe","cuvee":"Pecorino","short":"Pepe Pecorino","vintage":"2022","grapes":"","grape":"Pecorino","region":"Abruzzo","country":"Italy","section":"White: round","type":"white","price":280,"glass":null,"glassNote":"","unique":false,"note":"A legendary traditional estate; grapes trodden by foot, aged in concrete. Dense, savoury, long-lived.","check":false,"cmp":["decarlino"],"prodGroup":"Emidio Pepe"},{"id":"miroirs","producer":"Domaine des Miroirs","cuvee":"Sonorité du Vent","short":"Miroirs","vintage":"2019","grapes":"Chardonnay","grape":"Chardonnay","region":"Jura","country":"France","section":"White: round","type":"white","price":475,"glass":null,"glassNote":"","unique":true,"note":"A tiny cult Jura estate; bottles are very hard to find. The rarest white on the list.","check":false,"cmp":["ganevatchard","selosse"],"prodGroup":"Domaine des Miroirs"},{"id":"courreges","producer":"Valérie Courrèges","cuvee":"Le Vent dans les Voiles","short":"Courrèges Rosé","vintage":"2025","grapes":"Grenache, Cinsaut","grape":"Grenache","region":"Provence","country":"France","section":"Rosé","type":"rose","price":79,"glass":16,"glassNote":"","unique":false,"note":"Pale, dry Provence rosé: strawberry and citrus. What most guests picture as rosé.","check":false,"cmp":["clarete","rosanera","roc"],"prodGroup":"Valérie Courrèges"},{"id":"clarete","producer":"Azul y Garanza","cuvee":"Naturaleza Salvaje Clarete","short":"Clarete","vintage":"2021","grapes":"Garnacha Blanca & Garnacha","grape":"Grenache","region":"Rioja & Navarra","country":"Spain","section":"Rosé","type":"rose","price":84,"glass":null,"glassNote":"","unique":true,"note":"Clarete ferments white and red grapes together: deeper colour, savoury, herbal. More like a light red.","check":false,"cmp":["courreges","funambul","pranzegg"],"prodGroup":"Azul y Garanza"},{"id":"rosanera","producer":"Marabino","cuvee":"Rosanera","short":"Rosanera","vintage":"2024","grapes":"Nero d'Avola","grape":"Nero d'Avola","region":"Sicily","country":"Italy","section":"Rosé","type":"rose","price":85,"glass":null,"glassNote":"","unique":false,"note":"Biodynamic Sicilian rosé: cherry, blood orange, fuller.","check":false,"cmp":["valrosso","courreges"],"prodGroup":"Marabino"},{"id":"rebel","producer":"Blackbook","cuvee":"I'd Rather Be a Rebel","short":"Rebel Rosé","vintage":"2021","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Essex & London","country":"England","section":"Rosé","type":"rose","price":98,"glass":null,"glassNote":"","unique":false,"note":"English Pinot rosé: redcurrant, crisp, high acid. Sharper and leaner than Provence.","check":false,"cmp":["courreges","blackbookchard","evans"],"prodGroup":"Blackbook"},{"id":"evans","producer":"Sophie Evans","cuvee":"Pinot Pinot","short":"Pinot Pinot","vintage":"2023","grapes":"Pinot Noir, Pinot Gris","grape":"Pinot Noir","region":"Kent","country":"England","section":"Rosé","type":"rose","price":114,"glass":null,"glassNote":"","unique":true,"note":"Natural, small production. Sits between rosé and light red.","check":false,"cmp":["walgate","pranzegg","hamfield"],"prodGroup":"Sophie Evans"},{"id":"hamfield","producer":"Ham Street","cuvee":"Field Blend","short":"Ham Street Field Blend","vintage":"2023","grapes":"Pinot Noir, Pinot Meunier","grape":"Pinot Noir","region":"Kent","country":"England","section":"Orange","type":"orange","price":95,"glass":null,"glassNote":"","unique":true,"note":"Red grapes listed under orange, so ask how it is made and what colour it pours.","check":true,"cmp":["evans","hamstreet"],"prodGroup":"Ham Street"},{"id":"n5","producer":"Gili","cuvee":"N5","short":"Gili N5","vintage":"2025","grapes":"Muscat","grape":"Muscat","region":"Sicily","country":"Italy","section":"Orange","type":"orange","price":99,"glass":null,"glassNote":"","unique":true,"note":"Aromatic Muscat with skin contact: orange peel, flowers, light tannin.","check":true,"cmp":["marguerite","bislacco"],"prodGroup":"Gili"},{"id":"radikon","producer":"Radikon","cuvee":"Pop Bianco","short":"Pop Bianco","vintage":"2025","grapes":"Malvasia, Ribolla Gialla, Tocai Friulano","grape":"Malvasia","region":"Friuli","country":"Italy","section":"Orange","type":"orange","price":105,"glass":20,"glassNote":"","unique":true,"note":"From a founding family of modern orange wine; their young, lighter bottling. Apricot, tea, herbs. The by-the-glass introduction.","check":true,"cmp":["token","costabosco","marguerite"],"prodGroup":"Radikon"},{"id":"marguerite","producer":"Matassa","cuvee":"Cuvée Marguerite","short":"Cuvée Marguerite","vintage":"2024","grapes":"Muscat, Muscat di Alexandria, Macabeo","grape":"Muscat","region":"Languedoc-Roussillon","country":"France","section":"Orange","type":"orange","price":130,"glass":null,"glassNote":"","unique":true,"note":"Light, floral, grapey, low alcohol, gentle grip. The friendliest orange wine.","check":false,"cmp":["azimut","n5","rufo"],"prodGroup":"Matassa"},{"id":"costabosco","producer":"La Stoppa","cuvee":"Costabosco","short":"Costabosco","vintage":"2024","grapes":"Malvasia di Candia Aromatica","grape":"Malvasia","region":"Emilia-Romagna","country":"Italy","section":"Orange","type":"orange","price":130,"glass":null,"glassNote":"","unique":true,"note":"La Stoppa makes one of Italy's benchmark orange wines: apricot, dried flowers, firm tannin. Check the cuvée.","check":true,"cmp":["radikon","volta","ariento"],"prodGroup":"La Stoppa"},{"id":"gluck","producer":"Weingut Werlitsch","cuvee":"Glück","short":"Glück","vintage":"2022","grapes":"Sauvignon Blanc","grape":"Sauvignon Blanc","region":"Styria","country":"Austria","section":"Orange","type":"orange","price":155,"glass":null,"glassNote":"","unique":true,"note":"Skin-fermented Styrian Sauvignon with long ageing: herbal, stony, savoury.","check":false,"cmp":["graf","ariento"],"prodGroup":"Weingut Werlitsch"},{"id":"ariento","producer":"Massa Vecchia","cuvee":"Ariento","short":"Ariento","vintage":"2023","grapes":"Vermentino","grape":"Vermentino (Pigato)","region":"Tuscany","country":"Italy","section":"Orange","type":"orange","price":190,"glass":null,"glassNote":"","unique":true,"note":"Long skin contact from a revered natural farm: amber, structured, tannic, complex. The most serious orange.","check":false,"cmp":["selvadolce","poggio","gluck"],"prodGroup":"Massa Vecchia"},{"id":"valrosso","producer":"Valdibella Cooperative","cuvee":"Rosso","short":"Valdibella Rosso","vintage":"2023","grapes":"Nero d'Avola","grape":"Nero d'Avola","region":"Sicily","country":"Italy","section":"Red: soft","type":"red","price":45,"glass":null,"glassNote":"","unique":false,"note":"Organic co-operative Nero d'Avola: plum, cherry, soft, uncomplicated. The cheapest red.","check":false,"cmp":["pranzegg","valbianco","rosanera"],"prodGroup":"Valdibella Cooperative"},{"id":"syfany","producer":"Syfany","cuvee":"André","short":"Syfany André","vintage":"2017","grapes":"","grape":"André","region":"Moravia","country":"Czechia","section":"Red: soft","type":"red","price":55,"glass":null,"glassNote":"","unique":true,"note":"A Czech crossing of Blaufränkisch and St Laurent: dark berries, spice, bright acidity, some age. A bargain.","check":false,"cmp":["wachter","nestarec"],"prodGroup":"Syfany"},{"id":"girotondo","producer":"I Forestieri","cuvee":"Girotondo","short":"Girotondo","vintage":"2024","grapes":"Sangiovese","grape":"Sangiovese","region":"Tuscany","country":"Italy","section":"Red: soft","type":"red","price":80,"glass":null,"glassNote":"","unique":true,"note":"Light, rustic Tuscan Sangiovese: cherry, pomegranate, herbs. The first step on the Sangiovese ladder.","check":false,"cmp":["fonterenza","poggio","pranzegg"],"prodGroup":"I Forestieri"},{"id":"grolleau","producer":"Domaine Breton","cuvee":"Le Grolleau","short":"Le Grolleau","vintage":"2024","grapes":"Grolleau","grape":"Grolleau","region":"Loire","country":"France","section":"Red: soft","type":"red","price":82,"glass":null,"glassNote":"","unique":false,"note":"Low alcohol, peppery, crunchy red fruit; serve cool. The lightest red.","check":false,"cmp":["pranzegg","beauxmonts","racines"],"prodGroup":"Domaine Breton"},{"id":"wachter","producer":"Wachter-Wiesler","cuvee":"Béla-Jóska","short":"Béla-Jóska","vintage":"2020","grapes":"Blaufränkisch","grape":"Blaufränkisch","region":"Burgenland","country":"Austria","section":"Red: soft","type":"red","price":94,"glass":null,"glassNote":"","unique":true,"note":"The reference Blaufränkisch: sour cherry, black pepper, iron, fresh.","check":false,"cmp":["dvaduby","kekfrankos","preisinger","syfany"],"prodGroup":"Wachter-Wiesler"},{"id":"naia","producer":"Domaine Inebriati","cuvee":"Naia","short":"Naia","vintage":"2021","grapes":"Carignan","grape":"Carignan","region":"Languedoc-Roussillon","country":"France","section":"Red: soft","type":"red","price":95,"glass":null,"glassNote":"","unique":true,"note":"Natural Carignan: dark fruit, herbs, lively acidity.","check":true,"cmp":["fantine"],"prodGroup":"Domaine Inebriati"},{"id":"fedellos","producer":"Fedellos","cuvee":"As Xaras","short":"As Xaras","vintage":"2023","grapes":"Mencia","grape":"Mencía","region":"Galicia","country":"Spain","section":"Red: soft","type":"red","price":95,"glass":null,"glassNote":"","unique":false,"note":"Galician Mencía: floral, red-fruited, fresh, a little herbal. The Spanish answer to Beaujolais.","check":false,"cmp":["thillardon","pranzegg"],"prodGroup":"Fedellos"},{"id":"pranzegg","producer":"Pranzegg","cuvee":"Rosso per tutti","short":"Rosso per tutti","vintage":"2024","grapes":"Vernatsch & Lagrein","grape":"Vernatsch (Schiava)","region":"Trentino-Alto Adige","country":"Italy","section":"Red: soft","type":"red","price":99,"glass":19,"glassNote":"","unique":true,"note":"Alpine Italy. Pale, light, strawberry and almond, with a little dark fruit from the Lagrein. Your anchor light red.","check":false,"cmp":["boutdzan","grolleau","foradori"],"prodGroup":"Pranzegg"},{"id":"nestarec","producer":"Milan Nestarec","cuvee":"Postmoderna","short":"Postmoderna","vintage":"NV","grapes":"Blaufrankisch","grape":"Blaufränkisch","region":"Moravia","country":"Czechia","section":"Red: soft","type":"red","price":110,"glass":null,"glassNote":"","unique":true,"note":"From the best-known Czech natural winemaker. Expect juicy, bright, playful.","check":true,"cmp":["wachter"],"prodGroup":"Milan Nestarec"},{"id":"seignovert","producer":"Etienne Seignovert","cuvee":"Gentil Monstre","short":"Gentil Monstre","vintage":"2023","grapes":"Syrah & Merlot","grape":"Syrah","region":"Rhône & Ardèche","country":"France","section":"Red: soft","type":"red","price":110,"glass":null,"glassNote":"","unique":true,"note":"Natural Ardèche red, juicy and dark-fruited.","check":true,"cmp":["boutdzan","river"],"prodGroup":"Etienne Seignovert"},{"id":"ligas","producer":"Ktima Ligas","cuvee":"XI-RO","short":"XI-RO","vintage":"2021","grapes":"Xinomavro","grape":"Xinomavro","region":"Northern Greece","country":"Greece","section":"Red: soft","type":"red","price":116,"glass":null,"glassNote":"","unique":true,"note":"Xinomavro behaves like Nebbiolo: pale, tomato leaf, olive, firm tannin and acidity.","check":false,"cmp":["nebbiolo","kamara"],"prodGroup":"Ktima Ligas"},{"id":"ruof","producer":"Christof Ruof","cuvee":"Steingut","short":"Steingut","vintage":"2021","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Valais","country":"Switzerland","section":"Red: soft","type":"red","price":120,"glass":null,"glassNote":"","unique":false,"note":"Alpine Swiss Pinot: light, red cherry, herbal. The start of the Pinot ladder.","check":true,"cmp":["frickpinot","sabre"],"prodGroup":"Christof Ruof"},{"id":"thillardon","producer":"Domaine Thillardon","cuvee":"Chénas Vibrations","short":"Chénas Vibrations","vintage":"2023","grapes":"Gamay","grape":"Gamay","region":"Beaujolais","country":"France","section":"Red: soft","type":"red","price":120,"glass":null,"glassNote":"","unique":true,"note":"Serious Beaujolais from granite: raspberry, violet, mineral, silky. The bridge to the Pinot Noirs.","check":false,"cmp":["fedellos","sabre","batailles"],"prodGroup":"Domaine Thillardon"},{"id":"frickpinot","producer":"Pierre Frick","cuvee":"Pinot Noir","short":"Frick Pinot Noir","vintage":"2024","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Alsace","country":"France","section":"Red: soft","type":"red","price":120,"glass":null,"glassNote":"","unique":true,"note":"Alsace Pinot with no sulfur: light, crunchy, a little wild.","check":false,"cmp":["ruof","frickchasselas"],"prodGroup":"Pierre Frick"},{"id":"walgate","producer":"Walgate Wines","cuvee":"Pinot Meunier","short":"Walgate Meunier","vintage":"2022","grapes":"","grape":"Pinot Meunier","region":"Sussex","country":"England","section":"Red: soft","type":"red","price":127,"glass":null,"glassNote":"","unique":true,"note":"English natural red: very light, tart red berries.","check":false,"cmp":["evans","pranzegg"],"prodGroup":"Walgate Wines"},{"id":"river","producer":"Matassa","cuvee":"River","short":"Matassa River","vintage":"2024","grapes":"Syrah","grape":"Syrah","region":"Languedoc-Roussillon","country":"France","section":"Red: soft","type":"red","price":130,"glass":null,"glassNote":"","unique":true,"note":"Pale, low in alcohol and made like an infusion, even though it is Syrah.","check":true,"cmp":["dard","disko","pranzegg"],"prodGroup":"Matassa"},{"id":"arcane","producer":"Corentin Houillon","cuvee":"Arcane","short":"Arcane","vintage":"2022","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Savoie","country":"France","section":"Red: soft","type":"red","price":130,"glass":null,"glassNote":"","unique":true,"note":"Mountain Pinot from Savoie: fresh, red-fruited, fine.","check":false,"cmp":["altesse","sabre"],"prodGroup":"Corentin Houillon"},{"id":"sabre","producer":"Fanny Sabre","cuvee":"Bourgogne XXIV","short":"Bourgogne XXIV","vintage":"2024","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Burgundy","country":"France","section":"Red: soft","type":"red","price":140,"glass":null,"glassNote":"","unique":false,"note":"From vines in Volnay and Pommard: silky, light, pure red fruit. The cleanest, most classic Burgundy entry.","check":false,"cmp":["dandelion","maladerote","nsg","thillardon"],"prodGroup":"Fanny Sabre"},{"id":"racines","producer":"Cailloux du Paradis","cuvee":"Racines Rouge","short":"Racines Rouge","vintage":"2022","grapes":"Pineau d'Aunis, Cot, Gamay +","grape":"Field blend","region":"Loire","country":"France","section":"Red: soft","type":"red","price":140,"glass":null,"glassNote":"","unique":true,"note":"A pioneering natural farm. Peppery, earthy, wild, light-bodied. The wildest light red.","check":false,"cmp":["grolleau","durieux"],"prodGroup":"Cailloux du Paradis"},{"id":"disko","producer":"Matassa","cuvee":"French Disko","short":"French Disko","vintage":"2021","grapes":"Cinsault","grape":"Cinsault","region":"Languedoc-Roussillon","country":"France","section":"Red: soft","type":"red","price":160,"glass":null,"glassNote":"","unique":true,"note":"Pale, low-alcohol Cinsault made like an infusion.","check":true,"cmp":["river","rufo"],"prodGroup":"Matassa"},{"id":"dandelion","producer":"Domaine Dandelion","cuvee":"Sur la Plage","short":"Sur la Plage","vintage":"2023","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Burgundy","country":"France","section":"Red: soft","type":"red","price":175,"glass":null,"glassNote":"","unique":true,"note":"A young natural grower in the hills above Beaune: bright, juicy, energetic.","check":false,"cmp":["sabre","durieux"],"prodGroup":"Domaine Dandelion"},{"id":"batailles","producer":"Anne et Jean-François Ganevat","cuvee":"La Croix des Batailles","short":"Croix des Batailles","vintage":"2024","grapes":"Pinot Noir & Gamay","grape":"Pinot Noir","region":"Jura","country":"France","section":"Red: soft","type":"red","price":195,"glass":null,"glassNote":"","unique":false,"note":"Pinot Noir and Gamay from the Jura: juicy, crunchy, very drinkable.","check":false,"cmp":["ganevatchard","thillardon","sabre"],"prodGroup":"Anne et Jean-François Ganevat"},{"id":"maladerote","producer":"Chanterêves","cuvee":"La Maladérote","short":"La Maladérote","vintage":"2024","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Burgundy","country":"France","section":"Red: soft","type":"red","price":210,"glass":null,"glassNote":"","unique":false,"note":"Whole-bunch, low sulfur: perfumed, precise, fine tannins.","check":true,"cmp":["montchenevoy","sabre","nsg"],"prodGroup":"Chanterêves"},{"id":"montchenevoy","producer":"Chanterêves","cuvee":"Dessus de Montchenevoy","short":"Montchenevoy","vintage":"2024","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Burgundy","country":"France","section":"Red: soft","type":"red","price":230,"glass":null,"glassNote":"","unique":false,"note":"Single-vineyard Burgundy: perfumed, precise, fine tannins.","check":true,"cmp":["maladerote","nsg"],"prodGroup":"Chanterêves"},{"id":"durieux","producer":"Yann Durieux","cuvee":"Les 1ers Ponts","short":"Les 1ers Ponts","vintage":"2021","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Burgundy","country":"France","section":"Red: soft","type":"red","price":280,"glass":null,"glassNote":"","unique":true,"note":"A cult natural grower above Nuits-Saint-Georges. Wild, intense, divisive.","check":false,"cmp":["dandelion","racines","roch"],"prodGroup":"Yann Durieux"},{"id":"nsg","producer":"Philippe Pacalet","cuvee":"Nuits-Saint-Georges","short":"Pacalet Nuits","vintage":"2023","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Burgundy","country":"France","section":"Red: soft","type":"red","price":310,"glass":null,"glassNote":"","unique":false,"note":"Whole-bunch village Burgundy: dark cherry, spice, more structure. The classic top of the Pinot ladder.","check":false,"cmp":["roch","montchenevoy","ladoix","cornas"],"prodGroup":"Philippe Pacalet"},{"id":"roch","producer":"Prieuré Roch","cuvee":"Vin de France Rouge","short":"Prieuré Roch","vintage":"2023","grapes":"Pinot Noir","grape":"Pinot Noir","region":"Burgundy","country":"France","section":"Red: soft","type":"red","price":310,"glass":null,"glassNote":"","unique":false,"note":"A legendary natural estate in Nuits-Saint-Georges. Perfumed, whole-bunch, no added sulfur.","check":true,"cmp":["nsg","durieux"],"prodGroup":"Prieuré Roch"},{"id":"umberta","producer":"Fabrizio Iuli","cuvee":"Umberta","short":"Umberta","vintage":"2023","grapes":"Barbera","grape":"Barbera","region":"Piedmont","country":"Italy","section":"Red: rich","type":"red","price":70,"glass":null,"glassNote":"","unique":false,"note":"Unoaked Barbera: sour cherry, high acidity, very little tannin. Juicier than its section suggests.","check":false,"cmp":["nebbiolo","boutdzan"],"prodGroup":"Fabrizio Iuli"},{"id":"boutdzan","producer":"Mas du Libian","cuvee":"Bout d'Zan","short":"Bout d'Zan","vintage":"2024","grapes":"Grenache & Syrah","grape":"Grenache","region":"Rhône & Ardèche","country":"France","section":"Red: rich","type":"red","price":74,"glass":15,"glassNote":"","unique":false,"note":"Biodynamic Ardèche red: juicy plum, licorice, soft tannin, fresher than most Rhône reds. Your anchor for ripe and generous.","check":false,"cmp":["pranzegg","fronsac","dumarcher","fantine"],"prodGroup":"Mas du Libian"},{"id":"majer","producer":"Slobodné","cuvee":"Majer 3","short":"Majer 3","vintage":"NV","grapes":"Field Blend","grape":"Field blend","region":"Slovakia","country":"Slovakia","section":"Red: rich","type":"red","price":81,"glass":null,"glassNote":"","unique":true,"note":"A natural family farm in Slovakia; a blend across grapes and years.","check":true,"cmp":["magula"],"prodGroup":"Slobodné"},{"id":"magula","producer":"Vino Magula","cuvee":"Baccara","short":"Baccara","vintage":"2018","grapes":"Dunaj, Frankovka & Rosa","grape":"Dunaj","region":"Slovakia","country":"Slovakia","section":"Red: rich","type":"red","price":85,"glass":null,"glassNote":"","unique":false,"note":"Dunaj is a dark Slovak grape: plum, black cherry, spice, some age.","check":true,"cmp":["majer","dvaduby"],"prodGroup":"Vino Magula"},{"id":"nebbiolo","producer":"Ferdinando Principiano","cuvee":"Langhe Nebbiolo","short":"Langhe Nebbiolo","vintage":"2024","grapes":"Nebbiolo","grape":"Nebbiolo","region":"Piedmont","country":"Italy","section":"Red: rich","type":"red","price":90,"glass":17,"glassNote":"","unique":false,"note":"Young-vine Nebbiolo, no oak: pale colour, rose and cherry, then a firm grip of tannin. Little brother of his Barolo.","check":false,"cmp":["umberta","ligas","boutdzan"],"prodGroup":"Ferdinando Principiano"},{"id":"dvaduby","producer":"Dva Duby","cuvee":"Vox Silentium","short":"Vox Silentium","vintage":"2019","grapes":"Frankovka (Blaufränkisch)","grape":"Blaufränkisch","region":"Moravia","country":"Czechia","section":"Red: rich","type":"red","price":90,"glass":null,"glassNote":"","unique":false,"note":"Biodynamic Moravian Frankovka on rocky soils: dark cherry, pepper, mineral, structured.","check":false,"cmp":["wachter","kekfrankos","nebbiolo"],"prodGroup":"Dva Duby"},{"id":"fantine","producer":"Clos Fantine","cuvee":"Faugères Tradition","short":"Clos Fantine","vintage":"2021","grapes":"Carignan, Grenache, Syrah","grape":"Carignan","region":"Languedoc-Roussillon","country":"France","section":"Red: rich","type":"red","price":90,"glass":null,"glassNote":"","unique":false,"note":"No added sulfur, schist soils. Meaty, herbal (thyme, bay), smoky. Wilder and more savoury than Bout d'Zan.","check":false,"cmp":["boutdzan","barralblanc","naia"],"prodGroup":"Clos Fantine"},{"id":"beauxmonts","producer":"Domaine Breton","cuvee":"Les Beaux Monts","short":"Les Beaux Monts","vintage":"2024","grapes":"Cabernet Franc","grape":"Cabernet family","region":"Loire","country":"France","section":"Red: rich","type":"red","price":95,"glass":null,"glassNote":"","unique":false,"note":"Loire Cabernet Franc: raspberry, pencil shavings, a leafy green note, fresh.","check":true,"cmp":["fronsac","saumurchamp","grolleau"],"prodGroup":"Domaine Breton"},{"id":"foradori","producer":"Agricola Foradori","cuvee":"Foradori Teroldego","short":"Foradori","vintage":"2023","grapes":"Teroldego","grape":"Teroldego","region":"Trentino-Alto Adige","country":"Italy","section":"Red: rich","type":"red","price":105,"glass":null,"glassNote":"","unique":false,"note":"Biodynamic benchmark from the Dolomites: dark berries, violet, fresh, moderate tannin.","check":false,"cmp":["fronsac","pranzegg"],"prodGroup":"Agricola Foradori"},{"id":"fronsac","producer":"Matthieu Cosse","cuvee":"Fronsac","short":"Fronsac","vintage":"2020","grapes":"Cabernet Sauvignon, Merlot, Malbec, Cabernet Franc","grape":"Cabernet family","region":"Bordeaux","country":"France","section":"Red: rich","type":"red","price":105,"glass":20,"glassNote":"","unique":false,"note":"Biodynamic Bordeaux: cassis, plum, cedar, firm tannin. The most classic red on the list; your anchor for firm and structured.","check":false,"cmp":["boutdzan","beauxmonts","foradori"],"prodGroup":"Matthieu Cosse"},{"id":"preisinger","producer":"Claus Preisinger","cuvee":"Pannobile","short":"Pannobile","vintage":"2014","grapes":"Blaufränkisch, Zweigelt","grape":"Blaufränkisch","region":"Burgenland","country":"Austria","section":"Red: rich","type":"red","price":110,"glass":null,"glassNote":"","unique":false,"note":"Over ten years old: softened tannin, dried cherry, leather, spice. Shows what age does to Blaufränkisch.","check":false,"cmp":["wachter","kekfrankos"],"prodGroup":"Claus Preisinger"},{"id":"kekfrankos","producer":"Bott Frigyes","cuvee":"Kékfrankos","short":"Bott Kékfrankos","vintage":"2023","grapes":"Blaufränkisch","grape":"Blaufränkisch","region":"Slovakia","country":"Slovakia","section":"Red: rich","type":"red","price":115,"glass":null,"glassNote":"","unique":false,"note":"Volcanic-soil Blaufränkisch from Slovakia: spicy, sour cherry, fine tannin.","check":false,"cmp":["furmint","dvaduby","preisinger"],"prodGroup":"Bott Frigyes"},{"id":"matrone","producer":"Cantine Matrone","cuvee":"A Muntagna","short":"A Muntagna","vintage":"2022","grapes":"Cascaveglia & Piedirosso","grape":"Piedirosso","region":"Campania","country":"Italy","section":"Red: rich","type":"red","price":120,"glass":null,"glassNote":"","unique":true,"note":"From the slopes of Vesuvius: red fruit, smoke, ash, savoury. The volcanic red.","check":true,"cmp":["yeye","paloblanco"],"prodGroup":"Cantine Matrone"},{"id":"dumarcher","producer":"Matthieu Dumarcher","cuvee":"Réserve","short":"Dumarcher Réserve","vintage":"2020","grapes":"Syrah, Grenache & Carignan","grape":"Syrah","region":"Rhône & Ardèche","country":"France","section":"Red: rich","type":"red","price":120,"glass":null,"glassNote":"","unique":false,"note":"Natural southern Rhône with a few years of age: dark fruit, garrigue herbs, warmth. Bout d'Zan with more power.","check":false,"cmp":["boutdzan","dard"],"prodGroup":"Matthieu Dumarcher"},{"id":"brova","producer":"Louis Magnin","cuvee":"La Brova","short":"La Brova","vintage":"2017","grapes":"Mondeuse","grape":"Mondeuse","region":"Savoie","country":"France","section":"Red: rich","type":"red","price":130,"glass":null,"glassNote":"","unique":false,"note":"Barrel-aged Savoie Mondeuse: blackberry, black pepper, violet, firm tannin.","check":false,"cmp":["dard","monfarina"],"prodGroup":"Louis Magnin"},{"id":"saumurchamp","producer":"La Porte Saint Jean","cuvee":"Saumur-Champigny","short":"Saumur-Champigny","vintage":"2023","grapes":"Cabernet Franc","grape":"Cabernet family","region":"Loire","country":"France","section":"Red: rich","type":"red","price":155,"glass":null,"glassNote":"","unique":false,"note":"Fine, perfumed Cabernet Franc with silky tannin and real depth.","check":false,"cmp":["beauxmonts","pouches"],"prodGroup":"La Porte Saint Jean"},{"id":"dard","producer":"Dard et Ribo","cuvee":"Crozes-Hermitage","short":"Crozes-Hermitage","vintage":"2023","grapes":"Syrah","grape":"Syrah","region":"Rhône & Ardèche","country":"France","section":"Red: rich","type":"red","price":160,"glass":null,"glassNote":"","unique":true,"note":"Natural-wine pioneers. Pure Syrah: black olive, pepper, violet, fresh rather than heavy. The Syrah reference.","check":false,"cmp":["cornas","river","brova"],"prodGroup":"Dard et Ribo"},{"id":"fonterenza","producer":"Fonterenza","cuvee":"Rosso di Montalcino","short":"Rosso di Montalcino","vintage":"2020","grapes":"Sangiovese","grape":"Sangiovese","region":"Tuscany","country":"Italy","section":"Red: rich","type":"red","price":160,"glass":null,"glassNote":"","unique":false,"note":"Sour cherry, orange, herbs, leather; firm but ripe. The middle of the Sangiovese ladder.","check":false,"cmp":["girotondo","poggio"],"prodGroup":"Fonterenza"},{"id":"ganko","producer":"Olivier Rivière","cuvee":"Ganko","short":"Ganko","vintage":"2019","grapes":"Garanacha & Mazuelo","grape":"Grenache","region":"Rioja & Navarra","country":"Spain","section":"Red: rich","type":"red","price":160,"glass":null,"glassNote":"","unique":false,"note":"Old-vine Garnacha at altitude in Rioja: tight, mineral, dark cherry, fine tannin, not oaky. Listed under Rhône by mistake.","check":false,"cmp":["boutdzan","moraza"],"prodGroup":"Olivier Rivière"},{"id":"snake","producer":"Pyramid Valley","cuvee":"Snake's Tongue","short":"Snake's Tongue","vintage":"2022","grapes":"Pinot Noir","grape":"Pinot Noir","region":"New Zealand","country":"New Zealand","section":"Red: rich","type":"red","price":220,"glass":null,"glassNote":"","unique":false,"note":"New Zealand Pinot, riper and darker than Burgundy: black cherry, spice, more body.","check":false,"cmp":["pyramidchard","nsg","sabre"],"prodGroup":"Pyramid Valley"},{"id":"poggio","producer":"Massa Vecchia","cuvee":"Poggio a'Venti","short":"Poggio a'Venti","vintage":"2022","grapes":"Sangiovese","grape":"Sangiovese","region":"Tuscany","country":"Italy","section":"Red: rich","type":"red","price":260,"glass":null,"glassNote":"","unique":true,"note":"From a revered natural farm in the Maremma: deep, earthy, structured, long-lived. Top of the Sangiovese ladder.","check":false,"cmp":["fonterenza","ariento"],"prodGroup":"Massa Vecchia"},{"id":"cornas","producer":"Philippe Pacalet","cuvee":"Cornas","short":"Pacalet Cornas","vintage":"2021","grapes":"Syrah","grape":"Syrah","region":"Rhône & Ardèche","country":"France","section":"Red: rich","type":"red","price":260,"glass":null,"glassNote":"","unique":false,"note":"The Rhône's sturdiest Syrah: dark, smoky, meaty, firm tannin.","check":false,"cmp":["dard","nsg"],"prodGroup":"Philippe Pacalet"},{"id":"moscatello","producer":"L'Archetipo","cuvee":"Moscatello Selvatico","short":"Moscatello Selvatico","vintage":"2024","grapes":"","grape":"Muscat","region":"Puglia","country":"Italy","section":"Sweet","type":"sweet","price":80,"glass":15,"glassNote":"125ml","unique":false,"note":"An aromatic Muscat-family grape: orange blossom, grape, light. Check how sweet it is.","check":true,"cmp":["n5","marguerite"],"prodGroup":"L'Archetipo"},{"id":"szolo","producer":"Szóló","cuvee":"Dolce","short":"Szóló Dolce","vintage":"NV","grapes":"Furmint +","grape":"Furmint","region":"Tokaj","country":"Hungary","section":"Sweet","type":"sweet","price":90,"glass":10,"glassNote":"75ml","unique":false,"note":"Sweet Tokaj: apricot, honey, bright acidity.","check":false,"cmp":["furmint","souch"],"prodGroup":"Szóló"},{"id":"maury","producer":"Mas Amiel","cuvee":"Maury Vintage","short":"Maury","vintage":"2023","grapes":"Grenache","grape":"Grenache","region":"Languedoc-Roussillon","country":"France","section":"Sweet","type":"sweet","price":118,"glass":12,"glassNote":"75ml","unique":false,"note":"A fortified red, like a young Port: blackberry, chocolate, sweet. The one for chocolate puddings.","check":false,"cmp":["boutdzan","volta"],"prodGroup":"Mas Amiel"},{"id":"volta","producer":"La Stoppa","cuvee":"Vigna del Volta","short":"Vigna del Volta","vintage":"2024","grapes":"Malvasia di Candia Aromatica","grape":"Malvasia","region":"Emilia-Romagna","country":"Italy","section":"Sweet","type":"sweet","price":150,"glass":17,"glassNote":"75ml","unique":false,"note":"Made from dried grapes: apricot jam, honey, orange peel, rich.","check":false,"cmp":["costabosco","souch"],"prodGroup":"La Stoppa"},{"id":"souch","producer":"Domaine de Souch","cuvee":"Cuvée Marie-Kattalin","short":"Marie-Kattalin","vintage":"2022","grapes":"Petit Manseng","grape":"Petit Manseng","region":"South-West France","country":"France","section":"Sweet","type":"sweet","price":210,"glass":21,"glassNote":"75ml","unique":false,"note":"Late-harvest, biodynamic Jurançon: pineapple, honey, razor acidity. The finest sweet wine.","check":false,"cmp":["volta","szolo"],"prodGroup":"Domaine de Souch"},{"id":"auslese","producer":"Staffelter Hof","cuvee":"Riesling Auslese 2005","short":"Auslese 2005","vintage":"2005","grapes":"Riesling","grape":"Riesling","region":"Mosel","country":"Germany","section":"Sweet","type":"sweet","price":85,"glass":null,"glassNote":"","unique":true,"note":"Twenty-year-old sweet Riesling: honey, lime marmalade, petrol, light in alcohol.","check":false,"cmp":["sekt","trossen","rieslingplus"],"prodGroup":"Staffelter Hof"},{"id":"roc","producer":"Château Le Roc","cuvee":"Roc'Ambulle","short":"Roc'Ambulle","vintage":"2024","grapes":"Negrette","grape":"Négrette","region":"South-West France","country":"France","section":"Sparkling","type":"sparkling","price":null,"glass":16,"glassNote":"","unique":true,"note":"A pink pét-nat: low alcohol, soft bubbles, strawberry and violet, a touch of sweetness.","check":false,"cmp":["funambul","courreges","roebuck"],"prodGroup":"Château Le Roc"},{"id":"villo","producer":"Gili","cuvee":"Villo","short":"Villo Grillo","vintage":"2023","grapes":"Grillo","grape":"Grillo","region":"Sicily","country":"Italy","section":"White: round","type":"white","price":null,"glass":19,"glassNote":"","unique":false,"note":"Sicilian Grillo: citrus, herbs and a salty finish with some weight.","check":true,"cmp":["galerne","loiseau","bislacco"],"prodGroup":"Gili"}],"links":[["aligorhythm","basdesees"],["aligorhythm","galerne"],["altesse","arcane"],["altesse","monfarina"],["arcane","sabre"],["ariento","costabosco"],["ariento","gluck"],["ariento","poggio"],["ariento","selvadolce"],["auslese","rieslingplus"],["auslese","sekt"],["auslese","trossen"],["azimut","josmeyer"],["azimut","marguerite"],["azimut","trossen"],["barralblanc","coolmoon"],["barralblanc","envie"],["barralblanc","fantine"],["barralblanc","loiseau"],["basdesees","yume"],["batailles","ganevatchard"],["batailles","sabre"],["batailles","thillardon"],["beauxmonts","fronsac"],["beauxmonts","grolleau"],["beauxmonts","saumurchamp"],["bislacco","n5"],["bislacco","valbianco"],["bislacco","villo"],["blackbookchard","kitscoty"],["blackbookchard","pyramidchard"],["blackbookchard","rebel"],["bornard","ganevatchard"],["bornard","miroirs"],["bornard","ouille"],["bornard","strekov"],["bourgeois","davenport"],["bourgeois","gindl"],["bourgeois","graf"],["bourgeois","tueboeuf"],["bourgeois","zillinger"],["boutdzan","dumarcher"],["boutdzan","fantine"],["boutdzan","fronsac"],["boutdzan","ganko"],["boutdzan","maury"],["boutdzan","nebbiolo"],["boutdzan","pranzegg"],["boutdzan","seignovert"],["boutdzan","umberta"],["brocard","langham"],["brocard","lavalcum"],["brocard","pascal"],["brocard","roebuck"],["brocard","roebuck19"],["brova","dard"],["brova","monfarina"],["clarete","courreges"],["clarete","funambul"],["clarete","pranzegg"],["coolmoon","loiseau"],["cornas","dard"],["cornas","ladoix"],["cornas","nsg"],["costabosco","radikon"],["costabosco","volta"],["courreges","pascal"],["courreges","rebel"],["courreges","roc"],["courreges","rosanera"],["dandelion","durieux"],["dandelion","sabre"],["dard","dumarcher"],["dard","river"],["davenport","gindl"],["davenport","hamstreet"],["davenport","tueboeuf"],["decarlino","pepe"],["decarlino","selvadolce"],["disko","river"],["disko","rufo"],["durieux","racines"],["durieux","roch"],["dvaduby","kekfrankos"],["dvaduby","magula"],["dvaduby","nebbiolo"],["dvaduby","wachter"],["ecu","galerne"],["ecu","monfarina"],["envie","loiseau"],["evans","hamfield"],["evans","pranzegg"],["evans","rebel"],["evans","walgate"],["fantine","naia"],["faure","galerne"],["faure","yume"],["fedellos","pranzegg"],["fedellos","thillardon"],["fonterenza","girotondo"],["fonterenza","poggio"],["foradori","fronsac"],["foradori","pranzegg"],["fournois","galerne"],["fournois","lavalcum"],["fournois","rogerie"],["frantz","furmint"],["frantz","pouches"],["frantz","tessier"],["frickchasselas","frickpinot"],["frickchasselas","josmeyer"],["frickpinot","ruof"],["funambul","kamara"],["funambul","roc"],["funambul","roebuck"],["furmint","kekfrankos"],["furmint","strekov"],["furmint","szolo"],["fussey","ladoix"],["fussey","mainbey"],["fussey","pyramidchard"],["fussey","yume"],["galerne","josmeyer"],["galerne","kitscoty"],["galerne","loiseau"],["galerne","madeira"],["galerne","monfarina"],["galerne","villo"],["ganevatchard","miroirs"],["ganevatchard","ouille"],["ganko","moraza"],["gindl","zillinger"],["girotondo","poggio"],["girotondo","pranzegg"],["gluck","graf"],["graf","tueboeuf"],["graf","zillinger"],["grolleau","pranzegg"],["grolleau","racines"],["hamfield","hamstreet"],["hamstreet","kitscoty"],["josmeyer","rietschcremant"],["josmeyer","sylvaner"],["kamara","ligas"],["kekfrankos","preisinger"],["kekfrankos","wachter"],["ladoix","mainbey"],["ladoix","nsg"],["langham","lavalcum"],["langham","roebuck"],["lavalcum","rogerie"],["lavalcum","selosse"],["lavalcum","vlaval"],["leirana","moraza"],["leirana","nanclares"],["ligas","nebbiolo"],["loiseau","villo"],["madeira","paloblanco"],["magula","majer"],["mainbey","yume"],["maladerote","montchenevoy"],["maladerote","nsg"],["maladerote","sabre"],["marguerite","moscatello"],["marguerite","n5"],["marguerite","radikon"],["marguerite","rufo"],["matrone","paloblanco"],["matrone","yeye"],["maury","volta"],["miroirs","selosse"],["montchenevoy","nsg"],["moraza","rufo"],["moscatello","n5"],["nanclares","paloblanco"],["nebbiolo","umberta"],["nestarec","syfany"],["nestarec","wachter"],["nsg","roch"],["nsg","sabre"],["nsg","snake"],["ouille","trossen"],["paloblanco","yeye"],["pascal","roc"],["pouches","saumurchamp"],["pouches","tessier"],["pranzegg","river"],["pranzegg","valrosso"],["pranzegg","walgate"],["preisinger","wachter"],["pyramidchard","snake"],["radikon","token"],["rieslingplus","sekt"],["rieslingplus","trossen"],["rietschcremant","roebuck"],["rietschcremant","sylvaner"],["river","rufo"],["river","seignovert"],["roc","roebuck"],["roebuck","roebuck19"],["roebuck19","selosse"],["rosanera","valrosso"],["ruof","sabre"],["sabre","snake"],["sabre","thillardon"],["sekt","trossen"],["selosse","vlaval"],["souch","szolo"],["souch","volta"],["syfany","wachter"],["valbianco","valrosso"],["villo","yeye"]]};
+const GUIDE_URL = 'https://claude.ai/artifact/WsAAJj4JwzrjYCGeGF7gqK';
+
+const TYPES = {
+  sparkling:{label:'Sparkling', shape:d3.symbolDiamond},
+  white:{label:'White', shape:d3.symbolCircle},
+  rose:{label:'Rosé', shape:d3.symbolCircle},
+  orange:{label:'Orange', shape:d3.symbolSquare},
+  red:{label:'Red', shape:d3.symbolCircle},
+  sweet:{label:'Sweet', shape:d3.symbolTriangle}
+};
+const SECTION_ORDER = ['Sparkling','Champagne','White: fresh','White: round','Rosé','Orange','Red: soft','Red: rich','Sweet'];
+const BAND_ORDER = ['Glass only','Under £80','£80 to £99','£100 to £129','£130 to £179','£180 to £259','£260 and over'];
+function band(p){ if(p==null) return 'Glass only'; if(p<80) return 'Under £80'; if(p<100) return '£80 to £99'; if(p<130) return '£100 to £129'; if(p<180) return '£130 to £179'; if(p<260) return '£180 to £259'; return '£260 and over'; }
+const MODES = [
+  {id:'links', label:'Connections'},
+  {id:'style', label:'Style', key:w=>w.section, order:SECTION_ORDER},
+  {id:'grape', label:'Grape', key:w=>w.grape, other:'One-off grapes'},
+  {id:'region', label:'Region', key:w=>w.region, other:'One-off regions'},
+  {id:'country', label:'Country', key:w=>w.country},
+  {id:'producer', label:'Producer', key:w=>w.prodGroup, other:'One wine each'},
+  {id:'price', label:'Price', key:w=>band(w.price), order:BAND_ORDER}
+];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const wines = DATA.wines, byId = new Map(wines.map(w => [w.id, w]));
+const nbrs = new Map(wines.map(w => [w.id, new Set()]));
+const links = DATA.links.map(([a,b]) => { nbrs.get(a).add(b); nbrs.get(b).add(a); return {source:byId.get(a), target:byId.get(b)}; });
+wines.forEach(w => {
+  w.name = w.producer + ', ' + w.cuvee;
+  const p = w.price || 70, t = Math.max(0, Math.min(1, (Math.log(p)-Math.log(45))/(Math.log(475)-Math.log(45))));
+  w.sizeF = 0.8 + 0.5*t;
+  w.hay = [w.producer,w.cuvee,w.grapes,w.grape,w.region,w.country,w.section].join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+});
+document.getElementById('count').textContent = wines.length + ' wines, ' + links.length + ' comparisons';
+
+/* ---------- state ---------- */
+const state = {mode:'style', sel:null, hidden:new Set(), showLinks:true, query:''};
+const fromHash = () => { const h = location.hash.replace('#',''); return MODES.some(m => m.id===h) ? h : 'style'; };
+state.mode = fromHash();
+
+/* ---------- svg scaffold ---------- */
+const svg = d3.select('#map'), root = svg.append('g');
+const gGroups = root.append('g'), gLinks = root.append('g').attr('class','links'), gNodes = root.append('g'), gLabels = root.append('g');
+let K = 1, VW = 900, VH = 700, groups = [], lastW = 0;
+const zoom = d3.zoom().scaleExtent([0.25, 10]).on('zoom', e => { root.attr('transform', e.transform); K = e.transform.k; onZoom(); });
+svg.call(zoom).on('dblclick.zoom', null);
+svg.on('click', e => { if (e.target === svg.node()) select(null); });
+
+const linkSel = gLinks.selectAll('line').data(links).join('line').attr('class','link');
+const nodeSel = gNodes.selectAll('g').data(wines, d => d.id).join('g')
+  .attr('class', d => 'node t-' + d.type).attr('tabindex', -1)
+  .on('click', (e,d) => { e.stopPropagation(); select(d.id, false); })
+  .on('pointerenter', (e,d) => { if (e.pointerType === 'mouse') showTip(e,d); })
+  .on('pointermove', (e,d) => { if (e.pointerType === 'mouse') showTip(e,d); })
+  .on('pointerleave', hideTip);
+nodeSel.append('circle').attr('class','hit');
+nodeSel.filter(d => d.glass).append('circle').attr('class','glassring');
+nodeSel.append('path').attr('class','mark');
+nodeSel.append('text').attr('class','nlabel').text(d => d.short);
+
+const sim = d3.forceSimulation(wines).stop();
+
+/* ---------- layout ---------- */
+function measure(){
+  const r = document.getElementById('stage').getBoundingClientRect();
+  return {w:Math.max(200, r.width), h:Math.max(200, r.height)};
+}
+function computeGroups(mode){
+  const m = new Map();
+  wines.forEach(w => { const k = mode.key(w); if (!m.has(k)) m.set(k, []); m.get(k).push(w); });
+  let list = [];
+  if (mode.other){
+    const rest = [];
+    m.forEach((arr,k) => { if (arr.length > 1) list.push({name:k, members:arr}); else rest.push(arr[0]); });
+    list.sort((a,b) => b.members.length - a.members.length || a.name.localeCompare(b.name));
+    if (rest.length) list.push({name:mode.other, members:rest, other:true});
+  } else {
+    m.forEach((arr,k) => list.push({name:k, members:arr}));
+    if (mode.order) list.sort((a,b) => mode.order.indexOf(a.name) - mode.order.indexOf(b.name));
+    else list.sort((a,b) => b.members.length - a.members.length || a.name.localeCompare(b.name));
+  }
+  return list;
+}
+function layout(animate){
+  const s = measure(); lastW = s.w;
+  VW = Math.max(s.w, 820); VH = VW * Math.max(0.55, Math.min(1.5, s.h / s.w));
+  const mode = MODES.find(m => m.id === state.mode);
+  let base;
+  if (mode.id === 'links'){
+    groups = []; base = 9.5;
+    wines.forEach(w => { w.g = null; w.r = base * w.sizeF; });
+    sim.force('x', d3.forceX(VW/2).strength(0.045)).force('y', d3.forceY(VH/2).strength(0.045 * VW / VH))
+       .force('link', d3.forceLink(links).distance(44).strength(0.4))
+       .force('charge', d3.forceManyBody().strength(-150).distanceMax(340))
+       .force('collide', d3.forceCollide(d => d.r + 4).iterations(2));
+  } else {
+    groups = computeGroups(mode);
+    const h = d3.hierarchy({children: groups.map(g => ({g, value: g.members.length + 0.8}))}).sum(d => d.value || 0);
+    d3.pack().size([VW, VH]).padding(Math.max(16, VW * 0.03))(h);
+    h.children.forEach(c => { const g = c.data.g; g.x = c.x; g.y = c.y; g.r = c.r; });
+    base = Math.min(15, 0.6 * d3.min(groups, g => g.r / Math.sqrt(g.members.length)));
+    groups.forEach(g => g.members.forEach(w => { w.g = g; w.r = base * w.sizeF; }));
+    sim.force('link', null).force('charge', null)
+       .force('x', d3.forceX(d => d.g.x).strength(0.22)).force('y', d3.forceY(d => d.g.y).strength(0.22))
+       .force('collide', d3.forceCollide(d => d.r + Math.max(1.5, base * 0.16)).strength(0.9).iterations(3));
+  }
+  wines.forEach(w => {
+    if (w.x == null || !animate){
+      const cx = w.g ? w.g.x : VW/2, cy = w.g ? w.g.y : VH/2, rr = w.g ? w.g.r * 0.6 : Math.min(VW,VH) * 0.3, a = Math.random() * 6.283, q = Math.sqrt(Math.random()) * rr;
+      w.x = cx + Math.cos(a) * q; w.y = cy + Math.sin(a) * q; w.vx = 0; w.vy = 0;
+    }
+  });
+  // marks sized to the new radius
+  nodeSel.select('.mark').attr('d', d => d3.symbol().type(TYPES[d.type].shape).size(Math.PI * d.r * d.r * (d.type === 'rose' ? 0.7 : 1))());
+  nodeSel.select('.hit').attr('r', d => d.r + 7);
+  nodeSel.select('.glassring').attr('r', d => d.r + Math.max(2.5, d.r * 0.38));
+  // group circles and labels
+  gGroups.selectAll('circle').data(groups, g => g.name).join('circle').attr('class','gcirc')
+    .attr('cx', g => g.x).attr('cy', g => g.y).attr('r', g => g.r)
+    .on('click', (e,g) => { e.stopPropagation(); select(null); zoomToGroup(g); });
+  const lab = gLabels.selectAll('text').data(groups, g => g.name).join('text').attr('class','glabel')
+    .on('click', (e,g) => { e.stopPropagation(); zoomToGroup(g); });
+  lab.html(g => esc(g.name) + ' <tspan class="n">' + g.members.length + '</tspan>');
+  gLinks.classed('strong', mode.id === 'links');
+  document.querySelectorAll('#modes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
+
+  sim.on('tick', null).on('end', null);
+  if (animate && !reduced){
+    sim.alpha(0.9).alphaDecay(0.045).on('tick', draw).on('end', () => { if (state.mode === 'links') fit(true); }).restart();
+    if (state.mode !== 'links') fit(true);
+  } else {
+    sim.alpha(1).alphaDecay(0.03);
+    for (let i = 0; i < 280; i++) sim.tick();
+    draw(); fit(false);
+  }
+  onZoom();
+}
+function draw(){
+  nodeSel.attr('transform', d => 'translate(' + d.x.toFixed(1) + ',' + d.y.toFixed(1) + ')');
+  linkSel.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+}
+function bounds(){
+  if (state.mode !== 'links') return [0, 0, VW, VH];
+  const x0 = d3.min(wines, w => w.x - w.r), x1 = d3.max(wines, w => w.x + w.r), y0 = d3.min(wines, w => w.y - w.r), y1 = d3.max(wines, w => w.y + w.r);
+  return [x0, y0, x1, y1];
+}
+function fitBox(b, animate, maxK){
+  const s = measure(), pad = 18, w = b[2]-b[0], h = b[3]-b[1];
+  const k = Math.min(maxK || 6, (s.w - pad*2) / w, (s.h - pad*2) / h);
+  const t = d3.zoomIdentity.translate(s.w/2 - k*(b[0]+w/2), s.h/2 - k*(b[1]+h/2)).scale(k);
+  (animate && !reduced ? svg.transition().duration(550) : svg).call(zoom.transform, t);
+}
+function fit(animate){ fitBox(bounds(), animate, 1.6); }
+function zoomToGroup(g){ fitBox([g.x-g.r, g.y-g.r-g.r*0.12, g.x+g.r, g.y+g.r], true, 5); }
+function centreOn(w){
+  const set = [w, ...[...nbrs.get(w.id)].map(i => byId.get(i)).filter(x => !x.isOff)], pad = w.r * 3;
+  fitBox([d3.min(set, d => d.x) - pad, d3.min(set, d => d.y) - pad, d3.max(set, d => d.x) + pad, d3.max(set, d => d.y) + pad * 1.5], true, 13 / w.r);
+}
+function onZoom(){
+  const sel = state.sel, nb = sel ? nbrs.get(sel) : null;
+  nodeSel.select('.nlabel')
+    .style('font-size', (11 / K) + 'px').style('stroke-width', (3 / K) + 'px')
+    .attr('y', d => d.r + 12 / K)
+    .style('display', d => {
+      if (d.isOff) return 'none';
+      if (sel) return (d.id === sel || nb.has(d.id)) ? null : 'none';
+      return (d.r * K >= 10 && !d.isDim) ? null : 'none';
+    });
+  const kept = [], vis = new Set();
+  [...groups].sort((a,b) => b.members.length - a.members.length).forEach(g => {
+    const w = (g.name.length + 3) * 7.4, cx = g.x * K, y = (g.y - g.r) * K - 5, box = [cx - w/2, y - 14, cx + w/2, y + 4];
+    if (!kept.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])){ kept.push(box); vis.add(g.name); }
+  });
+  gLabels.selectAll('text')
+    .style('font-size', (12.5 / K) + 'px').style('stroke-width', (3.5 / K) + 'px')
+    .attr('x', g => g.x).attr('y', g => g.y - g.r - 5 / K)
+    .style('display', g => vis.has(g.name) ? null : 'none');
+}
+
+/* ---------- selection, filters ---------- */
+function refresh(){
+  const sel = state.sel, nb = sel ? nbrs.get(sel) : null, q = state.query;
+  wines.forEach(w => {
+    w.isOff = state.hidden.has(w.type);
+    w.isDim = !w.isOff && ((sel && w.id !== sel && !nb.has(w.id)) || (!sel && q && !w.hay.includes(q)));
+  });
+  nodeSel.classed('off', d => d.isOff).classed('dim', d => d.isDim).classed('sel', d => d.id === sel);
+  gLinks.classed('off', !state.showLinks && !sel).classed('hassel', !!sel);
+  linkSel.classed('on', d => sel && (d.source.id === sel || d.target.id === sel) && !d.source.isOff && !d.target.isOff);
+  if (sel) nodeSel.filter(d => d.id === sel || nb.has(d.id)).raise();
+  onZoom();
+}
+function select(id, move){
+  state.sel = id; refresh(); renderPanel();
+  if (id && move !== false) centreOn(byId.get(id));
+  const p = document.getElementById('panel'); p.scrollTop = 0;
+}
+
+/* ---------- panel ---------- */
+function glyph(type, size){
+  const s = size || 16, r = s * 0.36;
+  const path = d3.symbol().type(TYPES[type].shape).size(Math.PI * r * r * (type === 'rose' ? 0.7 : 1))();
+  const col = type === 'sparkling' ? 'var(--t-sparkling)' : type === 'sweet' ? 'var(--t-sweet)' : (type === 'red' || type === 'rose') ? 'var(--t-red)' : 'var(--t-white)';
+  const paint = type === 'rose' ? 'fill="var(--surface)" stroke="' + col + '" stroke-width="2.2"' : 'fill="' + col + '"';
+  return '<svg width="' + s + '" height="' + s + '" viewBox="' + (-s/2) + ' ' + (-s/2) + ' ' + s + ' ' + s + '" aria-hidden="true"><path d="' + path + '" ' + paint + '/></svg>';
+}
+function priceText(w){
+  const parts = [];
+  if (w.price != null) parts.push('£' + w.price + ' <small>bottle</small>');
+  if (w.glass != null) parts.push('£' + w.glass + ' <small>' + (w.glassNote ? esc(w.glassNote) : 'glass') + '</small>');
+  return parts.join(' &nbsp;·&nbsp; ');
+}
+function wineButton(w){
+  return '<button data-wine="' + w.id + '">' + glyph(w.type, 18) + '<span><span class="nm">' + esc(w.short) + '</span><br><span class="ds">' + esc(w.grape) + ' · ' + esc(w.region) + (w.price != null ? ' · £' + w.price : ' · £' + w.glass + ' glass') + '</span></span></button>';
+}
+function renderPanel(){
+  const el = document.getElementById('panel'), w = state.sel ? byId.get(state.sel) : null;
+  if (!w){
+    const anchors = ['galerne','loiseau','pranzegg','fronsac','boutdzan'].map(id => wineButton(byId.get(id))).join('');
+    el.innerHTML = '<div class="intro"><p><strong>Tap a wine</strong> to read its note and light up the wines to compare it with. Tap a group to zoom in.</p>'
+      + '<div class="sub">Start with the anchors</div><div class="anchors">' + anchors + '</div>'
+      + '<p class="foot">Notes describe what each producer, grape and region normally gives. Wines marked “Check” need confirming with your supplier. <a href="' + GUIDE_URL + '">Open the written guide</a></p></div>';
+  } else {
+    const cmp = [...nbrs.get(w.id)].map(id => byId.get(id)).sort((a,b) => (w.cmp.includes(b.id) - w.cmp.includes(a.id)) || (a.price||0) - (b.price||0));
+    const pills = '<span class="pill">' + glyph(w.type, 14) + esc(w.section) + '</span>'
+      + (w.glass != null ? '<span class="pill">By the glass</span>' : '')
+      + (w.unique ? '<span class="pill">♢ Unique expression</span>' : '')
+      + (w.check ? '<span class="pill warn">Check with supplier</span>' : '');
+    const chip = (mode, label, val) => '<button data-group="' + mode + '" data-val="' + esc(val) + '">' + label + ': <b>' + esc(val) + '</b></button>';
+    const multiProd = wines.filter(x => x.prodGroup === w.prodGroup).length > 1;
+    el.innerHTML = '<button class="close" aria-label="Close">×</button><div class="pills">' + pills + '</div>'
+      + '<h2>' + esc(w.name) + (w.vintage ? ' ' + esc(w.vintage) : '') + '</h2>'
+      + '<p class="meta">' + esc(w.grapes || w.grape) + ' · ' + esc(w.region) + (w.region !== w.country ? ', ' + esc(w.country) : '') + '</p>'
+      + '<p class="price">' + priceText(w) + '</p>'
+      + '<p class="note">' + esc(w.note) + '</p>'
+      + '<div class="sub">Compare with</div><div class="cmp">' + cmp.map(wineButton).join('') + '</div>'
+      + '<div class="sub">See its group</div><div class="chips">' + chip('grape','Grape',w.grape) + chip('region','Region',w.region) + (multiProd ? chip('producer','Producer',w.prodGroup) : '') + chip('price','Price',band(w.price)) + '</div>';
+  }
+}
+document.getElementById('panel').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.classList.contains('close')) return select(null);
+  if (b.dataset.wine) return select(b.dataset.wine);
+  if (b.dataset.group){
+    const keep = state.sel; setMode(b.dataset.group);
+    const w = byId.get(keep); if (w && w.g) setTimeout(() => zoomToGroup(w.g), reduced ? 0 : 650);
+  }
+});
+
+/* ---------- controls ---------- */
+function setMode(id){
+  if (id === state.mode) return;
+  state.mode = id;
+  try { history.replaceState(null, '', '#' + id); } catch (err) { location.hash = id; }
+  layout(true);
+}
+const modesEl = document.getElementById('modes');
+modesEl.innerHTML = MODES.map(m => '<button data-mode="' + m.id + '" aria-pressed="false">' + m.label + '</button>').join('');
+modesEl.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMode(b.dataset.mode); });
+addEventListener('hashchange', () => { const h = fromHash(); if (h !== state.mode){ state.mode = h; layout(true); } });
+
+const keyEl = document.getElementById('key');
+keyEl.innerHTML = Object.entries(TYPES).map(([id,t]) => '<button data-type="' + id + '" aria-pressed="true">' + glyph(id, 16) + t.label + '</button>').join('');
+keyEl.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const t = b.dataset.type; state.hidden.has(t) ? state.hidden.delete(t) : state.hidden.add(t);
+  b.setAttribute('aria-pressed', String(!state.hidden.has(t))); refresh();
+});
+document.getElementById('linksToggle').addEventListener('change', e => { state.showLinks = e.target.checked; refresh(); });
+document.getElementById('zin').addEventListener('click', () => svg.transition().duration(reduced ? 0 : 250).call(zoom.scaleBy, 1.6));
+document.getElementById('zout').addEventListener('click', () => svg.transition().duration(reduced ? 0 : 250).call(zoom.scaleBy, 1/1.6));
+document.getElementById('zfit').addEventListener('click', () => fit(true));
+
+/* search */
+const qEl = document.getElementById('q'), resEl = document.getElementById('results');
+function norm(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
+qEl.addEventListener('input', () => {
+  state.query = norm(qEl.value);
+  if (state.sel){ state.sel = null; renderPanel(); }
+  refresh();
+  if (!state.query){ resEl.classList.remove('open'); return; }
+  const hits = wines.filter(w => w.hay.includes(state.query));
+  resEl.innerHTML = hits.length ? hits.slice(0, 8).map(w => '<button role="option" data-wine="' + w.id + '">' + glyph(w.type, 16) + '<span>' + esc(w.name) + '<br><span class="sub">' + esc(w.grape) + ' · ' + esc(w.region) + '</span></span></button>').join('')
+      + (hits.length > 8 ? '<div class="none">' + (hits.length - 8) + ' more are highlighted on the map</div>' : '')
+    : '<div class="none">No wine matches “' + esc(qEl.value) + '”. Try a grape or a region.</div>';
+  resEl.classList.add('open');
+});
+resEl.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  resEl.classList.remove('open'); qEl.value = ''; state.query = ''; qEl.blur(); select(b.dataset.wine);
+});
+document.addEventListener('click', e => { if (!e.target.closest('.search')) resEl.classList.remove('open'); });
+qEl.addEventListener('keydown', e => { if (e.key === 'Enter'){ const b = resEl.querySelector('button'); if (b) b.click(); } if (e.key === 'Escape'){ qEl.value = ''; qEl.dispatchEvent(new Event('input')); } });
+
+/* tooltip (mouse only) */
+const tipEl = document.getElementById('tip');
+function showTip(e, d){
+  const r = document.getElementById('stage').getBoundingClientRect();
+  tipEl.innerHTML = '<b>' + esc(d.name) + '</b><br>' + esc(d.grape) + ' · ' + esc(d.region) + (d.price != null ? ' · £' + d.price : '');
+  tipEl.style.display = 'block';
+  const x = Math.min(e.clientX - r.left + 12, r.width - tipEl.offsetWidth - 8), y = Math.max(8, e.clientY - r.top - tipEl.offsetHeight - 10);
+  tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+}
+function hideTip(){ tipEl.style.display = 'none'; }
+
+/* ---------- go ---------- */
+renderPanel();
+requestAnimationFrame(() => { layout(false); refresh(); });
+let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { const s = measure(); if (Math.abs(s.w - lastW) > 40){ layout(false); refresh(); } }, 200); }).observe(document.getElementById('stage'));
+</script>
+</body>
+</html>
