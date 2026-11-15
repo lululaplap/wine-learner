@@ -24,6 +24,15 @@ function scoresBlock(w, L) {
   return `<h3>Taste profile</h3><div class="scores">${rows}</div>`;
 }
 
+// Where the wine comes from, with a link to its spot on the regions map.
+function whereBlock(w, ctx) {
+  const r = ctx.regions && w.regionId ? ctx.regions.byId.get(w.regionId) : null;
+  const parts = [w.place, r ? r.name : w.regionGroup, w.country].filter((x, i, a) => x && a.indexOf(x) === i);
+  if (!parts.length) return "";
+  const link = w.pin ? ` <a class="maplink" href="#/regions/w:${encodeURIComponent(w.id)}">Show on the map</a>` : "";
+  return `<p class="where"><span class="where-label">From</span> ${esc(parts.join(", "))}${w.pin && !w.pin.exact ? ' <span class="approx">(region only)</span>' : ""}${link}</p>`;
+}
+
 function sourceLine(w) {
   if (!w.hasNotes) return "This wine is on the list but has no study notes yet. Add a row for it in the study sheet.";
   if (w.tasted) return "Tasted by the team: " + esc(w.source.replace(/^tasted[,:\s]*/i, ""));
@@ -45,6 +54,7 @@ export function renderCard(w, ctx) {
     ${w.pronunciation ? `<p class="say">Say it: <strong>${esc(w.pronunciation)}</strong></p>` : ""}
     <p class="meta">${esc(meta)}</p>
     <p class="prices">${priceLine(w)}</p>
+    ${whereBlock(w, ctx)}
     ${w.guestLine ? `<h3>To the guest</h3><p class="guestline">“${L(w.guestLine)}”</p>` : ""}
     ${scoresBlock(w, L)}
     ${w.note ? `<h3>Style</h3><p class="note">${L(w.note)}</p>` : ""}

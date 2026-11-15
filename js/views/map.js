@@ -46,6 +46,7 @@ export async function mountMap(root, ctx) {
   const d3 = await loadD3().catch(() => null);
   const loading = root.querySelector("#maploading");
   if (!d3) { loading.textContent = "The map could not load. The Wine list has every wine."; return () => {}; }
+  if (!root.isConnected) return () => {}; // the screen changed while D3 was loading
   loading.remove();
 
   const wines = ctx.data.wines.map(w => Object.assign(Object.create(w), { x: undefined, y: undefined }));

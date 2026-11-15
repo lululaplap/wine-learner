@@ -2,7 +2,7 @@
 import { SHEETS, localCopy } from "./config.js";
 import { loadSheet } from "./load.js";
 import { toRows } from "./csv.js";
-import { buildWines } from "./data.js";
+import { buildWines, buildRegions } from "./data.js";
 import { store } from "./store.js";
 import { esc, timeOf } from "./ui.js";
 import { renderCard } from "./views/card.js";
@@ -10,12 +10,13 @@ import { renderList, toggleType } from "./views/list.js";
 import { renderCheck } from "./views/check.js";
 import { renderMapShell, mountMap } from "./views/map.js";
 import { buildGlossary, useGlossary } from "./glossary.js";
+import { renderRegionsShell, mountRegions } from "./views/regions.js";
 
 const MODES = {
   learn: { label: "Learn", home: "map", theme: "auto" },
   service: { label: "Service", home: "list", theme: "dark" }
 };
-const VIEWS = { map: "Map", list: "Wine list", check: "Data check" };
+const VIEWS = { map: "Map", regions: "Regions", list: "Wine list", check: "Data check" };
 const REFRESH_AFTER = 5 * 60 * 1000; // re-read the sheets when the tool comes back after five minutes
 
 const main = document.getElementById("main");
@@ -62,7 +63,7 @@ function go(hash) {
 
 // ---------- loading ----------
 async function load() {
-  const names = [["wine", "Wine sheet"], ["study", "Study sheet"], ["glossary", "Glossary"]];
+  const names = [["wine", "Wine sheet"], ["study", "Study sheet"], ["glossary", "Glossary"], ["regions", "Wine regions"]];
   const local = new URLSearchParams(location.search).has("local");
   const url = n => (local ? localCopy(n) : SHEETS[n]);
   const results = await Promise.allSettled(names.map(([n]) => loadSheet(n, url(n), localCopy(n))));
@@ -77,6 +78,7 @@ async function load() {
   useGlossary(ctx.glossary);
   ctx.data = buildWines(wineRows, studyRows);
   ctx.byId = new Map(ctx.data.wines.map(w => [w.id, w]));
+  ctx.regions = buildRegions(results[3].status === "fulfilled" ? toRows(results[3].value.text) : [], ctx.data.wines);
   ctx.loadedAt = Date.now();
   renderStatus(failed);
 }
@@ -131,7 +133,7 @@ function route() {
   const prev = main.dataset.view;
   if (prev && prev !== "wine") lastScroll.set(prev, window.scrollY);
   unmount(); unmount = () => {};
-  document.body.classList.toggle("fullmap", view === "map");
+  document.body.classList.toggle("fullmap", view === "map" || view === "regions");
 
   if (view === "wine") {
     const w = ctx.byId.get(decodeURIComponent(arg || ""));
@@ -154,7 +156,15 @@ function route() {
   if (v === "map") {
     main.innerHTML = renderMapShell();
     let cleanup = null, gone = false;
-    mountMap(main, ctx).then(fn => { if (gone) fn(); else cleanup = fn; });
+    mountMap(main.firstElementChild, ctx).then(fn => { if (gone) fn(); else cleanup = fn; });
+    unmount = () => { gone = true; if (cleanup) cleanup(); };
+  } else if (v === "regions") {
+    // #/regions/w:<wine id> or #/regions/<region id> opens the map on that wine or region.
+    const a = decodeURIComponent(arg || ""), focus = a.startsWith("w:") ? { wine: a.slice(2) } : a ? { region: a } : null;
+    if (a) history.replaceState(null, "", "#/regions");
+    main.innerHTML = renderRegionsShell();
+    let cleanup = null, gone = false;
+    mountRegions(main.firstElementChild, ctx, focus).then(fn => { if (gone) fn(); else cleanup = fn; });
     unmount = () => { gone = true; if (cleanup) cleanup(); };
   } else if (v === "list") {
     main.innerHTML = renderList(ctx, listState);

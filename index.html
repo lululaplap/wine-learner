@@ -12,6 +12,7 @@
   --accent:#6b1d3c; --on-accent:#ffffff; --warn:#7a3b00; --ok:#1d5a33;
   --t-sparkling:#2a6fc4; --t-white:#d99400; --t-red:#d23c3b; --t-sweet:#15936a;
   --term:#0645ad;
+  --sea:#dfe8ec; --land:#f3f1ea; --landline:#b9bfb8;
   --font:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
   color-scheme:light;
 }
@@ -21,6 +22,7 @@
     --accent:#f2b3cc; --on-accent:#2a0d19; --warn:#ffc58a; --ok:#9be0b3;
     --t-sparkling:#4a93ea; --t-white:#d79a1c; --t-red:#ea5a59; --t-sweet:#28b585;
     --term:#9ec5ff;
+    --sea:#0d1418; --land:#262b27; --landline:#4a524c;
     color-scheme:dark;
   }
 }
@@ -29,6 +31,7 @@
   --accent:#f2b3cc; --on-accent:#2a0d19; --warn:#ffc58a; --ok:#9be0b3;
   --t-sparkling:#4a93ea; --t-white:#d79a1c; --t-red:#ea5a59; --t-sweet:#28b585;
   --term:#9ec5ff;
+  --sea:#0d1418; --land:#262b27; --landline:#4a524c;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -62,7 +65,8 @@ nav#nav a[aria-current="page"]{color:var(--ink);background:var(--bg);box-shadow:
   #modeSwitch{grid-area:switch;justify-self:center}
   #modeSwitch button{padding:0 12px}
   #themeBtn{grid-area:theme}
-  nav#nav{grid-area:nav}
+  nav#nav{grid-area:nav;overflow-x:auto;scrollbar-width:none;min-width:0}
+  nav#nav::-webkit-scrollbar{display:none}
   nav#nav a{padding:0 8px}
   .status{grid-area:status;margin-left:0;justify-content:flex-end}
   .asof .asof-label{display:none}
@@ -237,6 +241,37 @@ body.fullmap main{max-width:none;padding:0}
   .card h2{font-size:24px}
   .search{max-width:none;min-width:180px}
 }
+/* ---------- regions map ---------- */
+.regionsview .stage{background:var(--sea)}
+#geo{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.country{fill:var(--land);stroke:none}
+.border{fill:none;stroke:var(--landline);stroke-width:.8;vector-effect:non-scaling-stroke;pointer-events:none}
+.region{cursor:pointer}
+.region .hit{fill:transparent}
+.region.ours .dot{fill:var(--accent);fill-opacity:.85;stroke:var(--surface);stroke-width:1.5}
+.region.other .dot{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.5}
+.region.faded .dot{fill-opacity:.25}
+.region.sel .dot{stroke:var(--ink);stroke-width:3}
+.rlabel{text-anchor:middle;fill:var(--ink);font-weight:700;paint-order:stroke;stroke:var(--sea);stroke-linejoin:round;cursor:pointer}
+.rlabel.other{fill:var(--ink-2);font-weight:500;font-style:italic}
+.pin{cursor:pointer}
+.pin .hit{fill:transparent}
+.pin path,.pin rect,.pin circle:not(.hit){stroke:var(--surface);stroke-width:1.2}
+.pin.approx .g{opacity:.75}
+.pin.sel path,.pin.sel rect,.pin.sel circle:not(.hit){stroke:var(--ink);stroke-width:2.5}
+.pin.dim{opacity:.25}
+.plabel{text-anchor:middle;font-size:14px;font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--sea);stroke-width:3.5px;stroke-linejoin:round;cursor:pointer}
+.plabel.sel{font-size:16px;font-weight:700}
+.zoomhint{font-weight:600}
+.approxnote{color:var(--warn);margin:6px 0 0}
+.countries{margin:0 0 10px;color:var(--ink-2)}
+.regiondot{width:14px;height:14px;border-radius:50%;background:var(--accent);flex:none}
+.mappanel .rows{grid-template-columns:1fr}
+.where{margin:8px 0 0;color:var(--ink-2)}
+.where-label{font-weight:600;color:var(--ink-3);margin-right:4px}
+.approx{color:var(--ink-3)}
+.maplink{margin-left:8px;font-weight:600;white-space:nowrap}
+
 /* ---------- glossary links ---------- */
 /* Wikipedia-style: blue words with a dotted underline (so it is not colour alone). Hover or tap shows the definition. */
 .term{display:inline;font:inherit;font-weight:inherit;color:var(--term);background:none;border:0;padding:0;margin:0;cursor:help;

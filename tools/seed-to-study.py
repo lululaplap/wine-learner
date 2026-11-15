@@ -15,9 +15,48 @@ WINE = ROOT / "sheets/wine.csv"
 OUT = ROOT / "sheets/study.csv"
 
 COLUMNS = ["Key", "Also matches", "Display name", "Short name", "Pronunciation", "Lead grape", "Grape family",
-           "Region group", "Country", "Sweetness", "Acidity", "Tannin", "Body", "Oak", "Wildness", "Flavours",
+           "Region group", "Country", "Place", "Latitude", "Longitude", "Sweetness", "Acidity", "Tannin", "Body", "Oak", "Wildness", "Flavours",
            "Making", "Style note", "Guest line", "If you like", "Compare", "Anchor", "Serve", "Story",
            "Pairs with", "Source", "Check"]
+
+# Where a wine comes from, only where its own name, its appellation or the wine sheet's region names the place.
+# Coordinates are the village or town (or the island or district), to about 5 km. Every other wine sits at its region.
+PLACES = {
+    "fronsac": ("Fronsac", 44.92, -0.27),
+    "thillardon": ("Chénas", 46.21, 4.72),
+    "ladoix": ("Ladoix-Serrigny", 47.07, 4.88),
+    "nsg": ("Nuits-Saint-Georges", 47.14, 4.95),
+    "cornas": ("Cornas", 44.96, 4.85),
+    "faure": ("Saint-Vérand (Saint-Véran)", 46.25, 4.73),
+    "galerne": ("Vézelay", 47.47, 3.73),
+    "bourgeois": ("Sancerre", 47.33, 2.84),
+    "saumurchamp": ("Saumur-Champigny", 47.26, -0.08),
+    "ecu": ("Muscadet Sèvre et Maine", 47.13, -1.38),
+    "fantine": ("Faugères", 43.57, 3.18),
+    "maury": ("Maury", 42.81, 2.61),
+    "dard": ("Crozes-Hermitage", 45.10, 4.84),
+    "souch": ("Jurançon", 43.29, -0.39),
+    "roc": ("Fronton", 43.84, 1.39),
+    "lavalcum": ("Cumières", 49.07, 3.92),
+    "fonterenza": ("Montalcino", 43.06, 11.49),
+    "nebbiolo": ("Langhe", 44.62, 8.00),
+    "kitscoty": ("Kit's Coty, Aylesford", 51.32, 0.50),
+    "davenport": ("Horsmonden", 51.14, 0.43),
+    "yeye": ("Lanzarote", 29.04, -13.63),
+    "paloblanco": ("Tenerife", 28.29, -16.63),
+    "nanclares": ("Rías Baixas", 42.50, -8.80),
+    "leirana": ("Rías Baixas", 42.50, -8.80),
+    "moraza": ("Rioja", 42.45, -2.45),
+    "clarete": ("Navarra", 42.60, -1.65),
+    "funambul": ("Penedès", 41.35, 1.70),
+    "ligas": ("Pella", 40.76, 22.52),
+    "kamara": ("Thessaloniki", 40.64, 22.94),
+    "strekov": ("Strekov", 47.88, 18.42),
+    "majer": ("Trnava", 48.38, 17.59),
+    "magula": ("Trnava", 48.38, 17.59),
+    "pyramidchard": ("North Canterbury", -43.00, 172.70),
+    "snake": ("Central Otago", -45.00, 169.20),
+}
 
 ANCHORS = {"galerne", "loiseau", "pranzegg", "fronsac", "boutdzan"}
 
@@ -116,6 +155,9 @@ def main():
                 "Grape family": w["grape"],
                 "Region group": w["region"],
                 "Country": w["country"],
+                "Place": PLACES.get(w["id"], ("", "", ""))[0],
+                "Latitude": PLACES.get(w["id"], ("", "", ""))[1],
+                "Longitude": PLACES.get(w["id"], ("", "", ""))[2],
                 "Style note": w["note"],
                 "Compare": "; ".join(compare),
                 "Anchor": "yes" if w["id"] in ANCHORS else "",

@@ -9,6 +9,7 @@ A web tool that helps the floor team learn the wine list quickly, then answers g
 - **Wine card.** Name, price, grapes, region, style note, comparisons and a badge: *Estimate*, *Tasted* or *Needs notes*. In Service mode the internal fields (Check, Source, Story) are hidden.
 - **Wine list.** By the glass first, then bottles by style, with one-tap type chips.
 - **Map.** The prototype network map, on the live data, grouped by connections, style, grape, region, country, producer or price.
+- **Regions map.** A real map of the wine world: 70 regions, 41 of which we pour from. Tap a region for what it is known for and our wines from it; zoom in to see each wine at its village or appellation (34 wines so far; the rest sit at their region's centre). Every wine card has *Show on the map*.
 - **Glossary links.** Wine jargon in the notes is a blue, Wikipedia-style link. Hover with a mouse, or tap on an iPad or phone, to read a short definition. The 72 terms live in `sheets/glossary.csv` (the *Wine glossary* tab).
 - **Data check.** Wines with no notes, study rows that match no wine, broken comparison links, duplicate rows, and the wines flagged "check with supplier".
 - **Saved copy.** Each sheet is saved on the device when it loads. If a sheet cannot be loaded, the tool shows the saved copy with its time and a "may be out of date" notice. On a device with no saved copy, it falls back to the copy in `sheets/`.
@@ -25,7 +26,8 @@ The same pattern as the menu site (`apricity-mocks`):
 | `index.html`, `js/` | The built pages GitHub Pages serves. Made by `./build.sh`; don't edit them by hand |
 | `build.sh` | Copies `src/` to the root and points each sheet at its published Google Sheets link |
 | `sheets/` | Local copies of the sheets, for testing and as the last-resort copy |
-| `vendor/d3-map.js` | Just the D3 modules the map uses (76KB), loaded only when the map opens |
+| `vendor/d3-map.js` | Just the D3 modules the maps use (105KB), loaded only when a map opens |
+| `vendor/world-50m.json` | Country outlines for the Regions map (Natural Earth, public domain; 75KB compressed), loaded only when it opens |
 | `tools/seed-to-study.py` | Made the first `sheets/study.csv` from the seed file |
 | `test/` | Tests for the sheet matching: `npm test` (Node 20+) |
 | `docs/wine-study/` | The spec, the prototype map and the seed data |

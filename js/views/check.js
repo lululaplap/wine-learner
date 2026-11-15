@@ -16,6 +16,8 @@ export function renderCheck(ctx) {
       `<ul class="plain">${report.unmatchedStudy.map(s => `<li><code>${esc(s.key)}</code>${s.name ? " · " + esc(s.name) : ""}</li>`).join("")}</ul>`, report.unmatchedStudy.length)}
     ${block("Compare links that point nowhere", "A Compare cell names a key that is not on the list.",
       `<ul class="plain">${report.brokenCompare.map(b => `<li>${esc(ctx.byId.get(b.wine).name)} → <code>${esc(b.key)}</code></li>`).join("")}</ul>`, report.brokenCompare.length)}
+    ${block("Wines with no region on the map", "Their Region group (or the wine sheet's region) matches no row in the Wine regions tab. Fix the spelling, or add it to that region's Also matches.",
+      `<div class="rows">${(ctx.regions ? ctx.regions.unplaced : []).map(w => `<div class="checkrow">${wineRow(w, { full: true })}<code class="key">${esc(w.regionGroup || w.region)}</code></div>`).join("")}</div>`, ctx.regions ? ctx.regions.unplaced.length : 0)}
     ${block("Spellings used by two study rows", "Each spelling in Key or Also matches can belong to one study row only.",
       `<ul class="plain">${report.clashes.map(c => `<li><code>${esc(c.key)}</code>: ${esc(c.a)} and ${esc(c.b)}</li>`).join("")}</ul>`, report.clashes.length)}
     ${block("More than one row in the wine sheet", "Two bottle rows (or two glass rows) match the same wine. The tool uses the first.",

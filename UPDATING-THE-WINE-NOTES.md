@@ -27,6 +27,7 @@ The wine study tool reads two sheets. Change either sheet and the tool updates b
 | --- | --- |
 | **Wine study** | One row per wine: the notes the tool shows |
 | **Wine lists** | The fixed words for *Flavours*, *Making* and *If you like*, one per row, so the quiz and the Finder use the same words as you |
+| **Wine regions** | The wine regions of the world for the Regions map: where each sits, what it is known for, its grapes |
 | **Wine glossary** | Wine jargon and what it means. The tool turns these words into blue links in the notes; hover or tap one to read the definition |
 
 ## Column guide
@@ -44,6 +45,8 @@ The wine study tool reads two sheets. Change either sheet and the tool updates b
 | Grape family | The family for ladders (often the same as the lead grape) | Grenache |
 | Region group | The region, corrected | Rhône & Ardèche |
 | Country | The country | France |
+| Place | The village or appellation the wine comes from, if known | Fronsac |
+| Latitude, Longitude | Where that place is, in decimal degrees (right-click the spot in Google Maps to copy them). Leave blank and the wine is pinned at its region's centre, marked "region only" | 44.92, -0.27 |
 | Sweetness, Acidity, Tannin, Body, Oak, Wildness | A score from 1 to 5 each (see below). Leave blank if unsure | 3 |
 | Flavours | Up to four words from the *Flavours* list, separated by `,` | plum, licorice, herbs |
 | Making | Words from the *Making* list | biodynamic |
@@ -70,6 +73,19 @@ The wine study tool reads two sheets. Change either sheet and the tool updates b
 
 **Wine lists**: two columns, *List* (`Flavours`, `Making` or `If you like`) and *Value*. Add a row to add a word.
 
+**Wine regions**
+
+| Column | What to type | Example |
+| --- | --- | --- |
+| Region | The region's name. A wine's *Region group* must match it (or one of its *Also matches*) | Loire |
+| Country | The country | France |
+| Latitude, Longitude | The middle of the region, in decimal degrees | 47.30, 0.70 |
+| Also matches | Other names that mean this region, separated by `;`: appellations, local spellings, and the region names used in the wine sheet | Sancerre; Muscadet; Loire Valley |
+| Known for | One plain sentence | France's longest river: Muscadet near the sea… |
+| Grapes | The main grapes | Chenin Blanc, Sauvignon Blanc, Cabernet Franc |
+
+A wine whose region matches no row is listed in **Data check** under *Wines with no region on the map*. Add the name to a region's *Also matches* (or fix the spelling), and it appears on the map.
+
 **Wine glossary**
 
 | Column | What to type | Example |
@@ -84,9 +100,9 @@ Capitals, accents and hyphens don't matter: `pet nat` also finds "Pét-nat". Onl
 
 ## Setting up the study sheet (once)
 
-1. In the **Apricity menus** Google Sheet, add three tabs: **Wine study**, **Wine lists** and **Wine glossary**.
-2. Import `sheets/study.csv` into *Wine study*, `sheets/lists.csv` into *Wine lists* and `sheets/glossary.csv` into *Wine glossary* (File → Import → Upload → *Replace current sheet*).
+1. In the **Apricity menus** Google Sheet, add four tabs: **Wine study**, **Wine lists**, **Wine glossary** and **Wine regions**.
+2. Import `sheets/study.csv` into *Wine study*, `sheets/lists.csv` into *Wine lists*, `sheets/glossary.csv` into *Wine glossary* and `sheets/regions.csv` into *Wine regions* (File → Import → Upload → *Replace current sheet*).
 3. File → Share → Publish to web. Publish each tab as *Comma-separated values (.csv)* and copy its link.
-4. Paste the links into `STUDY_CSV`, `LISTS_CSV` and `GLOSSARY_CSV` in `build.sh`, run `./build.sh`, and commit.
+4. Paste the links into `STUDY_CSV`, `LISTS_CSV`, `GLOSSARY_CSV` and `REGIONS_CSV` in `build.sh`, run `./build.sh`, and commit.
 
 Until then the tool reads the copies in `sheets/`, which only change when someone edits them in the repo.

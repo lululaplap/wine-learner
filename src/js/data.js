@@ -53,6 +53,8 @@ function tasteScores(s) {
   return any ? out : null;
 }
 
+const coord = (v, max) => { const n = parseFloat(String(v || "").replace(",", ".")); return isFinite(n) && Math.abs(n) <= max ? n : null; };
+
 const tags = cell => String(cell || "").split(/[;,\n]/).map(t => t.trim()).filter(Boolean);
 
 export function buildWines(wineRows, studyRows) {
@@ -103,6 +105,9 @@ export function buildWines(wineRows, studyRows) {
       region: regionRaw,
       regionGroup: sv("region group") || regionPart || "",
       country: sv("country") || COUNTRIES[(code || "").toUpperCase()] || code || "",
+      place: sv("place"),
+      lat: coord(sv("latitude"), 90),
+      lon: coord(sv("longitude"), 180),
       leadGrape: sv("lead grape") || (grapes.split(/[,&+]/)[0] || "").trim(),
       family: sv("grape family") || sv("lead grape") || (grapes.split(/[,&+]/)[0] || "").trim(),
       section: subsection,
@@ -163,3 +168,32 @@ export function buildWines(wineRows, studyRows) {
     }
   };
 }
+
+// ---------- wine regions ----------
+// The Wine regions tab: the major regions of the world, with or without wines of ours. Each wine joins a region
+// through its Region group (or, for a wine with no notes, the region named in the wine sheet).
+export function buildRegions(regionRows, wines) {
+  const regions = [], index = new Map();
+  (regionRows || []).forEach(r => {
+    const name = col(r, "region"), lat = coord(col(r, "latitude"), 90), lon = coord(col(r, "longitude"), 180);
+    if (!name || lat == null || lon == null) return;
+    const reg = { id: "r-" + slugify(name), name, country: col(r, "country"), lat, lon,
+      knownFor: col(r, "known for"), grapes: col(r, "grapes"), wines: [] };
+    regions.push(reg);
+    [name, ...String(col(r, "also matches") || "").split(";")].map(normalise).filter(Boolean)
+      .forEach(k => { if (!index.has(k)) index.set(k, reg); });
+  });
+  const unplaced = [];
+  wines.forEach(w => {
+    const sheetRegion = (w.region || "").split(",")[0];
+    const reg = index.get(normalise(w.regionGroup)) || index.get(normalise(sheetRegion)) || null;
+    w.regionId = reg ? reg.id : null;
+    if (reg) reg.wines.push(w);
+    if (w.lat != null && w.lon != null) w.pin = { lat: w.lat, lon: w.lon, exact: true };
+    else if (reg) w.pin = { lat: reg.lat, lon: reg.lon, exact: false };
+    else { w.pin = null; unplaced.push(w); }
+  });
+  return { regions, byId: new Map(regions.map(r => [r.id, r])), unplaced };
+}
+
+const slugify = s => normalise(s).replace(/ /g, "-");
