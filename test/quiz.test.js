@@ -6,7 +6,7 @@ import { toRows } from "../src/js/csv.js";
 import { buildWines } from "../src/js/data.js";
 import { buildStages } from "../src/js/quiz/stages.js";
 import { grade, isDue, isKnown, emptyProgress, noteListChanges, stageProgress, lessonDone } from "../src/js/quiz/progress.js";
-import { GENERATORS, TYPES, questionFor, ladderOf, comparatorLine } from "../src/js/quiz/questions.js";
+import { GENERATORS, TYPES, TYPED, questionFor, ladderOf, comparatorLine } from "../src/js/quiz/questions.js";
 import { planLesson, Session, rngFrom } from "../src/js/quiz/session.js";
 
 const read = p => readFileSync(new URL("../" + p, import.meta.url), "utf8");
@@ -78,7 +78,7 @@ function everyQuestion(type) {
 }
 const correctOf = q => q.options.filter(o => o.correct);
 
-for (const type of TYPES.filter(t => t !== "sayIt")) {
+for (const type of TYPES.filter(t => t !== "sayIt" && t !== "match" && !TYPED.has(t))) {
   test(`${type}: four different options, exactly one right`, () => {
     const qs = everyQuestion(type);
     assert.ok(qs.length > 0, "no questions made");
@@ -168,7 +168,7 @@ test("questions on estimated fields say so; tasted-only mode skips them", () => 
 });
 
 test("every wine can be asked about, and a new wine starts with Identify", () => {
-  wines.forEach(w => assert.equal(questionFor(w, wines, rngFrom(3), { prefer: ["identify"] }).type, "identify"));
+  wines.forEach(w => assert.equal(questionFor(w, wines, rngFrom(3), { prefer: ["identify"], recall: false }).type, "identify"));
 });
 
 test("the answer screen's comparator line", () => {

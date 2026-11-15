@@ -2,12 +2,17 @@
 // wines of the same type where possible, so they are plausible, and are chosen so that exactly one option is right.
 // A generator returns null when the wine's data cannot support that kind of question.
 import { money } from "../ui.js";
+import { parseGrapes, canonGrape, vocabulary, fold } from "./answer.js";
 
-export const TYPES = ["identify", "describe", "reverse", "price", "stepUp", "guestRequest", "headsUp", "sayIt"];
+export const TYPES = ["identify", "pickWine", "describe", "reverse", "price", "stepUp", "guestRequest", "headsUp", "oddOneOut", "match", "sayIt",
+  "missingGrape", "typeGrape", "typeRegion", "typeWine", "typePrice"];
 export const TYPE_NAMES = {
-  identify: "Identify", describe: "Describe", reverse: "Reverse", price: "Price",
-  stepUp: "Step up", guestRequest: "Guest request", headsUp: "Heads-up", sayIt: "Say it"
+  identify: "Identify", pickWine: "Pick the wine", describe: "Describe", reverse: "Reverse", price: "Price",
+  stepUp: "Step up", guestRequest: "Guest request", headsUp: "Heads-up", oddOneOut: "Odd one out", match: "Match", sayIt: "Say it",
+  missingGrape: "Missing grape", typeGrape: "Name the grape", typeRegion: "Where from", typeWine: "Name the wine", typePrice: "Type the price"
 };
+// Typed questions test recall, so they wait until a wine has been met in multiple choice (left box 1).
+export const TYPED = new Set(["missingGrape", "typeGrape", "typeRegion", "typeWine", "typePrice"]);
 // Questions built on estimated fields say so on the answer screen until the wine is tasted.
 const USES_ESTIMATES = new Set(["describe", "reverse", "guestRequest", "headsUp", "sayIt"]);
 
@@ -137,16 +142,117 @@ function sayIt(w) {
   return { type: "sayIt", wineId: w.id, prompt: `Pitch ${w.short} to a guest, out loud, in one sentence.`, answer: w.guestLine, options: [], estimate: !w.tasted };
 }
 
-export const GENERATORS = { identify, describe, reverse, price, stepUp, guestRequest, headsUp, sayIt };
+// ---------- the other way round: facts first, pick the wine ----------
+const factsLabel = x => (grapesOf(x) && x.regionGroup ? `${grapesOf(x)} · ${x.regionGroup}` : "");
+const andList = list => (list.length > 1 ? list.slice(0, -1).join(", ") + " and " + list[list.length - 1] : list[0] || "");
+
+// "Grenache and Syrah, from the Rhône & Ardèche. A red. Which wine?"
+function pickWine(w, all, rng) {
+  const grapes = parseGrapes(w.grapes);
+  if (!grapes.length || !w.regionGroup) return null;
+  const mine = factsLabel(w);
+  const pool = [sameType(w, all), others(w, all)].map(list => list.filter(x => factsLabel(x) !== mine));
+  const wrong = pickDistinct(pool, 3, x => x.short, new Set([w.short]), rng);
+  return make("pickWine", w, `${andList(grapes)}, from ${w.regionGroup}. A ${TYPE_WORDS[w.type]}. Which wine?`, w.short, wrong.map(x => x.short), rng);
+}
+
+// "Which of these is not from Burgundy?" or "Which of these is not a Pinot Noir?"
+function oddOneOut(w, all, rng) {
+  const ways = shuffle([
+    { key: x => x.regionGroup, say: v => `Which of these is not from ${v}?` },
+    { key: x => canonGrape(x.leadGrape || ""), say: v => `Which of these is not a ${v}?`, ok: x => parseGrapes(x.grapes).length <= 1 }
+  ], rng);
+  for (const way of ways) {
+    const v = way.key(w);
+    if (!v || (way.ok && !way.ok(w))) continue;
+    const fits = x => way.key(x) === v && (!way.ok || way.ok(x));
+    const insiders = pickDistinct([all.filter(x => x.id !== w.id && fits(x))], 2, x => x.short, new Set([w.short]), rng);
+    if (insiders.length < 2) continue;
+    const odd = pickDistinct([sameType(w, all).filter(x => !fits(x) && x.regionGroup !== v), others(w, all).filter(x => !fits(x))], 1, x => x.short, new Set([w.short, ...insiders.map(x => x.short)]), rng)[0];
+    if (!odd) continue;
+    const options = shuffle([{ label: odd.short, correct: true }, { label: w.short, correct: false }, ...insiders.map(x => ({ label: x.short, correct: false }))], rng);
+    return { type: "oddOneOut", wineId: w.id, prompt: way.say(v), options, answer: odd.short, estimate: false, oddId: odd.id };
+  }
+  return null;
+}
+
+// Match: tap pairs. Four wines and their grape (or region), all different, Duolingo style.
+function match(w, all, rng) {
+  const by = rng() < 0.6 ? "grape" : "region";
+  const right = x => (by === "grape" ? (parseGrapes(x.grapes).length === 1 ? parseGrapes(x.grapes)[0] : "") : x.regionGroup);
+  if (!right(w)) return null;
+  const used = new Set([fold(right(w))]);
+  const rest = pickDistinct([sameType(w, all), others(w, all)], 3, x => { const r = right(x); return r && !used.has(fold(r)) ? (used.add(fold(r)), x.short) : ""; }, new Set([w.short]), rng);
+  if (rest.length < 3) return null;
+  const set = [w, ...rest];
+  return { type: "match", wineId: w.id, prompt: `Match each wine to its ${by}.`, by,
+    pairs: set.map(x => ({ left: x.short, right: right(x) })), answer: set.map(x => `${x.short}: ${right(x)}`).join(" · "), estimate: false };
+}
+
+// ---------- typed answers ----------
+// "Bout d'Zan is Grenache and …?"
+function missingGrape(w, all, rng) {
+  const grapes = parseGrapes(w.grapes);
+  if (grapes.length < 2 || new Set(grapes.map(fold)).size !== grapes.length) return null;
+  // Skip lists where one name contains another (Garnacha Blanca and Garnacha): the shown one would give it away.
+  if (grapes.some((g, i) => grapes.some((h, j) => i !== j && fold(h).includes(fold(g))))) return null;
+  const hide = Math.floor(rng() * grapes.length);
+  const shown = grapes.map((g, i) => (i === hide ? "___" : g));
+  return { type: "missingGrape", wineId: w.id, prompt: `${w.short} is made from ${andList(shown)}. Which grape is missing?`, input: "text",
+    accept: [grapes[hide]], answer: grapes[hide], suggestFrom: "grape", estimate: false };
+}
+
+// "What grape is Monfarina made from?"
+function typeGrape(w) {
+  const grapes = parseGrapes(w.grapes);
+  if (grapes.length !== 1) return null;
+  return { type: "typeGrape", wineId: w.id, prompt: `What grape is ${w.short} made from?`, input: "text", accept: grapes, answer: grapes[0], suggestFrom: "grape", estimate: false };
+}
+
+// "Where is Ye-Ye from?" The region, or the place, or another name for the region.
+function typeRegion(w, all, rng, kb = {}) {
+  if (!w.regionGroup) return null;
+  const reg = kb.regionsById && w.regionId ? kb.regionsById.get(w.regionId) : null;
+  const accept = [w.regionGroup, w.place, ...(reg ? [reg.name, ...(reg.aliases || [])] : [])].filter(Boolean);
+  return { type: "typeRegion", wineId: w.id, prompt: `Where is ${w.short} from? Name the region.`, input: "text", accept, answer: w.regionGroup, suggestFrom: "region", estimate: false };
+}
+
+// "Xinomavro from Northern Greece. A red. Which wine?" Only when those facts point to one wine alone.
+function typeWine(w, all) {
+  const grapes = parseGrapes(w.grapes);
+  if (!grapes.length || !w.regionGroup) return null;
+  const same = all.filter(x => x.id !== w.id && factsLabel(x) === factsLabel(w));
+  let prompt = `${andList(grapes)} from ${w.regionGroup}. A ${TYPE_WORDS[w.type]}.`;
+  if (same.length) {
+    const p = w.bottle != null ? money(w.bottle) + " a bottle" : money(w.glass) + " a glass";
+    if (same.some(x => (x.bottle != null ? money(x.bottle) + " a bottle" : money(x.glass) + " a glass") === p)) return null;
+    prompt += ` ${p}.`;
+  }
+  return { type: "typeWine", wineId: w.id, prompt: `${prompt} Which wine?`, input: "text", accept: [w.short, w.cuvee, w.name].filter(Boolean), answer: w.short, suggestFrom: "wine", estimate: false };
+}
+
+// "How much is a glass of Fronsac?"
+function typePrice(w, all, rng) {
+  const byGlass = w.glass != null && (w.bottle == null || rng() < 0.6);
+  const val = byGlass ? w.glass : w.bottle;
+  if (val == null) return null;
+  return { type: "typePrice", wineId: w.id, prompt: byGlass ? `How much is a glass of ${w.short}${w.glassSize ? ` (${w.glassSize})` : ""}?` : `How much is a bottle of ${w.short}?`,
+    input: "number", accept: [String(val)], answer: money(val), estimate: false };
+}
+
+export const GENERATORS = { identify, pickWine, describe, reverse, price, stepUp, guestRequest, headsUp, oddOneOut, match, sayIt,
+  missingGrape, typeGrape, typeRegion, typeWine, typePrice };
+export { vocabulary };
 
 // Builds one question about wine w. `prefer` puts some types first (a new wine starts with Identify);
 // `avoid` skips the type just asked. `allowEstimates` false keeps Describe, Reverse and Heads-up to tasted wines.
-export function questionFor(w, all, rng, { prefer = [], avoid = null, allowEstimates = true } = {}) {
+export function questionFor(w, all, rng, { prefer = [], avoid = null, allowEstimates = true, recall = true, kb = {} } = {}) {
   const rest = shuffle(TYPES.filter(t => !prefer.includes(t)), rng);
   const order = [...prefer, ...rest].filter(t => t !== avoid);
   for (const t of order) {
     if (!allowEstimates && !w.tasted && (t === "describe" || t === "reverse" || t === "headsUp")) continue;
-    const q = GENERATORS[t](w, all, rng);
+    if (!recall && TYPED.has(t)) continue;
+    const q = GENERATORS[t](w, all, rng, kb);
     if (q) return q;
   }
   return null;

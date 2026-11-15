@@ -11,7 +11,7 @@ import { renderCheck } from "./views/check.js";
 import { renderMapShell, mountMap } from "./views/map.js";
 import { buildGlossary, useGlossary } from "./glossary.js";
 import { renderPath, onPathClick, onPathSubmit } from "./views/path.js";
-import { renderLesson, onLessonClick, onLessonKey } from "./views/lesson.js";
+import { renderLesson, onLessonClick, onLessonKey, onLessonInput, onLessonSubmit } from "./views/lesson.js";
 import { isOpen, setOpen } from "./quiz/tasting.js";
 import { renderRegionsShell, mountRegions } from "./views/regions.js";
 
@@ -202,7 +202,11 @@ main.addEventListener("click", e => {
   if (main.dataset.view === "learn") onPathClick(e, ctx, () => { main.innerHTML = renderPath(ctx); });
   else if (main.dataset.view === "lesson" && onLessonClick(e, ctx)) { main.innerHTML = renderLesson(main.dataset.lesson, ctx); focusQuestion(); }
 });
-main.addEventListener("submit", e => { if (main.dataset.view === "learn") onPathSubmit(e, () => { main.innerHTML = renderPath(ctx); }); });
+main.addEventListener("submit", e => {
+  if (main.dataset.view === "learn") onPathSubmit(e, () => { main.innerHTML = renderPath(ctx); });
+  else if (main.dataset.view === "lesson" && onLessonSubmit(e)) { main.innerHTML = renderLesson(main.dataset.lesson, ctx); focusQuestion(); }
+});
+main.addEventListener("input", e => { if (main.dataset.view === "lesson") onLessonInput(e, ctx); });
 document.addEventListener("keydown", e => {
   if (main.dataset.view !== "lesson") return;
   const sel = onLessonKey(e);
@@ -211,7 +215,7 @@ document.addEventListener("keydown", e => {
 });
 // After each step, put focus where the learner acts next: the feedback's button, or the question.
 function focusQuestion() {
-  const target = main.querySelector(".feedback .btn, .lessonend .btn, .qprompt");
+  const target = ["#typedInput:not([readonly])", ".feedback .btn", ".lessonend .btn", ".qprompt"].map(s => main.querySelector(s)).find(Boolean);
   if (target) { if (target.classList.contains("qprompt")) target.setAttribute("tabindex", "-1"); target.focus({ preventScroll: true }); }
 }
 

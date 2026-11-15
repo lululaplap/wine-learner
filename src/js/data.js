@@ -178,7 +178,8 @@ export function buildRegions(regionRows, wines) {
     const name = col(r, "region"), lat = coord(col(r, "latitude"), 90), lon = coord(col(r, "longitude"), 180);
     if (!name || lat == null || lon == null) return;
     const reg = { id: "r-" + slugify(name), name, country: col(r, "country"), lat, lon,
-      knownFor: col(r, "known for"), grapes: col(r, "grapes"), wines: [] };
+      knownFor: col(r, "known for"), grapes: col(r, "grapes"), wines: [],
+      aliases: String(col(r, "also matches") || "").split(";").map(s => s.trim()).filter(Boolean) };
     regions.push(reg);
     [name, ...String(col(r, "also matches") || "").split(";")].map(normalise).filter(Boolean)
       .forEach(k => { if (!index.has(k)) index.set(k, reg); });

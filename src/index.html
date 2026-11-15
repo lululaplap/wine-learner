@@ -337,6 +337,25 @@ body:has(main[data-view="lesson"]) .top{position:static}
 .lessonend h1{font-size:32px;margin-bottom:10px}
 .endscore{font-size:22px}
 
+/* ---------- typed answers and matching ---------- */
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.typedrow{display:flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:16px;background:var(--surface);padding:0 14px;box-shadow:0 4px 0 var(--line)}
+.typedrow:focus-within{border-color:var(--accent)}
+.typedrow.right{border-color:var(--ok);background:var(--ok-bg);box-shadow:0 4px 0 var(--ok)}
+.typedrow.wrong{border-color:var(--no);background:var(--no-bg);box-shadow:0 4px 0 var(--no)}
+.pound{font-size:22px;font-weight:700;color:var(--ink-2)}
+.typedinput{flex:1;min-width:0;min-height:60px;border:0;background:transparent;font-size:22px;font-weight:600;outline:none}
+.typedhelp{color:var(--ink-2);margin:8px 0}
+.suggest{list-style:none;margin:6px 0 14px;padding:0;display:flex;flex-wrap:wrap;gap:8px;min-height:44px}
+.sugg{min-height:44px;padding:0 14px;border-radius:22px;border:2px solid var(--line);background:var(--surface);font-weight:600}
+.sugg:hover{border-color:var(--accent)}
+.matchgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mcol{display:flex;flex-direction:column;gap:10px}
+.mbtn{min-height:60px;padding:8px 12px;border-radius:14px;border:2px solid var(--line);background:var(--surface);font-size:17px;font-weight:600;box-shadow:0 4px 0 var(--line);text-align:center}
+.mbtn.sel{border-color:var(--term);background:color-mix(in srgb,var(--term) 12%,var(--surface));box-shadow:0 4px 0 var(--term)}
+.mbtn.done{border-color:var(--ok);background:var(--ok-bg);color:var(--ok);box-shadow:none;opacity:.75}
+.mbtn.miss{border-color:var(--no);background:var(--no-bg);box-shadow:0 4px 0 var(--no)}
+
 /* ---------- taste first ---------- */
 .openline{margin:10px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .openstate{font-weight:600;color:var(--ink-3)}

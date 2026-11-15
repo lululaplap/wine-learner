@@ -6,6 +6,7 @@ import { buildStages } from "../quiz/stages.js";
 import { loadProgress, saveProgress, isDue } from "../quiz/progress.js";
 import { planLesson, Session, LESSON_LENGTH, BEFORE_SERVICE_LENGTH } from "../quiz/session.js";
 import { TYPE_NAMES, comparatorLine, shuffle } from "../quiz/questions.js";
+import { vocabulary, suggest, checkTyped } from "../quiz/answer.js";
 import { learner } from "./path.js";
 import { isOpen, openExtras, askToday, dontAskToday, SCALE_WORDS, SCORE_NAMES, gridScores, compareTasting, tastingText, saveTasting } from "../quiz/tasting.js";
 
@@ -48,7 +49,7 @@ function start(id, ctx) {
     allowEstimates = !tastedIn(stage.wines);
     tasteFrom = lesson.wines;
   }
-  const session = new Session({ kind, lessonId: id, plan, all, progress: p, allowEstimates });
+  const session = new Session({ kind, lessonId: id, plan, all, progress: p, allowEstimates, kb: { regionsById: ctx.regions ? ctx.regions.byId : null } });
   session.next();
   const toTaste = tasteFrom.filter(w => isOpen(w, now)).slice(0, MAX_TASTE);
   const ask = toTaste.length && session.current && (id === "open" || askToday(now));
@@ -122,6 +123,8 @@ function questionHTML(q, ctx) {
       <div class="saycard">${glyph(w.type, 28)}<div><p class="say-name">${esc(w.name)}</p><p class="say-meta">${esc([w.grapes || w.leadGrape, w.regionGroup, w.glass != null ? money(w.glass) + " a glass" : "", w.bottle != null ? money(w.bottle) + " a bottle" : ""].filter(Boolean).join(" · "))}</p></div></div>
       ${active.phase === "ask" ? '<button type="button" class="btn big reveal" data-reveal>Show the guest line</button>' : ""}`;
   }
+  if (q.input) return typedHTML(q, ctx);
+  if (q.type === "match") return matchHTML(q);
   const opts = q.options.map((o, i) => {
     let cls = "opt";
     if (active.phase !== "ask") cls += o.correct ? " right" : active.picked === i ? " wrong" : " faded";
@@ -130,12 +133,102 @@ function questionHTML(q, ctx) {
   return `${typeChip(q)}<h1 class="qprompt">${esc(q.prompt)}</h1><div class="opts" role="group" aria-label="Answers">${opts}</div>`;
 }
 
+// ---------- typed answers ----------
+const vocabCache = new Map();
+function wordsFor(q, ctx) {
+  const key = q.suggestFrom;
+  if (!key) return [];
+  if (!vocabCache.has(key) || vocabCache.get(key).src !== ctx.data) {
+    let list = vocabulary(ctx.data.wines, key);
+    // Every region on the map is offered, not just ours, so a suggestion never gives the answer away.
+    if (key === "region" && ctx.regions) list = [...new Set([...list, ...ctx.regions.regions.map(r => r.name)])].sort((a, b) => a.localeCompare(b));
+    vocabCache.set(key, { src: ctx.data, list });
+  }
+  return vocabCache.get(key).list;
+}
+const suggestHTML = (list, typed) => suggest(list, typed).map(v => `<li><button type="button" class="sugg" data-sugg="${esc(v)}">${esc(v)}</button></li>`).join("");
+
+function typedHTML(q, ctx) {
+  const asking = active.phase === "ask", num = q.input === "number";
+  const mark = !asking ? (active.result ? " right" : " wrong") : "";
+  return `${typeChip(q)}<h1 class="qprompt">${esc(q.prompt)}</h1>
+    <form class="typed" id="typedForm" autocomplete="off">
+      <label class="visually-hidden" for="typedInput">Your answer</label>
+      <div class="typedrow${mark}">${num ? '<span class="pound" aria-hidden="true">£</span>' : ""}
+        <input id="typedInput" class="typedinput" ${num ? 'inputmode="decimal" pattern="[0-9.]*"' : 'autocapitalize="words"'} autocomplete="off" autocorrect="off" spellcheck="false"
+          value="${esc(active.typed || "")}" ${asking ? "" : "readonly"} placeholder="${num ? "Price" : "Type your answer"}" aria-describedby="typedHelp"></div>
+      <p id="typedHelp" class="typedhelp">${num ? "Just the number." : "Suggestions appear as you type. Spelling slips are forgiven."}</p>
+      <ul class="suggest" id="suggest" aria-label="Suggestions">${asking ? suggestHTML(wordsFor(q, ctx), active.typed || "") : ""}</ul>
+      ${asking ? '<button type="submit" class="btn big">Check</button>' : ""}
+    </form>`;
+}
+
+export function onLessonInput(e, ctx) {
+  if (!active || e.target.id !== "typedInput" || active.phase !== "ask") return;
+  active.typed = e.target.value;
+  const q = active.session.current, ul = document.getElementById("suggest");
+  if (ul && q.suggestFrom) ul.innerHTML = suggestHTML(wordsFor(q, ctx), active.typed);
+}
+
+// Returns true when the screen should be drawn again.
+export function onLessonSubmit(e) {
+  if (!active || e.target.id !== "typedForm" || active.phase !== "ask") return false;
+  e.preventDefault();
+  const q = active.session.current, typed = (document.getElementById("typedInput") || {}).value || "";
+  if (!typed.trim()) return false;
+  active.typed = typed;
+  const c = checkTyped(typed, q.accept, { grapes: q.suggestFrom === "grape", numeric: q.input === "number" });
+  active.result = c.ok; active.check = c;
+  active.session.answer(c.ok); save();
+  active.phase = "feedback";
+  return true;
+}
+
+// ---------- match ----------
+function matchState(q) {
+  if (!active.match || active.match.q !== q) {
+    active.match = { q, rights: shuffle(q.pairs.map((p, i) => i), Math.random), done: new Set(), selL: null, selR: null, mistakes: 0, flash: null };
+  }
+  return active.match;
+}
+function matchHTML(q) {
+  const m = matchState(q);
+  const btn = (side, i, label) => {
+    const done = m.done.has(i), sel = side === "L" ? m.selL === i : m.selR === i, flash = m.flash && m.flash[side] === i;
+    return `<button type="button" class="mbtn${done ? " done" : ""}${sel ? " sel" : ""}${flash ? " miss" : ""}" data-m="${side}${i}" ${done || active.phase !== "ask" ? "disabled" : ""} aria-pressed="${sel}">${esc(label)}</button>`;
+  };
+  return `${typeChip(q)}<h1 class="qprompt">${esc(q.prompt)}</h1>
+    <div class="matchgrid" role="group" aria-label="Tap a wine, then its ${esc(q.by)}">
+      <div class="mcol">${q.pairs.map((p, i) => btn("L", i, p.left)).join("")}</div>
+      <div class="mcol">${m.rights.map(i => btn("R", i, q.pairs[i].right)).join("")}</div>
+    </div>
+    ${m.mistakes ? `<p class="typedhelp">${m.mistakes} mismatch${m.mistakes > 1 ? "es" : ""} so far</p>` : ""}`;
+}
+function onMatchTap(code) {
+  const q = active.session.current, m = matchState(q), side = code[0], i = +code.slice(1);
+  m.flash = null;
+  if (side === "L") m.selL = m.selL === i ? null : i; else m.selR = m.selR === i ? null : i;
+  if (m.selL == null || m.selR == null) return;
+  if (m.selL === m.selR) m.done.add(m.selL);
+  else { m.mistakes++; m.flash = { L: m.selL, R: m.selR }; }
+  m.selL = m.selR = null;
+  if (m.done.size === q.pairs.length) {
+    active.result = m.mistakes === 0;
+    active.session.answer(active.result); save();
+    active.phase = "feedback";
+  }
+}
+
 function feedbackHTML(q, ctx) {
   const w = ctx.byId.get(q.wineId), ok = active.result;
   const used = new Set();
   const isSay = q.type === "sayIt";
   const head = isSay ? "The guest line" : ok ? "Correct!" : "Not quite";
-  const answer = isSay ? "" : ok ? "" : `<p class="fb-answer">The answer: <strong>${esc(q.answer)}</strong></p>`;
+  let answer = isSay ? "" : ok ? "" : `<p class="fb-answer">The answer: <strong>${esc(q.answer)}</strong></p>`;
+  if (q.input && ok && active.check && !active.check.exact) answer = `<p class="fb-answer">Watch the spelling: <strong>${esc(active.check.matched)}</strong></p>`;
+  if (q.input && ok && active.check && active.check.exact && active.check.matched && q.accept[0] !== active.check.matched) answer = `<p class="fb-answer">Also called <strong>${esc(q.accept[0])}</strong>.</p>`;
+  if (q.input && !ok) answer = `<p class="fb-answer">You typed <strong>${esc(active.typed)}</strong>. The answer: <strong>${esc(q.answer)}</strong></p>`;
+  if (q.type === "match") answer = ok ? "" : `<p class="fb-answer">${active.match.mistakes} mismatch${active.match.mistakes > 1 ? "es" : ""}. ${esc(q.answer)}</p>`;
   const cmp = comparatorLine(w, ctx.byId);
   return `<div class="feedback ${isSay ? "say" : ok ? "ok" : "no"}" role="status">
     <div class="fb-inner">
@@ -194,6 +287,15 @@ export function onLessonClick(e, ctx) {
   const ta = document.getElementById("tasteNote");
   if (ta && active.taste) active.taste.draft.note = ta.value; // keep the typed note across redraws
   if (active.phase.startsWith("taste")) return onTasteClick(t);
+  const sugg = t.closest("[data-sugg]");
+  if (sugg && active.phase === "ask") {
+    const input = document.getElementById("typedInput");
+    if (input) { input.value = sugg.dataset.sugg; active.typed = input.value; input.focus(); }
+    const ul = document.getElementById("suggest"); if (ul) ul.innerHTML = "";
+    return false;
+  }
+  const mb = t.closest("[data-m]");
+  if (mb && active.phase === "ask") { onMatchTap(mb.dataset.m); return true; }
   const opt = t.closest("[data-opt]");
   if (opt && active.phase === "ask") {
     const i = +opt.dataset.opt;
@@ -237,7 +339,7 @@ function onTasteClick(t) {
 
 function advance() {
   const s = active.session;
-  active.picked = null; active.result = null;
+  active.picked = null; active.result = null; active.typed = ""; active.check = null; active.match = null;
   if (s.next()) { active.phase = "ask"; return; }
   active.phase = "end";
   const sum = s.summary();

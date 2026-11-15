@@ -31,8 +31,8 @@ export function planLesson({ newWines, wines, progress, now = Date.now(), length
 }
 
 export class Session {
-  constructor({ kind, lessonId, plan, all, progress, rng = Math.random, now = () => Date.now(), allowEstimates = true }) {
-    Object.assign(this, { kind, lessonId, all, progress, rng, now, allowEstimates });
+  constructor({ kind, lessonId, plan, all, progress, rng = Math.random, now = () => Date.now(), allowEstimates = true, kb = {} }) {
+    Object.assign(this, { kind, lessonId, all, progress, rng, now, allowEstimates, kb });
     this.queue = plan.slice();
     this.index = 0;
     this.extra = 0;
@@ -49,7 +49,11 @@ export class Session {
     while (!this.done) {
       const item = this.queue[this.index];
       const prefer = item.prefer || (item.first ? ["identify", "sayIt"] : []);
-      const q = questionFor(item.wine, this.all, this.rng, { prefer, avoid: this.lastType, allowEstimates: this.allowEstimates });
+      // Recall (typed answers) only once the wine has left box 1, i.e. was answered right on an earlier day.
+      const id = item.wine.id, rec = this.progress.wines[id];
+      const boxBefore = this.startBox.has(id) ? this.startBox.get(id) : rec ? rec.box : 0;
+      const recall = boxBefore >= 2;
+      const q = questionFor(item.wine, this.all, this.rng, { prefer, avoid: this.lastType, allowEstimates: this.allowEstimates, recall, kb: this.kb });
       if (q) { this.current = { ...q, gradeId: item.wine.id }; this.lastType = q.type; return this.current; }
       this.queue.splice(this.index, 1); // no question possible for this wine: drop it
     }
