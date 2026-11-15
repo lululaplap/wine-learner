@@ -42,6 +42,13 @@ export function renderMapShell() {
   </div>`;
 }
 
+// Safari (iPad and iPhone) stretches a snapshot of the map while zooming and may not redraw it sharply when the
+// zoom ends, leaving it blurred until the next tap. Hiding and showing the map for one layout pass makes it redraw.
+export function sharpen(el) {
+  if (!el || !el.isConnected) return;
+  requestAnimationFrame(() => { el.style.display = "none"; void el.getBoundingClientRect(); el.style.display = ""; });
+}
+
 export async function mountMap(root, ctx) {
   const d3 = await loadD3().catch(() => null);
   const loading = root.querySelector("#maploading");
@@ -83,6 +90,7 @@ export async function mountMap(root, ctx) {
   let K = 1, VW = 900, VH = 700, groups = [], lastW = 0;
   // The zoom's extent comes from the stage's size, not the SVG's, which cannot be read once the map is off screen.
   const zoom = d3.zoom().scaleExtent([0.25, 10]).extent(() => { const r = stage.getBoundingClientRect(); return [[0, 0], [Math.max(1, r.width), Math.max(1, r.height)]]; }).on("zoom", e => { g0.attr("transform", e.transform); K = e.transform.k; onZoom(); });
+  zoom.on("end.sharpen", () => sharpen(svg.node()));
   svg.call(zoom).on("dblclick.zoom", null);
   svg.on("click", e => { if (e.target === svg.node()) select(null); });
 

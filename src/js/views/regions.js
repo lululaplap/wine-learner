@@ -4,6 +4,7 @@
 import { esc, glyph, money, notesBadge, typeLabel, wineRow } from "../ui.js";
 import { linkTerms } from "../glossary.js";
 import { store } from "../store.js";
+import { sharpen } from "./map.js";
 
 const EUROPE = [[-11, 35], [31, 59.5]]; // lon/lat corners of the default view, where nearly all our wines are
 const PIN_ZOOM = 2.2;                   // wines are pinned once zoomed in this far past the Europe view
@@ -74,6 +75,7 @@ export async function mountRegions(root, ctx, focus) {
       g0.attr("transform", e.transform); K = e.transform.k; onZoom();
       if (e.sourceEvent) root.querySelectorAll("[data-fit]").forEach(b => b.setAttribute("aria-pressed", "false")); // moved by hand
     });
+  zoom.on("end.sharpen", () => sharpen(svg.node()));
   svg.call(zoom).on("dblclick.zoom", null);
   svg.on("click", e => { if (e.target === svg.node() || e.target.classList.contains("country")) select(null); });
 
