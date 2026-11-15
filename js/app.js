@@ -10,13 +10,15 @@ import { renderList, toggleType } from "./views/list.js";
 import { renderCheck } from "./views/check.js";
 import { renderMapShell, mountMap } from "./views/map.js";
 import { buildGlossary, useGlossary } from "./glossary.js";
+import { renderPath, onPathClick, onPathSubmit } from "./views/path.js";
+import { renderLesson, onLessonClick, onLessonKey } from "./views/lesson.js";
 import { renderRegionsShell, mountRegions } from "./views/regions.js";
 
 const MODES = {
-  learn: { label: "Learn", home: "map", theme: "auto" },
+  learn: { label: "Learn", home: "learn", theme: "auto" },
   service: { label: "Service", home: "list", theme: "dark" }
 };
-const VIEWS = { map: "Map", regions: "Regions", list: "Wine list", check: "Data check" };
+const VIEWS = { learn: "Lessons", map: "Map", regions: "Regions", list: "Wine list", check: "Data check" };
 const REFRESH_AFTER = 5 * 60 * 1000; // re-read the sheets when the tool comes back after five minutes
 
 const main = document.getElementById("main");
@@ -63,7 +65,7 @@ function go(hash) {
 
 // ---------- loading ----------
 async function load() {
-  const names = [["wine", "Wine sheet"], ["study", "Study sheet"], ["glossary", "Glossary"], ["regions", "Wine regions"]];
+  const names = [["wine", "Wine sheet"], ["study", "Study sheet"], ["glossary", "Glossary"], ["regions", "Wine regions"], ["lists", "Lists"]];
   const local = new URLSearchParams(location.search).has("local");
   const url = n => (local ? localCopy(n) : SHEETS[n]);
   const results = await Promise.allSettled(names.map(([n]) => loadSheet(n, url(n), localCopy(n))));
@@ -78,6 +80,8 @@ async function load() {
   useGlossary(ctx.glossary);
   ctx.data = buildWines(wineRows, studyRows);
   ctx.byId = new Map(ctx.data.wines.map(w => [w.id, w]));
+  ctx.lists = {};
+  (results[4].status === "fulfilled" ? toRows(results[4].value.text) : []).forEach(r => { if (r.list && r.value) (ctx.lists[r.list] = ctx.lists[r.list] || []).push(r.value); });
   ctx.regions = buildRegions(results[3].status === "fulfilled" ? toRows(results[3].value.text) : [], ctx.data.wines);
   ctx.loadedAt = Date.now();
   renderStatus(failed);
@@ -135,6 +139,16 @@ function route() {
   unmount(); unmount = () => {};
   document.body.classList.toggle("fullmap", view === "map" || view === "regions");
 
+  if (view === "lesson") {
+    navLinks("learn");
+    main.dataset.view = "lesson";
+    main.dataset.lesson = decodeURIComponent(arg || "");
+    main.innerHTML = renderLesson(main.dataset.lesson, ctx);
+    document.title = "Lesson · Apricity Wines";
+    window.scrollTo(0, 0);
+    focusQuestion();
+    return;
+  }
   if (view === "wine") {
     const w = ctx.byId.get(decodeURIComponent(arg || ""));
     navLinks(null);
@@ -166,6 +180,8 @@ function route() {
     let cleanup = null, gone = false;
     mountRegions(main.firstElementChild, ctx, focus).then(fn => { if (gone) fn(); else cleanup = fn; });
     unmount = () => { gone = true; if (cleanup) cleanup(); };
+  } else if (v === "learn") {
+    main.innerHTML = renderPath(ctx);
   } else if (v === "list") {
     main.innerHTML = renderList(ctx, listState);
   } else {
@@ -174,6 +190,24 @@ function route() {
   if (prev === "wine" && lastScroll.has(v)) window.scrollTo(0, lastScroll.get(v));
 }
 addEventListener("hashchange", route);
+
+// The lesson path and lessons: one set of listeners for the life of the page.
+main.addEventListener("click", e => {
+  if (main.dataset.view === "learn") onPathClick(e, ctx, () => { main.innerHTML = renderPath(ctx); });
+  else if (main.dataset.view === "lesson" && onLessonClick(e, ctx)) { main.innerHTML = renderLesson(main.dataset.lesson, ctx); focusQuestion(); }
+});
+main.addEventListener("submit", e => { if (main.dataset.view === "learn") onPathSubmit(e, () => { main.innerHTML = renderPath(ctx); }); });
+document.addEventListener("keydown", e => {
+  if (main.dataset.view !== "lesson") return;
+  const sel = onLessonKey(e);
+  const b = sel && main.querySelector(sel);
+  if (b) { e.preventDefault(); b.click(); }
+});
+// After each step, put focus where the learner acts next: the feedback's button, or the question.
+function focusQuestion() {
+  const target = main.querySelector(".feedback .btn, .lessonend .btn, .qprompt");
+  if (target) { if (target.classList.contains("qprompt")) target.setAttribute("tabindex", "-1"); target.focus({ preventScroll: true }); }
+}
 
 // Type chips on the wine list: one listener for the life of the page.
 main.addEventListener("click", e => {

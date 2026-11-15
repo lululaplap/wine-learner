@@ -62,8 +62,11 @@ export function linkTerms(glossary, text, used = new Set()) {
   for (const h of hits) {
     if (used.has(h.term.id)) continue;
     used.add(h.term.id);
-    out += esc(text.slice(pos, h.start)) + termButton(h.term, text.slice(h.start, h.end));
-    pos = h.end;
+    // Punctuation right after the term stays on its line (a button would otherwise allow a break before it).
+    const punct = (text.slice(h.end).match(/^[.,;:!?)\]”’"']+/) || [""])[0];
+    const btn = termButton(h.term, text.slice(h.start, h.end));
+    out += esc(text.slice(pos, h.start)) + (punct ? `<span class="nb">${btn}${esc(punct)}</span>` : btn);
+    pos = h.end + punct.length;
   }
   return out + esc(text.slice(pos));
 }

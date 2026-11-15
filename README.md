@@ -5,7 +5,8 @@ A web tool that helps the floor team learn the wine list quickly, then answers g
 ## What phase 1 does
 
 - **Reads the live wine list.** Every wine in the restaurant's *apricity_wines* sheet appears, joined to its study notes by a wine key (producer plus cuvée, lower case, no accents or punctuation, no vintage). Glass and bottle rows merge into one wine with two prices.
-- **Mode switch.** *Learn* (home: the map) and *Service* (home: the wine list, dark theme). The mode sets the theme and how much a wine card shows. Every screen is reachable from both.
+- **Lessons.** Learn mode's home: a Duolingo-style path, one unit per stage (anchors, by the glass, bottles under £100, families, £100 to £179, the top of the list), each a row of short lessons. A lesson is 10 questions in about three minutes, mixing up to 4 new wines with reviews that are due, in eight question types (Identify, Describe, Reverse, Price, Step up, Guest request, Heads-up, Say it). Spaced repetition uses five boxes per wine and per person, kept on the device. Also *Before service* (5 questions on the glass list), *Review*, *New on the list* and *Reset my progress*.
+- **Mode switch.** *Learn* (home: the lessons) and *Service* (home: the wine list, dark theme). The mode sets the theme and how much a wine card shows. Every screen is reachable from both.
 - **Wine card.** Name, price, grapes, region, style note, comparisons and a badge: *Estimate*, *Tasted* or *Needs notes*. In Service mode the internal fields (Check, Source, Story) are hidden.
 - **Wine list.** By the glass first, then bottles by style, with one-tap type chips.
 - **Map.** The prototype network map, on the live data, grouped by connections, style, grape, region, country, producer or price.
@@ -14,7 +15,7 @@ A web tool that helps the floor team learn the wine list quickly, then answers g
 - **Data check.** Wines with no notes, study rows that match no wine, broken comparison links, duplicate rows, and the wines flagged "check with supplier".
 - **Saved copy.** Each sheet is saved on the device when it loads. If a sheet cannot be loaded, the tool shows the saved copy with its time and a "may be out of date" notice. On a device with no saved copy, it falls back to the copy in `sheets/`.
 
-The study sheet was seeded from the prototype (`tools/seed-to-study.py`): 136 wines with style notes, comparison links and 34 "check" flags. All notes are marked `estimate`. Taste scores, guest lines and pronunciations come in phase 2.
+The study sheet was seeded from the prototype (`tools/seed-to-study.py`): 136 wines with style notes, comparison links and 34 "check" flags. Taste scores, flavours, making tags, "if you like" styles and guest lines were then drafted for every wine (`tools/estimates.txt`, applied with `tools/apply-estimates.py`, which only fills empty cells). Everything is marked `estimate` until the team tastes it.
 
 ## How it is built
 
@@ -28,8 +29,9 @@ The same pattern as the menu site (`apricity-mocks`):
 | `sheets/` | Local copies of the sheets, for testing and as the last-resort copy |
 | `vendor/d3-map.js` | Just the D3 modules the maps use (105KB), loaded only when a map opens |
 | `vendor/world-50m.json` | Country outlines for the Regions map (Natural Earth, public domain; 75KB compressed), loaded only when it opens |
-| `tools/seed-to-study.py` | Made the first `sheets/study.csv` from the seed file |
-| `test/` | Tests for the sheet matching: `npm test` (Node 20+) |
+| `tools/seed-to-study.py` | Made the first `sheets/study.csv` from the seed file (run `tools/apply-estimates.py` after it) |
+| `tools/estimates.txt` | The drafted tasting estimates, one line per wine |
+| `test/` | Tests for the sheet matching, glossary, regions, scheduler and every question generator: `npm test` (Node 20+) |
 | `docs/wine-study/` | The spec, the prototype map and the seed data |
 
 ## Preview it locally

@@ -19,6 +19,8 @@ The wine study tool reads two sheets. Change either sheet and the tool updates b
 
 **You taste a wine as a team.** Correct the notes and scores in its row, then change *Source* from `estimate` to `tasted`, with who and when: `tasted, LL, 2026-11-20`. The badge changes from *Estimate* to *Tasted*.
 
+**The estimates need checking.** Every wine's taste scores, flavours, making tags, "if you like" styles and guest line were drafted as estimates, from the grape, region, producer style and the existing note. Start with the five anchors and the glass list: taste them, correct the row, and change *Source* to `tasted`. The lessons use whatever the sheet says, so a correction reaches the quiz straight away.
+
 **A supplier question is answered.** Fix the note, then clear the *Check* cell.
 
 ## The tabs
@@ -71,7 +73,7 @@ The wine study tool reads two sheets. Change either sheet and the tool updates b
 | 4 | Sweet | Medium plus | Pronounced | Clearly natural, may be cloudy or funky |
 | 5 | Luscious | High | Dominant | Divisive; warn the guest |
 
-**Wine lists**: two columns, *List* (`Flavours`, `Making` or `If you like`) and *Value*. Add a row to add a word.
+**Wine lists**: two columns, *List* (`Flavours`, `Making`, `If you like` or `Team`) and *Value*. Add a row to add a word. Rows with *List* `Team` are the first names offered when someone opens Lessons for the first time; anyone not listed can type their name.
 
 **Wine regions**
 

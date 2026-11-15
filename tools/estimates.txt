@@ -1,0 +1,139 @@
+# Estimated tasting data, one wine per line, drafted from each wine's grape, region, producer style and seed note.
+# Every value here is an estimate (Source stays "estimate"). A dash means no sound basis: the field is left blank.
+# id | sweetness acidity tannin body oak wildness | flavours | making | if you like | guest line
+funambul | 1 4 1 2 1 2 | green apple; pear; nuts | traditional method | Cava; Champagne | A bone-dry Spanish sparkling made like Champagne: crisp apple and almond.
+kamara | 1 4 1 2 1 3 | peach; flowers; lemon; salt | - | Prosecco | A Greek natural sparkling: floral and peachy, with a salty, citrus finish.
+rietschcremant | 1 3 1 3 1 3 | green apple; pear; brioche | traditional method | Champagne; Cava | A natural Alsace fizz, very dry, with ripe pear and a creamy texture.
+roebuck | 1 5 1 2 1 1 | green apple; lemon; brioche | traditional method | Champagne | English sparkling made exactly like Champagne: crisp apple, lemon and brioche.
+langham | 1 4 1 3 2 1 | green apple; peach; brioche | traditional method; oak aged | Champagne | A Dorset sparkling, partly fermented in barrel: red apple, stone fruit and pastry.
+sekt | 1 4 1 3 1 1 | lime; honey; toast | traditional method | Riesling; Champagne | An aged German Riesling sparkling: lime, honey and toast.
+roebuck19 | 1 4 1 4 1 1 | raspberry; toast; nuts | traditional method | Champagne | A long-aged English sparkling from Pinot Noir: red fruit, toast and nuts.
+brocard | 1 4 1 3 1 1 | pear; green apple; brioche | traditional method | Champagne | A young grower's Champagne, ripe and fruity with soft pear, and dry.
+pascal | 1 4 1 3 1 2 | raspberry; strawberry; chalk | traditional method; biodynamic | Champagne; Provence rosé | A biodynamic rosé Champagne: red berries, chalk and fine bubbles.
+fournois | 1 5 1 2 1 1 | lemon; chalk; green apple | traditional method | Champagne; Chablis | A pure Chardonnay Champagne: lemony, chalky and very fine.
+rogerie | 1 4 1 3 2 2 | lemon; nuts; brioche | traditional method; oak aged | Champagne; White Burgundy | A Chardonnay Champagne aged in oak: broader and more like a white wine.
+lavalcum | 1 4 1 4 2 2 | green apple; brioche; nuts | traditional method; organic; oak aged | Champagne; White Burgundy | An organic Champagne with no added sugar: rich and intense, like a white wine with bubbles.
+vlaval | 1 4 1 3 - 2 | - | traditional method | Champagne | A tiny Champagne from Vincent Laval's family vines: ask us for the details.
+selosse | 1 4 1 5 2 3 | nuts; toast; raspberry | traditional method | Champagne | A powerful Pinot Noir Champagne, nutty and rich: the richest sparkling we have.
+rieslingplus | - 4 1 2 1 2 | lime; green apple | - | Riesling | Our own Riesling, made with the Wasted Wine Club: lime, green apple and light.
+gindl | 1 4 1 2 1 2 | green apple; pepper; herbs | biodynamic | Grüner Veltliner; Sancerre | A biodynamic Austrian Grüner: green apple and a twist of white pepper.
+davenport | 1 4 1 2 1 1 | elderflower; grapefruit; herbs | organic | Sancerre; New Zealand Sauvignon | An organic English white: elderflower and grapefruit, dry and light.
+tueboeuf | 1 3 1 2 1 3 | pear; green apple; herbs | - | Sancerre | A natural Loire Sauvignon, softer than Sancerre, with orchard fruit.
+ecu | 1 4 1 1 1 1 | lemon; salt | biodynamic | Chablis; Pinot Grigio | A biodynamic Muscadet: lemony, salty and lean, made for oysters.
+frantz | 1 4 1 3 1 2 | green apple; quince; honey | - | Chablis | A Loire Chenin: apple and quince with a honeyed edge and bright acidity.
+josmeyer | 1 2 1 2 1 1 | pear; green apple; flowers | - | Pinot Grigio | A soft, floral Alsace white: pear and apple, easy and friendly.
+yeye | 1 4 1 2 1 2 | flowers; lemon; salt; smoke | - | Albariño | Grown in volcanic ash on Lanzarote: floral, citrus, salty and smoky.
+sylvaner | 1 3 1 2 1 3 | herbs; green apple | - | Grüner Veltliner | An old-vine Alsace Sylvaner, made naturally: herbal and green apple.
+hamstreet | 1 4 1 2 - 3 | elderflower; green apple | - | Sancerre | A small natural farm in Kent: Bacchus aroma with Chardonnay body.
+azimut | 1 3 1 2 1 2 | flowers; tropical fruit; lemon | - | Riesling | A very aromatic Alsace blend, rose and lychee, but dry.
+galerne | 1 4 1 2 1 1 | green apple; lemon; chalk | - | Chablis; White Burgundy | An unoaked Chardonnay from northern Burgundy: crisp, citrus and mineral.
+token | 1 5 1 2 - 3 | lemon; green apple | - | Pinot Grigio | A Friulian Ribolla: lemon, green apple and high acidity.
+bourgeois | 1 4 1 2 1 1 | grapefruit; lemon; flint | - | Sancerre; New Zealand Sauvignon | A textbook Sancerre: gooseberry, citrus and a flinty edge.
+monfarina | 1 4 1 1 1 1 | flowers; pear | - | Pinot Grigio; Chablis | A light Alpine white, about 11%: white flowers, pear and fresh.
+ouille | 1 5 1 2 2 2 | lemon; green apple; nuts | - | Chablis | A fresh Jura Savagnin: lemon, green apple, a hint of nuts and sharp acidity.
+furmint | 1 4 1 3 1 2 | quince; pear; smoke | - | Riesling | A Slovak Furmint from volcanic soils: quince, pear and smoke.
+coolmoon | 1 3 1 3 1 2 | peach; herbs; salt | biodynamic | Albariño | A biodynamic Mediterranean white: stone fruit, herbs and a salty freshness.
+altesse | 1 4 1 3 1 2 | quince; honey; nuts | - | White Burgundy | A Savoie Altesse: quince, honey and almond, with firm acidity.
+paloblanco | 1 4 1 3 2 2 | lemon; smoke; salt; flint | oak aged | White Burgundy | Old vines on Tenerife's volcanic soil: smoky, salty and lemony.
+nanclares | 1 5 1 2 1 1 | lime; salt | - | Albariño; Sancerre | An intense Atlantic Albariño: lime, sea spray and very fresh.
+aligorhythm | 1 5 1 2 1 3 | lemon; green apple | - | Chablis | A natural Aligoté, Burgundy's other white grape: sharp and lemony.
+graf | 1 3 1 3 3 3 | nuts; herbs; flint | biodynamic; no added sulfur; oak aged | Sancerre; White Burgundy | A biodynamic Austrian Sauvignon aged in barrel: nutty, herbal and textured.
+trossen | 1 4 1 2 1 3 | lime; green apple; flint | biodynamic; no added sulfur | Riesling | A biodynamic Mosel Riesling, dry, with lime, apple and a stony edge.
+faure | 1 3 1 3 1 1 | green apple; peach | - | White Burgundy | A southern Burgundy Chardonnay, riper and rounder: yellow apple and peach.
+bornard | 1 4 1 3 2 4 | lemon; nuts; herbs | - | White Burgundy | A natural Jura Chardonnay: lemony, nutty and savoury, wilder than Burgundy.
+yume | 1 4 1 2 2 1 | lemon; green apple; chalk | - | White Burgundy; Chablis | A precise, pure Burgundy Chardonnay with real tension.
+basdesees | 1 4 1 3 2 1 | lemon; chalk | - | Chablis | A serious Aligoté: citrus, chalk and a long finish.
+ladoix | 1 3 1 3 3 2 | peach; vanilla; flint | oak aged | White Burgundy; Oaked Chardonnay | A village Burgundy white: ripe fruit, some oak and a mineral finish.
+valbianco | 1 3 1 2 1 1 | lemon; nuts; herbs | organic | Pinot Grigio | An organic Sicilian white: lemon, almond and herbs. Easy drinking.
+loiseau | 1 2 1 3 1 2 | peach; herbs | biodynamic | White Burgundy; Côtes du Rhône | A biodynamic Languedoc blend: peach and fennel, soft and round.
+tessier | 1 5 1 3 1 2 | quince; honey | - | Chablis | A rare Loire grape: high acidity, quince and honey, like a sharper Chenin.
+kitscoty | 1 4 1 3 3 1 | green apple; lemon; toast | oak aged | Oaked Chardonnay; White Burgundy | An English Chardonnay fermented in barrel: apple, citrus and toast.
+bislacco | 1 3 1 3 - 3 | lemon; herbs | - | Pinot Grigio | A natural Sicilian white with more character than most.
+envie | 1 2 1 4 1 2 | apricot; flowers; nuts | biodynamic | White Burgundy; Côtes du Rhône | A biodynamic Rhône Marsanne: apricot, honeysuckle and almond, broad and soft.
+moraza | 1 3 1 3 - 2 | green apple; herbs | organic | Rioja | A white Rioja from an organic family estate: apple, fennel and a waxy texture.
+leirana | 1 4 1 3 1 1 | peach; lemon; salt | - | Albariño | A softer, rounder Albariño: peach, lemon and a salty finish.
+strekov | 1 3 1 3 - 4 | nuts; herbs | no added sulfur | White Burgundy | A natural Slovak Chardonnay: savoury, slightly nutty and unconventional.
+decarlino | 1 4 2 3 1 2 | lemon; herbs; salt | biodynamic | Albariño | A biodynamic Pecorino from Abruzzo: citrus, mountain herbs and salt.
+frickchasselas | 1 2 1 2 1 4 | green apple; nuts | biodynamic; no added sulfur | Pinot Grigio | A biodynamic Alsace Chasselas with no sulfur: soft, nutty, with a cidery edge.
+madeira | 1 4 1 3 - 2 | lemon; flint | - | White Burgundy | An old-vine field blend from Portugal's Dão: citrus and stone, textured but taut.
+blackbookchard | 1 3 1 4 3 1 | peach; vanilla; toast | oak aged | Oaked Chardonnay; White Burgundy | An English Chardonnay in the Burgundy style: ripe and creamy.
+selvadolce | 1 3 2 3 1 2 | herbs; peach; salt | skin contact | Albariño | A Ligurian Pigato: herbs, peach and sea salt.
+zillinger | 1 3 1 4 3 2 | smoke; grapefruit; herbs | oak aged | Sancerre; Oaked Chardonnay | An Austrian Sauvignon aged in oak and amphora: smoky, textured and ripe.
+barralblanc | 1 3 1 4 2 4 | apricot; nuts; honey | - | White Burgundy | A natural-wine icon from Faugères: rich, nutty and apricot, deliberately oxidative.
+rufo | 1 4 1 1 1 4 | salt; lemon | - | - | A light, low-alcohol natural white: salty and a little wild.
+pyramidchard | 1 4 1 4 3 1 | lemon; vanilla; toast | biodynamic; oak aged | Oaked Chardonnay; White Burgundy | A biodynamic New Zealand Chardonnay: concentrated citrus and oak.
+ganevatchard | 1 4 1 4 3 2 | lemon; flint; nuts | oak aged | White Burgundy | From the Jura's star grower: intense, mineral and struck-match.
+pouches | 1 4 1 3 2 1 | quince; chalk; honey | oak aged | White Burgundy; Chablis | A barrel-aged Loire Chenin: quince, chalk and great length.
+mainbey | 1 4 1 3 2 1 | lemon; chalk | - | White Burgundy | A single-vineyard Burgundy Chardonnay: precise, pure and built to age.
+fussey | 1 4 1 3 2 1 | lemon; chalk | - | White Burgundy | A single-vineyard Chardonnay from the hills above Beaune: precise and pure.
+pepe | 1 4 2 4 1 3 | herbs; nuts; honey | - | White Burgundy | A legendary Abruzzo estate: dense, savoury and long-lived.
+miroirs | 1 4 1 3 - - | - | - | White Burgundy | A tiny cult Jura estate: the rarest white on our list.
+courreges | 1 3 1 2 1 1 | strawberry; lemon | - | Provence rosé | A pale, dry Provence rosé: strawberry and citrus.
+clarete | 1 3 2 3 1 3 | cherry; herbs | - | Provence rosé; Beaujolais | A traditional Spanish style between rosé and light red: savoury and herbal.
+rosanera | 1 3 1 3 1 2 | cherry; orange peel | biodynamic | Provence rosé | A biodynamic Sicilian rosé: cherry and blood orange, fuller than Provence.
+rebel | 1 5 1 2 1 1 | redcurrant; strawberry | - | Provence rosé | An English Pinot Noir rosé: redcurrant and crisp.
+evans | 1 4 2 2 1 3 | strawberry; redcurrant | - | Provence rosé; Pinot Noir | A small natural Kent wine, between a rosé and a light red.
+hamfield | 1 - - - - 3 | - | - | - | A natural Kent wine from Pinot grapes; ask us how it pours tonight.
+n5 | 1 3 2 2 1 3 | orange peel; flowers | skin contact | - | An aromatic Sicilian Muscat made with skin contact: orange peel and flowers.
+radikon | 1 3 2 3 2 3 | apricot; tea; herbs | skin contact | - | A young orange wine from a founding family of the style: apricot, tea and herbs.
+marguerite | 1 3 2 1 1 3 | flowers; orange peel | skin contact | - | A light, floral orange wine, low in alcohol: the friendliest orange wine.
+costabosco | 1 3 3 3 - 3 | apricot; flowers; orange peel | skin contact | - | One of Italy's benchmark orange wines: apricot, dried flowers and firm grip.
+gluck | 1 3 3 3 2 3 | herbs; flint | skin contact | - | A skin-fermented Austrian Sauvignon: herbal, stony and savoury.
+ariento | 1 3 4 4 1 4 | apricot; tea; nuts | skin contact | - | A long skin-contact Tuscan orange wine: amber, structured and complex.
+valrosso | 1 3 2 3 1 1 | plum; cherry | organic | Côtes du Rhône; Malbec | An organic Sicilian red: plum and cherry, soft and easy.
+syfany | 1 4 3 3 - 2 | blackberry; spice | - | Pinot Noir; Côtes du Rhône | A Czech red: dark berries, spice and bright acidity.
+girotondo | 1 4 3 2 1 2 | cherry; herbs | - | Chianti | A light, rustic Tuscan Sangiovese: cherry, pomegranate and herbs.
+grolleau | 1 4 1 1 1 3 | redcurrant; raspberry; pepper | - | Beaujolais | The lightest red: low alcohol, peppery and crunchy. Best served cool.
+wachter | 1 4 3 3 1 1 | cherry; pepper | - | Pinot Noir; Côtes du Rhône | The reference Austrian Blaufränkisch: sour cherry, black pepper, fresh.
+naia | 1 4 2 3 1 3 | blackberry; herbs | - | Côtes du Rhône | A natural Carignan: dark fruit, herbs and lively.
+fedellos | 1 4 2 2 1 2 | raspberry; flowers; herbs | - | Beaujolais; Pinot Noir | A Galician Mencía: floral, red-fruited and fresh, like Spain's Beaujolais.
+pranzegg | 1 3 1 1 1 2 | strawberry; nuts; cherry | - | Pinot Noir; Beaujolais | A pale, light Alpine red: strawberry and almond.
+nestarec | 1 4 2 2 1 4 | cherry; raspberry | - | Beaujolais | From the best-known Czech natural winemaker: juicy, bright and playful.
+seignovert | 1 3 2 3 1 3 | blackberry; plum | - | Côtes du Rhône | A natural Ardèche red: juicy and dark-fruited.
+ligas | 1 4 4 3 1 2 | cherry; herbs; earth | - | Barolo | A Greek Xinomavro that behaves like Nebbiolo: pale, savoury and firm.
+ruof | 1 4 2 2 1 2 | cherry; herbs | - | Pinot Noir | An Alpine Swiss Pinot Noir: light, red cherry and herbal.
+thillardon | 1 4 2 2 1 2 | raspberry; flowers | - | Beaujolais; Pinot Noir | A serious Beaujolais from granite: raspberry, violet and silky.
+frickpinot | 1 4 2 2 1 4 | cherry; redcurrant | no added sulfur | Pinot Noir | An Alsace Pinot Noir with no sulfur: light, crunchy and a little wild.
+walgate | 1 5 1 1 1 3 | redcurrant; raspberry | - | Pinot Noir | A very light English natural red: tart red berries.
+river | 1 4 1 1 1 4 | raspberry; pepper | - | Beaujolais | A pale, low-alcohol Syrah, made almost like an infusion.
+arcane | 1 4 2 2 1 2 | raspberry; cherry | - | Pinot Noir | A mountain Pinot Noir from Savoie: fresh, red-fruited and fine.
+sabre | 1 4 2 2 2 1 | cherry; raspberry | - | Pinot Noir | A classic red Burgundy: silky, light and pure red fruit.
+racines | 1 4 2 2 1 5 | pepper; earth; raspberry | - | - | A wild, peppery, earthy light red from a natural-wine pioneer. Not for everyone.
+disko | 1 4 1 1 1 4 | strawberry; raspberry | - | Beaujolais | A pale, low-alcohol Cinsault, made almost like an infusion.
+dandelion | 1 4 2 2 1 3 | cherry; raspberry | - | Pinot Noir | A young natural Burgundy: bright, juicy and full of energy.
+batailles | 1 4 2 2 1 3 | cherry; raspberry | - | Beaujolais; Pinot Noir | Pinot Noir and Gamay from the Jura: juicy, crunchy and very drinkable.
+maladerote | 1 4 3 2 2 2 | cherry; spice; flowers | whole bunch | Pinot Noir | A perfumed, precise Burgundy with fine tannins.
+montchenevoy | 1 4 3 3 2 1 | cherry; flowers | - | Pinot Noir | A single-vineyard Burgundy: perfumed and precise, with fine tannins.
+durieux | 1 4 3 3 - 5 | cherry; earth | - | - | A cult natural Burgundy: wild and intense. A divisive wine; ask us first.
+nsg | 1 4 3 3 2 2 | cherry; spice | whole bunch | Pinot Noir | A village Burgundy from Nuits-Saint-Georges: dark cherry, spice and more structure.
+roch | 1 4 3 3 2 4 | cherry; spice; flowers | whole bunch; no added sulfur | Pinot Noir | A legendary natural Burgundy estate: perfumed, with no added sulfur.
+umberta | 1 5 1 3 1 1 | cherry | - | Chianti | An unoaked Barbera: sour cherry, juicy acidity and very little tannin.
+boutdzan | 1 3 2 3 1 2 | plum; licorice; herbs | biodynamic | Côtes du Rhône; Malbec | A juicy, fresh Rhône red from a biodynamic farm: plum and licorice.
+majer | 1 - - - - 4 | - | - | - | A natural blend from a Slovak family farm, across grapes and years.
+magula | 1 3 3 4 - 2 | plum; cherry; spice | - | Malbec; Côtes du Rhône | A Slovak red from the dark Dunaj grape: plum, black cherry and spice.
+nebbiolo | 1 4 4 3 1 1 | cherry; flowers | - | Barolo | A young Nebbiolo, unoaked: rose and cherry, then firm tannin. Barolo's little brother.
+dvaduby | 1 4 3 3 1 2 | cherry; pepper | biodynamic | Pinot Noir; Côtes du Rhône | A biodynamic Czech Blaufränkisch: dark cherry, pepper and structure.
+fantine | 1 3 3 3 1 4 | herbs; smoke; leather | no added sulfur | Côtes du Rhône | A wild, savoury Languedoc red: meaty, herbal and smoky.
+beauxmonts | 1 4 3 2 1 2 | raspberry; herbs | - | Bordeaux; Pinot Noir | A Loire Cabernet Franc: raspberry, a leafy note and fresh.
+foradori | 1 4 2 3 1 2 | blackberry; flowers | biodynamic | Pinot Noir; Côtes du Rhône | A biodynamic Alpine Teroldego: dark berries, violet and fresh.
+fronsac | 1 3 4 4 2 1 | blackcurrant; plum | biodynamic | Bordeaux | A biodynamic Bordeaux: cassis, plum and cedar, firm and classic.
+preisinger | 1 3 2 3 2 1 | cherry; leather; spice | - | Rioja | A mature Austrian red: dried cherry, leather and spice.
+kekfrankos | 1 4 3 3 1 2 | cherry; spice | - | Pinot Noir; Côtes du Rhône | A Slovak Blaufränkisch from volcanic soil: spicy, sour cherry, fine tannin.
+matrone | 1 3 3 3 1 2 | raspberry; smoke | - | Chianti | A red from the slopes of Vesuvius: red fruit, smoke and savoury.
+dumarcher | 1 3 3 4 1 3 | blackberry; herbs | - | Côtes du Rhône; Shiraz | A natural southern Rhône with a few years' age: dark fruit and herbs.
+brova | 1 4 3 3 2 2 | blackberry; pepper; flowers | oak aged | Shiraz; Côtes du Rhône | A barrel-aged Savoie Mondeuse: blackberry, black pepper and violet.
+saumurchamp | 1 4 3 3 1 1 | raspberry; flowers | - | Bordeaux; Pinot Noir | A fine, perfumed Loire Cabernet Franc with silky tannin.
+dard | 1 4 3 3 1 3 | pepper; flowers; blackberry | - | Shiraz; Côtes du Rhône | A pure, fresh Syrah from natural-wine pioneers: black olive, pepper and violet.
+fonterenza | 1 4 3 3 2 2 | cherry; orange peel; herbs; leather | - | Chianti | A Tuscan Sangiovese from Montalcino: sour cherry, herbs and leather.
+ganko | 1 4 3 3 1 1 | cherry; earth | - | Rioja | An old-vine Garnacha from high in Rioja: tight, mineral and dark cherry.
+snake | 1 3 2 4 2 1 | cherry; spice | - | Pinot Noir | A New Zealand Pinot Noir, riper and darker: black cherry and spice.
+poggio | 1 4 4 4 - 3 | cherry; earth | - | Chianti; Barolo | A deep, earthy Tuscan Sangiovese from a revered natural farm.
+cornas | 1 3 4 5 2 2 | blackberry; smoke; pepper | - | Shiraz | The Rhône's sturdiest Syrah: dark, smoky and firm.
+moscatello | - 3 1 2 1 2 | orange peel; flowers | - | - | An aromatic Muscat-family wine: orange blossom and grape.
+szolo | 4 4 1 3 1 1 | apricot; honey | - | Sauternes | A sweet Tokaj wine: apricot, honey and bright acidity.
+maury | 4 2 3 4 1 1 | blackberry; plum | - | Port | A fortified red, like a young Port: blackberry and chocolate.
+volta | 5 3 1 4 1 2 | apricot; honey; orange peel | - | Sauternes | A sweet wine from dried grapes: apricot jam, honey and orange peel.
+souch | 4 5 1 3 1 1 | tropical fruit; honey | biodynamic | Sauternes | A late-harvest biodynamic Jurançon: pineapple, honey and razor acidity.
+auslese | 4 4 1 2 1 1 | honey; lime | - | Riesling; Sauternes | A twenty-year-old sweet Riesling: honey and lime marmalade, light in alcohol.
+roc | 2 3 1 1 1 3 | strawberry; flowers | - | Prosecco | A pink pét-nat: low alcohol, soft bubbles, strawberry and violet.
+villo | 1 3 1 3 1 1 | lemon; herbs; salt | - | Pinot Grigio; Albariño | A Sicilian Grillo: citrus, herbs and a salty finish.
