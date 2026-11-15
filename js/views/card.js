@@ -3,6 +3,9 @@
 import { esc, priceLine, badges, glyph, money } from "../ui.js";
 import { SCORES } from "../data.js";
 import { linkTerms } from "../glossary.js";
+import { isOpen, latestTasting, SCALE_WORDS, SCORE_NAMES, gridScores } from "../quiz/tasting.js";
+import { loadProgress } from "../quiz/progress.js";
+import { store } from "../store.js";
 
 const SCALE = {
   sweetness: ["Dry", "Off-dry", "Medium", "Sweet", "Luscious"],
@@ -22,6 +25,24 @@ function scoresBlock(w, L) {
     return `<div class="score"><span class="sc-name">${L(NAMES[n])}</span><span class="dots" aria-hidden="true">${dots}</span><span class="sc-word">${v} · ${esc(SCALE[n][v - 1])}</span></div>`;
   }).join("");
   return `<h3>Taste profile</h3><div class="scores">${rows}</div>`;
+}
+
+// Open to taste today: wines by the glass are open unless marked otherwise; any other bottle can be opened for the day.
+function openBlock(w) {
+  const open = isOpen(w);
+  const label = w.glass != null ? (open ? "Open (by the glass)" : "Not open today") : (open ? "Open to taste today" : "Not open");
+  const action = w.glass != null ? (open ? "Mark as not open today" : "Mark as open again") : (open ? "Mark as closed" : "Open to taste today");
+  return `<p class="openline"><span class="openstate${open ? " on" : ""}">${label}</span> <button type="button" class="btn ghost small" data-open-toggle aria-pressed="${open}">${action}</button></p>`;
+}
+
+// The learner's own latest tasting of this wine, beside the notes (Learn mode only).
+function yourTasting(w) {
+  const name = store.get("learner", "");
+  const t = name ? latestTasting(loadProgress(name), w.id) : null;
+  if (!t) return "";
+  const scores = gridScores(w).filter(n => t.scores[n] != null).map(n => `${SCORE_NAMES[n]} ${t.scores[n]} (${esc(SCALE_WORDS[n][t.scores[n] - 1])})`);
+  const when = new Date(t.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return `<h3>Your tasting, ${esc(when)}</h3><p class="yourtaste">${esc([scores.join(", "), t.flavours.length ? "Flavours: " + t.flavours.join(", ") : "", t.note].filter(Boolean).join(". "))}</p>`;
 }
 
 // Where the wine comes from, with a link to its spot on the regions map.
@@ -55,12 +76,14 @@ export function renderCard(w, ctx) {
     <p class="meta">${esc(meta)}</p>
     <p class="prices">${priceLine(w)}</p>
     ${whereBlock(w, ctx)}
+    ${openBlock(w)}
     ${w.guestLine ? `<h3>To the guest</h3><p class="guestline">“${L(w.guestLine)}”</p>` : ""}
     ${scoresBlock(w, L)}
     ${w.note ? `<h3>Style</h3><p class="note">${L(w.note)}</p>` : ""}
     ${tagRow("Flavours", w.flavours)}${tagRow("Making", w.making)}${tagRow("If they like", w.ifYouLike)}
     ${w.serve ? `<h3>Serve</h3><p>${L(w.serve)}</p>` : ""}
     ${!service && w.story ? `<h3>Story</h3><p>${L(w.story)}</p>` : ""}
+    ${!service ? yourTasting(w) : ""}
     ${cmp.length ? `<h3>Compare with</h3><div class="cmp">${cmp.map(c => `<a class="cmpbtn" href="#/wine/${encodeURIComponent(c.id)}">${glyph(c.type, 20)}<span><span class="nm">${esc(c.short)}</span><span class="ds">${esc([c.leadGrape, c.regionGroup, c.bottle != null ? money(c.bottle) : money(c.glass) + " glass"].filter(Boolean).join(" · "))}</span></span></a>`).join("")}</div>` : ""}
     ${!service && w.check ? `<h3>Check with the supplier</h3><p class="checkq">${L(w.check)}</p>` : ""}
     ${!service ? `<p class="source">${sourceLine(w)}</p>` : (!w.tasted && w.hasNotes ? '<p class="source">Estimated notes, not yet tasted by the team.</p>' : "")}

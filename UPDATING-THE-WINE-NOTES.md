@@ -19,6 +19,10 @@ The wine study tool reads two sheets. Change either sheet and the tool updates b
 
 **You taste a wine as a team.** Correct the notes and scores in its row, then change *Source* from `estimate` to `tasted`, with who and when: `tasted, LL, 2026-11-20`. The badge changes from *Estimate* to *Tasted*.
 
+**A bottle is open to taste.** Open its wine card and tap *Open to taste today*. Lessons on that device then offer to taste it first, and the Lessons page shows it under *Open to taste today*. A glass wine that has run out can be marked *Not open today*. All of this resets at 4am, and only on the device where you set it.
+
+**Collecting the team's tasting notes.** After tasting in a lesson, *Copy my notes* puts the person's assessment on the clipboard, with the notes' score beside each of theirs. Ask the team to send theirs to whoever keeps the study sheet; agreed corrections go into the sheet, with *Source* set to `tasted`.
+
 **The estimates need checking.** Every wine's taste scores, flavours, making tags, "if you like" styles and guest line were drafted as estimates, from the grape, region, producer style and the existing note. Start with the five anchors and the glass list: taste them, correct the row, and change *Source* to `tasted`. The lessons use whatever the sheet says, so a correction reaches the quiz straight away.
 
 **A supplier question is answered.** Fix the note, then clear the *Check* cell.

@@ -4,6 +4,7 @@ import { esc, glyph, wineRow } from "../ui.js";
 import { store } from "../store.js";
 import { buildStages } from "../quiz/stages.js";
 import { loadProgress, saveProgress, noteListChanges, stageProgress, lessonDone, isDue } from "../quiz/progress.js";
+import { openExtras } from "../quiz/tasting.js";
 
 export const learner = () => store.get("learner", "");
 
@@ -25,6 +26,14 @@ function namePicker(ctx) {
     <form class="nameform" id="nameForm"><label for="nameInput">First name</label>
       <div class="namerow"><input id="nameInput" name="name" autocomplete="given-name" maxlength="30" required><button type="submit" class="btn">Start</button></div></form>
   </div>`;
+}
+
+// Bottles open beyond the glass list today, and a lesson built from them: taste each, then questions.
+function openSection(ctx) {
+  const extras = openExtras(ctx.data.wines);
+  if (!extras.length) return '<p class="opennote">Lessons offer to taste any wine that is open: the glass list, and any bottle marked <em>Open to taste today</em> on its card.</p>';
+  return `<div class="openlist"><h2>Open to taste today</h2><div class="rows">${extras.map(w => wineRow(w)).join("")}</div>
+    <p><a class="btn" href="#/lesson/open">Taste what's open, then questions</a></p></div>`;
 }
 
 const CROWN = learnt => `<svg class="crown${learnt ? " on" : ""}" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18l-1.6-10-4.6 4-2.8-6-2.8 6-4.6-4z"/></svg>`;
@@ -75,6 +84,7 @@ export function renderPath(ctx) {
         <a class="btn ghost" href="#/lesson/service">Before service: 5 on the glass list</a>
         ${due.length ? `<a class="btn ghost" href="#/lesson/review">Review ${due.length} due</a>` : ""}
       </div>
+      ${openSection(ctx)}
       ${changed.length ? `<div class="newlist"><h2>New on the list</h2><p class="intro">New wines, or a new vintage or price. They are back at the start of their reviews.</p><div class="rows">${changed.map(w => wineRow(w)).join("")}</div><button type="button" class="linkbtn" data-clear-new>Clear this list</button></div>` : ""}
     </div>
     ${units}

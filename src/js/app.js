@@ -12,6 +12,7 @@ import { renderMapShell, mountMap } from "./views/map.js";
 import { buildGlossary, useGlossary } from "./glossary.js";
 import { renderPath, onPathClick, onPathSubmit } from "./views/path.js";
 import { renderLesson, onLessonClick, onLessonKey } from "./views/lesson.js";
+import { isOpen, setOpen } from "./quiz/tasting.js";
 import { renderRegionsShell, mountRegions } from "./views/regions.js";
 
 const MODES = {
@@ -193,6 +194,11 @@ addEventListener("hashchange", route);
 
 // The lesson path and lessons: one set of listeners for the life of the page.
 main.addEventListener("click", e => {
+  if (main.dataset.view === "wine" && e.target.closest("[data-open-toggle]")) {
+    const id = decodeURIComponent((location.hash.match(/^#\/wine\/(.+)/) || [])[1] || ""), w = ctx.byId.get(id);
+    if (w) { const y = scrollY; setOpen(w, !isOpen(w)); route(); scrollTo(0, y); const b = main.querySelector("[data-open-toggle]"); if (b) b.focus({ preventScroll: true }); }
+    return;
+  }
   if (main.dataset.view === "learn") onPathClick(e, ctx, () => { main.innerHTML = renderPath(ctx); });
   else if (main.dataset.view === "lesson" && onLessonClick(e, ctx)) { main.innerHTML = renderLesson(main.dataset.lesson, ctx); focusQuestion(); }
 });

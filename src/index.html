@@ -337,6 +337,42 @@ body:has(main[data-view="lesson"]) .top{position:static}
 .lessonend h1{font-size:32px;margin-bottom:10px}
 .endscore{font-size:22px}
 
+/* ---------- taste first ---------- */
+.openline{margin:10px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.openstate{font-weight:600;color:var(--ink-3)}
+.openstate.on{color:var(--ok)}
+.openstate.on::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ok);margin-right:6px}
+.yourtaste{margin:0;border-left:4px solid var(--term);padding-left:10px}
+.opennote{color:var(--ink-2);margin:14px 0 0}
+.openlist{margin-top:18px;padding:14px;border:2px solid var(--ok);border-radius:16px;background:var(--surface)}
+.openlist h2{font-size:20px;margin-bottom:8px}
+.tasteask .rows{grid-template-columns:1fr;margin:14px 0}
+.tasterow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.tasterow .ds{color:var(--ink-3);margin-left:auto;text-align:right}
+.tastegrid .qprompt .glyph{vertical-align:-3px}
+.gridrow{border:0;padding:0;margin:0 0 16px}
+.gridrow legend{font-weight:700;font-size:18px;margin-bottom:8px;padding:0}
+.gridchips{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.gridchips.flavs{display:flex;flex-wrap:wrap}
+.gchip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;padding:6px 4px;border-radius:12px;border:2px solid var(--line);background:var(--surface);font-size:16px;font-weight:600;line-height:1.15;text-align:center}
+.gchip .gnum{font-size:16px;color:var(--ink-3)}
+.gchip.flav{flex-direction:row;min-height:44px;padding:0 14px;border-radius:22px}
+.gchip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.gchip[aria-pressed="true"] .gnum{color:var(--on-accent)}
+.gchip:disabled{opacity:.45}
+.notelabel{display:block;font-weight:700;font-size:18px;margin-bottom:6px}
+#tasteNote{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);font:inherit;resize:vertical}
+.cmptable{width:100%;border-collapse:collapse;margin:8px 0 14px}
+.cmptable th,.cmptable td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.cmptable thead th{color:var(--ink-3);font-size:16px}
+.v-match{color:var(--ok);font-weight:700}
+.v-close{color:var(--ink-2);font-weight:600}
+.v-apart{color:var(--no);font-weight:700}
+.flavcmp{margin:0 0 10px}
+.copied{color:var(--ok);font-weight:600;white-space:pre-wrap}
+@media (max-width:560px){.gridchips{display:flex;flex-wrap:wrap}.gchip{flex:1 1 auto;min-width:60px;min-height:60px;padding:6px 10px}}
+.cmptable .nw{white-space:nowrap}
+
 /* ---------- regions map ---------- */
 .regionsview .stage{background:var(--sea)}
 #geo{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
