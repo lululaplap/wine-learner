@@ -8,7 +8,7 @@ import { planLesson, Session, LESSON_LENGTH, BEFORE_SERVICE_LENGTH } from "../qu
 import { TYPE_NAMES, comparatorLine, shuffle } from "../quiz/questions.js";
 import { vocabulary, suggest, checkTyped } from "../quiz/answer.js";
 import { learner } from "./path.js";
-import { termIndexFor, pickTerms, withTerms, TERM_TYPE_NAMES, shortDefinition } from "../quiz/terms.js";
+import { termIndexFor, wordQuota, pickTerms, withTerms, TERM_TYPE_NAMES, shortDefinition } from "../quiz/terms.js";
 import { isOpen, openExtras, askToday, dontAskToday, SCALE_WORDS, SCORE_NAMES, gridScores, compareTasting, tastingText, saveTasting } from "../quiz/tasting.js";
 
 const MAX_TASTE = 4;
@@ -52,7 +52,7 @@ function start(id, ctx) {
     title = stage ? `Review: ${stage.title}` : "Review";
     plan = planLesson({ newWines: [], wines: pool, progress: p, now, length: LESSON_LENGTH });
     if (stage) allowEstimates = !tastedIn(stage.wines);
-    if (terms) plan = withTerms(plan, pickTerms(terms, p, { wines: pool, newMax: 0, now }), LESSON_LENGTH);
+    if (terms) plan = withTerms(plan, pickTerms(terms, p, { wines: pool, n: wordQuota(p).n, newMax: 0, now }), LESSON_LENGTH);
   } else {
     const lesson = stages.flatMap(s => s.lessons).find(l => l.id === id);
     if (!lesson) return null;
@@ -61,8 +61,9 @@ function start(id, ctx) {
     plan = planLesson({ newWines: lesson.wines, wines: all, progress: p, now });
     allowEstimates = !tastedIn(stage.wines);
     tasteFrom = lesson.wines;
-    // Wine words where they fit: terms the lesson's own wines use, due ones first, at most one new.
-    if (terms) plan = withTerms(plan, pickTerms(terms, p, { wines: lesson.wines, now }), LESSON_LENGTH);
+    // Wine words where they fit: terms the lesson's own wines use, due ones first. How many depends on how well
+    // this person knows wine words (wordQuota): two while finding out, none for someone who knows them.
+    if (terms) { const quota = wordQuota(p); plan = withTerms(plan, pickTerms(terms, p, { wines: lesson.wines, n: quota.n, newMax: quota.newMax, now }), LESSON_LENGTH); }
   }
   const session = new Session({ kind, lessonId: id, plan, all, progress: p, allowEstimates, kb: { regionsById: ctx.regions ? ctx.regions.byId : null, terms } });
   session.next();

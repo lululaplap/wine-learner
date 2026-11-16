@@ -2,8 +2,8 @@
 // are due. A wine answered wrong comes back later in the same lesson (as on Duolingo). A wine's box moves on its
 // first answer in the lesson; later answers are practice.
 import { questionFor } from "./questions.js";
-import { termQuestionFor } from "./terms.js";
-import { grade, isDue } from "./progress.js";
+import { termQuestionFor, logTermAnswer, FIRST_RIGHT_BOX } from "./terms.js";
+import { grade, isDue, BOXES } from "./progress.js";
 
 export const LESSON_LENGTH = 10;
 export const BEFORE_SERVICE_LENGTH = 5;
@@ -37,6 +37,7 @@ export class Session {
     this.queue = plan.slice();
     this.index = 0;
     this.extra = 0;
+    this.reasked = new Set(); // words already asked again in this lesson
     this.graded = new Map();   // wine id -> was its first answer right
     this.startBox = new Map(); // wine id -> box before this lesson
     this.lastType = null;
@@ -79,13 +80,23 @@ export class Session {
     if (!this.startBox.has(id)) this.startBox.set(id, (this.rec(id) || {}).box || 0);
     if (!this.graded.has(id)) {
       this.graded.set(id, !!correct);
-      this.setRec(id, grade(this.rec(id), !!correct, now));
+      const before = this.rec(id), rec = grade(before, !!correct, now);
+      if (id.startsWith("term:")) {
+        // A word answered right the first time it is met is already known: it skips to box 4, so one more right
+        // answer, a week on, retires it. Every first answer to a word feeds how many words later lessons ask.
+        if (!before && correct) Object.assign(rec, { box: FIRST_RIGHT_BOX, due: now + BOXES[FIRST_RIGHT_BOX].after });
+        logTermAnswer(this.progress, correct);
+      }
+      this.setRec(id, rec);
     } else if (correct) {
       // Practice: a later right answer counts towards finishing the lesson, but does not move the box.
       this.setRec(id, Object.assign({}, this.rec(id), { right: (this.rec(id).right || 0) + 1 }));
     }
-    if (!correct && this.extra < MAX_EXTRA) {
+    // A missed wine comes back later in the lesson; a missed word comes back once at most, so words never crowd out the wines.
+    const again = !correct && this.extra < MAX_EXTRA && !(id.startsWith("term:") && this.reasked.has(id));
+    if (again) {
       this.extra++;
+      if (id.startsWith("term:")) this.reasked.add(id);
       const at = Math.min(this.queue.length, this.index + 3); // a few questions later
       const { wine, term, hint } = this.queue[this.index];
       this.queue.splice(at, 0, term ? { term, hint } : { wine });

@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { toRows } from "../src/js/csv.js";
 import { buildWines } from "../src/js/data.js";
 import { buildGlossary, findTerms } from "../src/js/glossary.js";
-import { buildTermIndex, TERM_GENERATORS, termQuestionFor, pickTerms, withTerms, termStats, shortDefinition, isLearnt, TERM_LEARNT } from "../src/js/quiz/terms.js";
+import { buildTermIndex, TERM_GENERATORS, termQuestionFor, pickTerms, withTerms, termStats, shortDefinition, isLearnt, TERM_LEARNT, wordQuota, termFluency, FIRST_RIGHT_BOX } from "../src/js/quiz/terms.js";
 import { planLesson, Session, rngFrom } from "../src/js/quiz/session.js";
 import { emptyProgress, grade } from "../src/js/quiz/progress.js";
 import { fold } from "../src/js/quiz/answer.js";
@@ -137,4 +137,60 @@ test("a word answered wrong comes back later in the same lesson", () => {
   const s = new Session({ kind: "words", lessonId: "words", plan: [{ term: t }, { term: byTerm("Dosage") }, { term: byTerm("Flor") }], all: wines, progress: p, rng: rngFrom(2), kb: { terms: idx } });
   s.next(); s.answer(false);
   assert.ok(s.queue.slice(s.index).some(x => x.term && x.term.id === t.id));
+});
+
+// ---------- fewer words for those who know them ----------
+const lessonWithWords = (p, rng, lessonWines) => {
+  const q = wordQuota(p);
+  const plan = withTerms(planLesson({ newWines: lessonWines, wines, progress: p }), pickTerms(idx, p, { wines: lessonWines, n: q.n, newMax: q.newMax }), 10);
+  const s = new Session({ kind: "lesson", lessonId: "x", plan, all: wines, progress: p, rng, kb: { terms: idx } });
+  let words = 0;
+  for (let q2 = s.next(); q2; q2 = s.next()) { if (q2.termId) words++; s.answer(q2.termId ? p.knowsWords : true); }
+  return words;
+};
+const lessonsOfWines = () => { const ws = wines.filter(w => idx.termsOf(w).length); return Array.from({ length: 8 }, (_, i) => ws.slice(i * 4, i * 4 + 4)); };
+
+test("the number of word questions follows how well someone knows the words", () => {
+  const p = emptyProgress();
+  assert.equal(termFluency(p), null);
+  assert.equal(wordQuota(p).n, 2); // finding out
+  p.termLog = [true, true, true, true]; assert.equal(wordQuota(p).n, 0);
+  p.termLog = [true, true, true, false, true, true, true, true]; assert.equal(wordQuota(p).n, 1); // 7 of 8: mostly known
+  assert.equal(wordQuota(p).newMax, 0);
+  p.termLog = [true, false, true, false, true, true]; assert.equal(wordQuota(p).n, 1); // 4 of 6
+  p.termLog = [false, false, true, false]; assert.equal(wordQuota(p).n, 2);
+  p.termLog = Array(12).fill(true).concat(false); // only the last 12 count
+  assert.equal(termFluency(p), 11 / 12);
+});
+
+test("a word answered right the first time it is met skips to box 4, and one more right answer retires it", () => {
+  const t = byTerm("Biodynamic"), p = emptyProgress();
+  const s = new Session({ kind: "words", lessonId: "words", plan: [{ term: t }], all: wines, progress: p, rng: rngFrom(4), kb: { terms: idx } });
+  s.next(); s.answer(true);
+  assert.equal(p.terms[t.id].box, FIRST_RIGHT_BOX);
+  assert.deepEqual(p.termLog, [true]);
+  const later = new Session({ kind: "words", lessonId: "words", plan: [{ term: t }], all: wines, progress: p, rng: rngFrom(5), kb: { terms: idx }, now: () => p.terms[t.id].due });
+  later.next(); later.answer(true);
+  assert.ok(isLearnt(p.terms[t.id]));
+  // A word missed on first meeting starts at box 1, as before.
+  const u = byTerm("Lees"), s2 = new Session({ kind: "words", lessonId: "words", plan: [{ term: u }], all: wines, progress: p, rng: rngFrom(6), kb: { terms: idx } });
+  s2.next(); s2.answer(false);
+  assert.equal(p.terms[u.id].box, 1);
+});
+
+test("an expert sees words only while the app finds out, then lessons are all wines; a beginner keeps seeing two", () => {
+  const expert = Object.assign(emptyProgress(), { knowsWords: true }), novice = Object.assign(emptyProgress(), { knowsWords: false });
+  const ex = lessonsOfWines().map((lw, i) => lessonWithWords(expert, rngFrom(10 + i), lw));
+  const nv = lessonsOfWines().map((lw, i) => lessonWithWords(novice, rngFrom(10 + i), lw));
+  assert.ok(ex.slice(0, 2).reduce((a, b) => a + b, 0) >= 3, `expert, first lessons: ${ex}`);
+  assert.deepEqual(ex.slice(3), [0, 0, 0, 0, 0], `expert, later lessons: ${ex}`);
+  assert.ok(nv.slice(3).every(n => n >= 1), `beginner: ${nv}`);
+});
+
+test("a missed word comes back once in the lesson, not again and again", () => {
+  const t = byTerm("Lees"), p = emptyProgress();
+  const s = new Session({ kind: "words", lessonId: "words", plan: [{ term: t }, { term: byTerm("Dosage") }, { term: byTerm("Flor") }, { term: byTerm("Sekt") }], all: wines, progress: p, rng: rngFrom(2), kb: { terms: idx } });
+  let asked = 0;
+  for (let q = s.next(); q; q = s.next()) { if (q.termId === t.id) asked++; s.answer(q.termId !== t.id); }
+  assert.equal(asked, 2);
 });

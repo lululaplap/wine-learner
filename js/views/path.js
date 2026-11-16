@@ -5,7 +5,7 @@ import { store } from "../store.js";
 import { buildStages } from "../quiz/stages.js";
 import { loadProgress, saveProgress, noteListChanges, stageProgress, lessonDone, isDue } from "../quiz/progress.js";
 import { openExtras } from "../quiz/tasting.js";
-import { termIndexFor, termStats } from "../quiz/terms.js";
+import { termIndexFor, termStats, wordQuota } from "../quiz/terms.js";
 
 export const learner = () => store.get("learner", "");
 
@@ -43,7 +43,9 @@ function wordsButton(ctx, p) {
   if (!idx || !idx.terms.length) return "";
   const st = termStats(idx, p);
   const note = st.due ? `${st.due} due` : st.fresh ? `${st.learnt} of ${st.total} learnt` : "all learnt";
-  return `<a class="btn ghost" href="#/lesson/words">Wine words <span class="n">· ${note}</span></a>`;
+  // Someone who knows the words gets none in their lessons; say so, so it isn't a surprise.
+  const quiet = wordQuota(p).n === 0 ? `<span class="n"> · you know these well, so lessons skip them</span>` : "";
+  return `<a class="btn ghost" href="#/lesson/words">Wine words <span class="n">· ${note}</span>${quiet}</a>`;
 }
 
 const CROWN = learnt => `<svg class="crown${learnt ? " on" : ""}" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18l-1.6-10-4.6 4-2.8-6-2.8 6-4.6-4z"/></svg>`;

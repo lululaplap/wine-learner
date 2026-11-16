@@ -10,7 +10,9 @@ import { shuffle } from "./questions.js";
 export const TERM_TYPES = ["termDefine", "termName", "termMatch", "termWine", "termPickAll"];
 export const TERM_TYPE_NAMES = { termDefine: "What it means", termName: "Name the term", termMatch: "Match the meanings", termWine: "Which wine", termPickAll: "Find them all" };
 export const TERM_LEARNT = 5;         // box 5: learnt, no longer asked
-export const TERMS_PER_LESSON = 2;    // in a 10-question lesson
+export const TERMS_PER_LESSON = 2;    // in a 10-question lesson, at most
+export const FIRST_RIGHT_BOX = 4;     // a word answered right the first time it is met is already known: next asked in 7 days
+const LOG_SIZE = 12;                  // how many recent first answers to words judge how well someone knows them
 const WIDE = 0.4;                     // a term in more than 40% of the wines says little about any one of them
 
 const termKey = t => "term:" + t.id;
@@ -147,6 +149,27 @@ export function withTerms(plan, items, length) {
     if (it.wine && out.findIndex(x => x.wine && x.wine.id === it.wine.id) < i) out.splice(i, 1);
   }
   return out;
+}
+
+// How well someone knows wine words: the share of their recent first answers to word questions that were right.
+// Null until there are 4, so the first lessons find out.
+export function termFluency(progress) {
+  const log = (progress.termLog || []).slice(-LOG_SIZE);
+  return log.length < 4 ? null : log.filter(Boolean).length / log.length;
+}
+
+// How many word questions a lesson gets, and how many of them may be new words. The better someone knows the
+// words, the fewer: an expert learning the list's new wines soon sees none.
+export function wordQuota(progress) {
+  const f = termFluency(progress);
+  if (f == null) return { n: 2, newMax: 2, level: "finding out" }; // two new words a lesson, so it knows within two lessons
+  if (f >= 0.9) return { n: 0, newMax: 0, level: "known" };
+  if (f >= 0.75) return { n: 1, newMax: 0, level: "mostly known" };
+  if (f >= 0.5) return { n: 1, newMax: 1, level: "learning" };
+  return { n: 2, newMax: 1, level: "new" };
+}
+export function logTermAnswer(progress, correct) {
+  progress.termLog = (progress.termLog || []).concat(!!correct).slice(-LOG_SIZE);
 }
 
 export function termStats(idx, progress) {
