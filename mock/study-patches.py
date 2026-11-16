@@ -38,3 +38,6 @@ patch("js/views/path.js","<p>Lessons on this device: ${sessToday} today, ${sessW
 patch("js/views/path.js","Reset all of ${learner()}'s progress on this device?","Reset all of ${learner()}'s progress?")
 patch("js/views/path.js","<h2>Open to taste today</h2>","<h2>Opened for a tasting today</h2>")
 patch("js/views/path.js",'href="#/lesson/service">Before service: 5 on the glass list</a>','href="#/lesson/service">Before service: 5 on tonight&#39;s glass list</a>')
+# The tablet's "Who's learning?" before a lesson lists the venue's people only, as the path's does.
+patch("js/views/lesson.js", '''    <form class="nameform" id="lessonNameForm"><label for="lessonName">${team.length ? "Not listed? Your first name" : "Your first name"}</label>
+      <div class="namerow"><input id="lessonName" name="name" autocomplete="given-name" maxlength="30" required><button type="submit" class="btn">Start</button></div></form>''', "")

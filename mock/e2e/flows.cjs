@@ -44,6 +44,11 @@ const { chromium, devices } = require('playwright');
     await signin('tablet'); await go('#/learn'); out('tablet learn:', await p.locator('.namepick h1').innerText());
     await tap('[data-name="Kai"]'); out('picked:', await p.locator('.hello').innerText());
     await go('#tonight'); await go('#/learn'); out('after leaving Learn:', await p.locator('.namepick h1').count() ? 'asks again' : 'still signed in');
+    // Before service on the tablet: it asks who is learning, then the lesson starts for them
+    await go('#tonight'); await tap('#view a[href="#/lesson/service"]'); await p.waitForTimeout(120);
+    const ask = await p.locator('#view h1').first().innerText(); await tap('[data-learner-name="Jo"]'); await p.waitForTimeout(120);
+    const started = await p.locator('.lessonview').count();
+    out('tablet before service asks:', ask, '| then starts:', started > 0); if (ask !== "Who's learning?" || !started) errs.push('tablet Before service did not start');
     await go('#take-off'); out('tablet take-off asks:', await p.locator('#view h2').first().innerText());
     // floor cannot reach office screens
     await go('#tastings'); out('tablet at #tastings shows:', await p.locator('#title').innerText());

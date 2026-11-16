@@ -8,6 +8,7 @@ import { planLesson, Session, LESSON_LENGTH, BEFORE_SERVICE_LENGTH } from "../qu
 import { TYPE_NAMES, comparatorLine, shuffle } from "../quiz/questions.js";
 import { vocabulary, suggest, checkTyped } from "../quiz/answer.js";
 import { learner } from "./path.js";
+import { store } from "../store.js";
 import { termIndexFor, wordQuota, pickTerms, withTerms, TERM_TYPE_NAMES, shortDefinition } from "../quiz/terms.js";
 import { isOpen, openExtras, askToday, dontAskToday, SCALE_WORDS, SCORE_NAMES, gridScores, compareTasting, tastingText, saveTasting } from "../quiz/tasting.js";
 
@@ -189,6 +190,12 @@ export function onLessonInput(e, ctx) {
 
 // Returns true when the screen should be drawn again.
 export function onLessonSubmit(e) {
+  if (e.target.id === "lessonNameForm") {
+    e.preventDefault();
+    const v = e.target.elements.name.value.trim();
+    if (v) { store.set("learner", v.slice(0, 30)); active = null; }
+    return !!v;
+  }
   if (!active || e.target.id !== "typedForm" || active.phase !== "ask") return false;
   e.preventDefault();
   const q = active.session.current, typed = (document.getElementById("typedInput") || {}).value || "";
@@ -302,7 +309,20 @@ function endHTML(ctx) {
   </div>`;
 }
 
+// A lesson started with nobody chosen as the learner (the shared tablet, or a link opened on a new device)
+// asks who is learning, then starts, rather than failing.
+function whoHTML(id, ctx) {
+  const team = (ctx.lists && ctx.lists.Team) || [];
+  return `<div class="namepick"><h1>Who's learning?</h1>
+    <p class="intro">Pick your name and ${id === "service" ? "Before service" : "the lesson"} starts, with your own progress.</p>
+    ${team.length ? `<div class="choices names">${team.map(n => `<button type="button" class="choice" data-learner-name="${esc(n)}"><span class="c-title">${esc(n)}</span></button>`).join("")}</div>` : ""}
+    <form class="nameform" id="lessonNameForm"><label for="lessonName">${team.length ? "Not listed? Your first name" : "Your first name"}</label>
+      <div class="namerow"><input id="lessonName" name="name" autocomplete="given-name" maxlength="30" required><button type="submit" class="btn">Start</button></div></form>
+  </div>`;
+}
+
 export function renderLesson(id, ctx) {
+  if (!learner()) { active = null; return whoHTML(id, ctx); }
   // A lesson already finished and shown starts afresh when opened again.
   if (!active || active.id !== id || active.name !== learner() || (active.phase === "end" && active.endShown)) active = start(id, ctx);
   if (!active) return `<div class="errorbox"><h1>Lesson not found</h1><p><a href="#/learn">Back to the path</a></p></div>`;
@@ -328,6 +348,8 @@ function save() {
 
 // Returns true when the screen should be drawn again.
 export function onLessonClick(e, ctx) {
+  const who = e.target.closest("[data-learner-name]");
+  if (who) { store.set("learner", who.dataset.learnerName); active = null; return true; }
   if (!active) return false;
   const t = e.target, s = active.session;
   if (t.closest(".term")) return false;
