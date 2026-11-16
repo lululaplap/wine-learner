@@ -63,3 +63,14 @@ body[data-device="tablet"] .tabletonly{display:inline}
 .wpick.chosen{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-height:52px}
 .wpick.chosen .wpick-name{flex:1;min-width:0}
 .table .wpick{min-width:250px}
+/* the maps inside the app frame: controls on one scrolling row on small screens, and on phones the map gets
+   most of the screen with its panel below, instead of squeezing all three into the space under the header */
+@media (max-width:899px){.mapbar .row{flex-wrap:nowrap}}
+@media (max-width:860px){
+  body.fullmap .topbar{display:none}
+  body.fullmap .mapview{height:auto}
+  body.fullmap .mapbody{display:block}
+  body.fullmap .stage{height:60dvh;min-height:300px}
+  body.fullmap .mappanel{max-height:none}
+}
+@media (max-width:860px){.legendnote{flex-wrap:wrap;gap:2px 10px;right:12px;font-size:14px}.legendnote span{white-space:nowrap}}

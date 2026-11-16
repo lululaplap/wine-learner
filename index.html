@@ -282,7 +282,8 @@ body.fullmap main{max-width:none;padding:0}
 .unithead .bar span{background:var(--on-accent)}
 .duebtn{grid-column:1 / -1;justify-self:start;color:var(--on-accent);border-color:color-mix(in srgb,var(--on-accent) 60%,transparent)}
 .nodes{list-style:none;margin:44px 0 0;padding:0;display:flex;flex-direction:column;align-items:center;gap:22px}
-.node{position:relative;display:flex;flex-direction:column;align-items:center;transform:translateX(calc(var(--off) * var(--wind)));max-width:min(260px,70vw)}
+/* .nodes > .node, not .node: the maps draw each wine as an svg <g class="node"> placed by its transform attribute, which a CSS transform would override */
+.nodes > .node{position:relative;display:flex;flex-direction:column;align-items:center;transform:translateX(calc(var(--off) * var(--wind)));max-width:min(260px,70vw)}
 .nodebtn{display:grid;place-items:center;width:76px;height:76px;border-radius:50%;background:var(--surface);border:3px solid var(--line);
   color:var(--ink-2);font-size:24px;font-weight:700;text-decoration:none;box-shadow:0 5px 0 var(--line)}
 .node.next .nodebtn{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:0 5px 0 color-mix(in srgb,var(--accent) 60%,#000);outline:4px solid color-mix(in srgb,var(--accent) 30%,transparent);outline-offset:4px}
