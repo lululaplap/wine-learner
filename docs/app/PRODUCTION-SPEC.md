@@ -135,6 +135,12 @@ JSON over HTTPS. Reads return an `ETag`. Writes that may be retried carry a `cli
   - Movements are append-only, so they never conflict.
   - Progress merges per wine by the latest answer.
   - Wine edits are online-only, because only the wine lead makes them and a 409 is clearer than a silent merge.
+- **Choosing a wine is always a search.** No dropdown lists every wine: with about 140 wines and more vintages, a long list is slow to scroll and easy to mis-tap. Every place a wine is chosen uses one component, `winePicker`, which `mock/app.js` already has. That covers editing a wine, a pairing's course, linking a Lightspeed item, adding a wine to a delivery and taking off stock.
+  - Type any part of the producer, wine, grape, region or vintage. Capitals and accents don't matter, and every word typed must match. Up to 8 results show, each with its vintage, section and stock.
+  - Before typing it offers suggestions where there is a sensible set. A pairing course suggests that wine's comparisons, a delivery suggests what is running low from that supplier, and a Lightspeed item is searched by its own name.
+  - Enter takes the first match, the arrow keys move through the results, and Escape keeps the wine already chosen.
+  - No match says so, and offers *Add a wine* where that is the likely next step.
+  - Dropdowns stay only for short fixed lists: glass sizes, sections, suppliers, pour sizes.
 - **Theme and layout.** As in the mock: Service is dark, Learn and Office follow the device. Phones get the bottom bar and the tablet and laptop the sidebar. The public menu keeps its own colours.
 - **Accessibility.** Keep the study tool's bar: text contrast of at least 6.7:1 in both themes, 44px targets, everything reachable by keyboard, and no information carried by colour alone.
 

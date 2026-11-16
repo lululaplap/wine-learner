@@ -610,6 +610,17 @@ body[data-device="tablet"] .tabletonly{display:inline}
   body.inlesson .topbar,body.inlesson .mobilenav{display:none}
 }
 .switch{display:inline-block;vertical-align:middle}
+/* the wine picker */
+.wpick{max-width:460px;min-width:min(100%,240px)}
+.wpick-list{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.wpick-list button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;min-height:52px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.wpick-list button:hover,.wpick-list button:focus-visible{border-color:var(--accent)}
+.wpick-list .wsub,.wpick.chosen .wsub{display:block}
+.wpick-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-top:2px}
+.wpick-none{color:var(--ink-2);font-size:14px;padding:6px 2px}
+.wpick.chosen{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-height:52px}
+.wpick.chosen .wpick-name{flex:1;min-width:0}
+.table .wpick{min-width:250px}
 
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -1295,6 +1306,62 @@ RENDER.me = () => {
 };
 RENDER.today = () => officeToday();
 
+// ---------- the wine picker: search, never a dropdown of every wine ----------
+// Wherever someone chooses a wine, they type any part of the producer, wine, grape, region or vintage.
+// Capitals and accents don't matter, every word typed must match, and up to 8 results show with their stock.
+// Before anything is typed, a picker can offer a few suggestions (a wine's comparisons, tonight's glass list).
+const wpFold = s => String(s == null ? "" : s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+function findWines(q, n = 8) {
+  const words = wpFold(q).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const starts = w => (wpFold(w.s).startsWith(words[0]) || wpFold(w.p).startsWith(words[0]) ? 0 : 1);
+  return WINES.concat(state.added)
+    .filter(w => { const hay = wpFold([w.p, w.c, w.s, w.v, w.gr, w.rg, w.co, w.sec].join(" ")); return words.every(t => hay.includes(t)); })
+    .sort((a, b) => starts(a) - starts(b) || a.s.localeCompare(b.s)).slice(0, n);
+}
+const picks = {}; // picker id -> { q, open, onPick, suggest, none }
+function winePicker(id, { value = null, onPick, label = "Wine", suggest = [], q = "", disabled = false, none = "", keepOpen = false } = {}) {
+  const p = picks[id] = picks[id] || { q, open: !value };
+  Object.assign(p, { onPick, suggest, none, keepOpen });
+  const w = value && (byId.get(value) || state.added.find(x => x.id === value));
+  if (w && !p.open) return `<div class="wpick chosen">${glyph(w.t)}<span class="wpick-name"><b>${esc(w.s)}</b> <span class="muted num">${esc(w.v)}</span><span class="wsub">${esc(w.p)} · ${esc(w.sec)}</span></span>
+    ${disabled ? "" : `<button type="button" class="btn ghost" data-wpick-change="${id}" aria-label="Change ${esc(label)}">Change</button>`}</div>`;
+  return `<div class="wpick"><input class="input" type="search" data-wpick-q="${id}" value="${esc(p.q)}" placeholder="Search: producer, wine, grape or region" aria-label="${esc(label)}: type to search" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="wpl-${id}" aria-expanded="true">
+    <ul class="wpick-list" id="wpl-${id}" role="listbox" aria-label="Matching wines">${wpickItems(id)}</ul></div>`;
+}
+function wpickItems(id) {
+  const p = picks[id], typed = p.q.trim();
+  const hits = typed ? findWines(p.q) : p.suggest.map(x => byId.get(x) || state.added.find(a => a.id === x)).filter(Boolean).slice(0, 6);
+  if (!hits.length) return typed ? `<li class="wpick-none">No wine matches “${esc(typed)}”.${p.none ? " " + p.none : ""}</li>` : "";
+  return (typed ? "" : '<li class="wpick-head">Suggested</li>') + hits.map(w => `<li role="option" aria-selected="false"><button type="button" data-wpick-opt="${id}" data-id="${w.id}">${glyph(w.t)}<span><b>${esc(w.s)}</b> <span class="muted num">${esc(w.v)}</span><span class="wsub">${esc(w.p)} · ${esc(w.sec)} · ${stockText(w.id)}</span></span></button></li>`).join("");
+}
+function choosePick(id, wineId) {
+  const p = picks[id];
+  p.q = ""; p.open = !!p.keepOpen;
+  if (p.onPick) p.onPick(wineId);
+  if (p.keepOpen) { const n = view.querySelector(`[data-wpick-q="${id}"]`); if (n) n.focus(); }
+}
+document.addEventListener("input", e => {
+  const inp = e.target.closest("[data-wpick-q]"); if (!inp) return;
+  const id = inp.dataset.wpickQ; picks[id].q = inp.value;
+  document.getElementById("wpl-" + id).innerHTML = wpickItems(id);
+});
+document.addEventListener("click", e => {
+  const opt = e.target.closest("[data-wpick-opt]"); if (opt) { choosePick(opt.dataset.wpickOpt, opt.dataset.id); return; }
+  const ch = e.target.closest("[data-wpick-change]");
+  if (ch) { const id = ch.dataset.wpickChange; picks[id].open = true; picks[id].reopened = true; render(); const n = view.querySelector(`[data-wpick-q="${id}"]`); if (n) n.focus(); }
+});
+// Keys: Enter takes the first match; the arrows move through the matches; Escape keeps the wine already chosen.
+document.addEventListener("keydown", e => {
+  const inp = e.target.closest("[data-wpick-q]"), opt = e.target.closest("[data-wpick-opt]");
+  const id = inp ? inp.dataset.wpickQ : opt ? opt.dataset.wpickOpt : null; if (!id) return;
+  const opts = [...document.querySelectorAll(`#wpl-${id} [data-wpick-opt]`)], i = opts.indexOf(e.target);
+  if (e.key === "Enter" && inp) { e.preventDefault(); if (opts[0]) opts[0].click(); }
+  else if (e.key === "ArrowDown") { e.preventDefault(); (opts[i + 1] || opts[0] || {}).focus?.(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); if (i > 0) opts[i - 1].focus(); else if (inp || i === 0) view.querySelector(`[data-wpick-q="${id}"]`).focus(); }
+  else if (e.key === "Escape" && picks[id].reopened) { picks[id].open = false; picks[id].reopened = false; picks[id].q = ""; render(); }
+});
+
 function officeToday() {
   const low = WINES.filter(w => status(w.id) === "low").sort((a, b) => (daysLeft(a.id) ?? 99) - (daysLeft(b.id) ?? 99));
   const out = WINES.filter(w => status(w.id) === "out");
@@ -1389,10 +1456,10 @@ RENDER["take-off"] = () => {
       <div class="bigchoices">${PEOPLE.map(p => `<button type="button" class="bigchoice" data-who="${p}"><span class="t">${p}</span><span class="s">Floor</span></button>`).join("")}</div>`;
   } else if (tk.step === 1) {
     const glass = WINES.filter(w => w.gl != null).slice(0, 8);
-    const hits = tk.q ? WINES.filter(w => `${w.p} ${w.c} ${w.s}`.toLowerCase().includes(tk.q.toLowerCase())).slice(0, 8) : [];
+    const hits = tk.q ? findWines(tk.q, 8) : [];
     const card = w => `<button type="button" class="bigchoice" data-pick="${w.id}"><span class="row" style="gap:6px">${glyph(w.t)}<span class="t">${esc(w.s)}</span></span><span class="s num">${esc(w.v)} · ${stockText(w.id)}</span></button>`;
     body = `<h2 style="font-size:22px;margin-bottom:10px">Which wine?</h2>
-      <input class="input" id="tkSearch" placeholder="Search, or scan the label" value="${esc(tk.q)}" style="max-width:420px;min-height:52px;font-size:18px" aria-label="Search wines">
+      <input class="input" id="tkSearch" placeholder="Search: producer, wine, grape or region" value="${esc(tk.q)}" style="max-width:420px;min-height:52px;font-size:18px" aria-label="Search wines">
       ${tk.q ? `<h3 class="lab" style="margin:14px 0 8px">Matches</h3><div class="bigchoices">${hits.map(card).join("") || '<p class="muted">No wine matches.</p>'}</div>` : `
       <h3 class="lab" style="margin:14px 0 8px">By the glass tonight</h3><div class="bigchoices">${glass.map(card).join("")}</div>`}`;
   } else if (tk.step === 2) {
@@ -1446,7 +1513,7 @@ function editorHTML() {
   const scoreRow = n => `<div class="field"><span class="lab">${n}</span><div class="scorechips" role="group" aria-label="${n}">${SCALE[n].map((s, i) => `<button type="button" data-score="${n}" data-v="${i + 1}" aria-pressed="${ed.scores[n] === i + 1}">${i + 1}<br>${s}</button>`).join("")}</div></div>`;
   return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));align-items:start">
   <div class="parts" style="grid-column:span 2;min-width:0">
-    ${ed.mode === "edit" ? `<div class="panel"><div class="row"><label class="lab" for="pickWine">Wine</label><select class="input" id="pickWine" style="max-width:420px">${WINES.map(x => `<option value="${x.id}"${w && w.id === x.id ? " selected" : ""}>${esc(x.s)} · ${esc(x.p)}</option>`).join("")}</select></div>
+    ${ed.mode === "edit" ? `<div class="panel"><span class="lab">Wine</span>${winePicker("editwine", { value: w.id, label: "Wine to edit", onPick: id => { loadForEdit(id); render(); } })}
       <div class="row" style="margin-top:10px"><span class="lab">Vintages</span><span class="badge ok num">${val("v")} · on sale · ${stockText(w.id)}</span><button type="button" class="btn ghost" data-addvintage>Add vintage</button></div>
       <p class="hint">A new vintage copies the notes and price, starts its own stock, and the old one stays on sale until it runs out.</p></div>` : ""}
     <section class="panel"><h2><span class="partno">1</span>On the list</h2><div class="formgrid">
@@ -1559,15 +1626,14 @@ AFTER["add-wine"] = bindEditor; AFTER["edit-wine"] = bindEditor;
 const dl = { supplier: "Les Caves", lines: [{ id: "mas-du-libian-bout-dzan", qty: 12, cost: 21 }, { id: "matthieu-cosse-fronsac", qty: 6, cost: 31 }], q: "" };
 RENDER.delivery = () => {
   const total = dl.lines.reduce((a, l) => a + l.qty * l.cost, 0);
-  const hits = dl.q ? WINES.filter(w => `${w.p} ${w.c} ${w.s}`.toLowerCase().includes(dl.q.toLowerCase())).slice(0, 6) : [];
   return `<div class="grid cols-2" style="align-items:start"><div class="panel">
     <div class="formgrid"><div class="field"><label for="dSupplier">Supplier</label><select class="input" id="dSupplier">${SUPPLIERS.map(s => `<option${s.name === dl.supplier ? " selected" : ""}>${s.name}</option>`).join("")}</select></div>
       <div class="field"><label for="dDate">Date</label><input class="input" id="dDate" type="date" value="2026-11-16"></div></div>
     <div class="scroll" style="margin-top:12px"><table class="table"><thead><tr><th>Wine</th><th class="r">Bottles</th><th class="r">Cost each</th><th class="r">Line</th><th></th></tr></thead><tbody>
       ${dl.lines.map((l, i) => { const w = byId.get(l.id); return `<tr><td>${wineRowCells(w)}</td><td class="r"><input class="input num" style="width:76px;text-align:right" data-dqty="${i}" inputmode="numeric" value="${l.qty}" aria-label="Bottles of ${esc(w.s)}"></td><td class="r"><input class="input num" style="width:86px;text-align:right" data-dcost="${i}" inputmode="decimal" value="${l.cost}" aria-label="Cost of ${esc(w.s)}"></td><td class="r num">${money(l.qty * l.cost)}</td><td><button type="button" class="btn ghost" data-drm="${i}" aria-label="Remove ${esc(w.s)}">×</button></td></tr>`; }).join("")}
     </tbody></table></div>
-    <div class="field typeahead" style="margin-top:12px;max-width:420px"><label for="dAdd">Add a wine</label><input class="input" id="dAdd" placeholder="Search, or scan the barcode" value="${esc(dl.q)}" autocomplete="off">
-      ${hits.length ? `<ul>${hits.map(w => `<li><button type="button" data-dpick="${w.id}">${esc(w.s)} · ${esc(w.p)}</button></li>`).join("")}</ul>` : ""}
+    <div class="field" style="margin-top:12px;max-width:460px"><span class="lab">Add a wine</span>${winePicker("dadd", { label: "Wine to add to the delivery", keepOpen: true, suggest: WINES.filter(w => w.supplier === dl.supplier && status(w.id) !== "ok" && !dl.lines.some(l => l.id === w.id)).map(w => w.id),
+        onPick: id => { dl.lines.push({ id, qty: 6, cost: (byId.get(id) || {}).cost || 0 }); render(); } })}
       <span class="hint">Not on the list yet? It is added as a draft for you to finish in <a href="#add-wine">Add a wine</a>.</span></div>
   </div>
   <aside class="panel sticky"><h2>Delivery from ${esc(dl.supplier)}</h2><p class="num" style="font-size:20px"><b>${dl.lines.reduce((a, l) => a + l.qty, 0)} bottles · ${money(total)}</b></p>
@@ -1576,8 +1642,6 @@ RENDER.delivery = () => {
   ${questions(["How do deliveries arrive: an invoice to type from, or a list from the supplier you could import?", "Do you want cost price per delivery (it changes), or one cost per wine?"])}`;
 };
 AFTER.delivery = () => {
-  const a = document.getElementById("dAdd");
-  a.addEventListener("input", () => { dl.q = a.value; const p = a.selectionStart; render(); const n = document.getElementById("dAdd"); n.focus(); n.setSelectionRange(p, p); });
   document.getElementById("dSupplier").onchange = e => { dl.supplier = e.target.value; render(); };
   view.querySelectorAll("[data-dqty]").forEach(el => el.onchange = () => { dl.lines[+el.dataset.dqty].qty = Math.max(0, parseInt(el.value) || 0); render(); });
   view.querySelectorAll("[data-dcost]").forEach(el => el.onchange = () => { dl.lines[+el.dataset.dcost].cost = Math.max(0, parseFloat(el.value) || 0); render(); });
@@ -1619,7 +1683,7 @@ RENDER.pairings = () => {
     <h3>Pairing bottles taken off this week</h3><ul class="ledger">${state.moves.filter(m => m.kind === "pairing").slice(0, 6).map(ledgerItem).join("") || '<li class="muted">None yet</li>'}</ul></div>`
   : `<div class="grid cols-2" style="align-items:start"><div class="panel"><h2>7-course pairing</h2><p class="muted small">Lightspeed item: <b>7 Course Pairing</b> · ${total} ml a cover · from 10 Nov</p>
     <div class="scroll"><table class="table"><thead><tr><th>Course</th><th>Wine</th><th class="r">Pour</th></tr></thead><tbody>
-    ${pr.courses.map((c, i) => `<tr><td class="wname">${esc(c.course)}</td><td><select class="input" data-pwine="${i}" aria-label="Wine for ${esc(c.course)}" ${canEdit() ? "" : "disabled"}>${WINES.map(w => `<option value="${w.id}"${w.id === c.id ? " selected" : ""}>${esc(w.s)} ${esc(w.v)}</option>`).join("")}</select></td><td class="r"><select class="input num" data-pml="${i}" style="width:96px" aria-label="Pour for ${esc(c.course)}" ${canEdit() ? "" : "disabled"}>${[50, 75, 100, 125].map(n => `<option${n === c.ml ? " selected" : ""}>${n}</option>`).join("")}</select></td></tr>`).join("")}
+    ${pr.courses.map((c, i) => `<tr><td class="wname">${esc(c.course)}</td><td>${winePicker("pc" + i, { value: c.id, label: "Wine for " + c.course, disabled: !canEdit(), suggest: sw(c.id) ? sw(c.id).compare : [], onPick: id => { pr.courses[i].id = id; toast("Tonight's pairing updated"); render(); } })}</td><td class="r"><select class="input num" data-pml="${i}" style="width:96px" aria-label="Pour for ${esc(c.course)}" ${canEdit() ? "" : "disabled"}>${[50, 75, 100, 125].map(n => `<option${n === c.ml ? " selected" : ""}>${n}</option>`).join("")}</select></td></tr>`).join("")}
     </tbody></table></div><p class="hint">Changing tonight's wine for one course is one change here; each Lightspeed sale of the pairing takes every course's pour, times the covers, off that wine's open bottle.</p></div>
     <aside class="panel"><h2>End of night check</h2><p class="muted small">${pr.covers} covers tonight. Expected left in each open bottle, against a quick look.</p>
       ${pr.courses.map((c, i) => { const used = c.ml * pr.covers, exp = Math.max(0, (Math.ceil(used / BOTTLE) * BOTTLE) - used), act = pr.actual[i] ?? exp;
@@ -1628,13 +1692,13 @@ RENDER.pairings = () => {
   ${questions(["Do the pairings change nightly or by menu? Would you set them up before each service?", "Is the pairing sold as one item in Lightspeed, per cover?", "Would an end-of-night check like this be realistic, or one step too many?"])}`;
 };
 AFTER.pairings = () => {
-  view.querySelectorAll("[data-pwine]").forEach(el => el.onchange = () => { pr.courses[+el.dataset.pwine].id = el.value; toast("Tonight's pairing updated"); render(); });
   view.querySelectorAll("[data-pml]").forEach(el => el.onchange = () => { pr.courses[+el.dataset.pml].ml = +el.value; render(); });
   view.querySelectorAll("[data-pact]").forEach(el => el.oninput = () => { pr.actual[+el.dataset.pact] = +el.value; const hint = el.nextElementSibling; const i = +el.dataset.pact, c = pr.courses[i], used = c.ml * pr.covers, exp = Math.max(0, (Math.ceil(used / BOTTLE) * BOTTLE) - used); hint.innerHTML = `Looks like ${el.value} ml${Math.abs(el.value - exp) > 125 ? ' · <b style="color:var(--warn)">more than a glass out: add a reason</b>' : ""}`; });
 };
 
 // ---------- Lightspeed ----------
-const lsState = { unlinked: ["Nowack S.A. Btl", "Du Grappin Macon-Villages Gls", "Roc des Anges Alquimia Gls"], linking: null };
+const lsState = { unlinked: ["Nowack S.A. Btl", "Du Grappin Macon-Villages Gls", "Roc des Anges Alquimia Gls", "Fronsac Mag Btl"], linking: null, choice: {} };
+const lsQuery = item => item.replace(/\b(btl|gls|mag|\d+ ?ml)\b/gi, "").replace(/\s+/g, " ").trim();
 RENDER.lightspeed = () => `<div class="grid cols-3">
   <div class="panel kpi"><span class="muted">Connection</span><b style="font-size:20px"><span class="statusdot"></span>Connected</b><span class="small muted">Restaurant K-Series · last sale 18:24</span></div>
   <div class="panel kpi"><span class="muted">Wines linked</span><b class="num">${WINES.length} of ${WINES.length + lsState.unlinked.length}</b><span class="small muted">${WINES.reduce((a, w) => a + w.ls.length, 0)} Lightspeed items</span></div>
@@ -1642,7 +1706,7 @@ RENDER.lightspeed = () => `<div class="grid cols-3">
   <div class="grid cols-2" style="margin-top:16px;align-items:start">
   <div class="panel"><h2>Sold, but not linked</h2><p class="muted small">These Lightspeed items sold but aren't linked to a wine, so their sales haven't come off stock. Linking one applies its past sales.</p>
     ${lsState.unlinked.map((x, i) => `<div class="countrow"><div><div class="wname">${esc(x)}</div><div class="wsub num">${3 + i * 2} sold since 10 Nov</div></div>
-      ${lsState.linking === i ? `<div class="row"><select class="input" id="lsPick" style="max-width:220px" aria-label="Wine to link">${WINES.map(w => `<option value="${w.id}">${esc(w.s)} ${esc(w.v)}</option>`).join("")}</select><select class="input" id="lsAmt" style="width:auto" aria-label="Amount"><option>a bottle (750 ml)</option><option>a glass (125 ml)</option><option>a glass (75 ml)</option></select><button type="button" class="btn" data-lsdo="${i}">Link</button></div>`
+      ${lsState.linking === i ? `<div class="lslink">${winePicker("ls" + i, { value: lsState.choice[i], q: lsQuery(x), label: "Wine for " + x, none: 'If it is new, <a href="#add-wine">add the wine</a> and link it there.', onPick: id => { lsState.choice[i] = id; render(); } })}<div class="row"><select class="input" id="lsAmt" style="width:auto" aria-label="Amount"><option>a bottle (750 ml)</option><option>a glass (125 ml)</option><option>a glass (75 ml)</option></select><button type="button" class="btn" data-lsdo="${i}" ${lsState.choice[i] ? "" : "disabled"}>Link</button></div></div>`
       : `<button type="button" class="btn ghost" data-lslink="${i}">Link…</button>`}</div>`).join("") || '<p class="ok" style="color:var(--ok);font-weight:600">Everything that sold is linked.</p>'}
   </div>
   <div class="panel"><h2>Last night's check</h2><ul class="ledger">
@@ -1788,7 +1852,7 @@ document.addEventListener("click", e => {
   if (t.closest("[data-pcheck]")) { toast("Check saved. Differences over a glass would ask for a reason."); return; }
   // lightspeed
   const ll = t.closest("[data-lslink]"); if (ll) { lsState.linking = +ll.dataset.lslink; render(); return; }
-  const ld = t.closest("[data-lsdo]"); if (ld) { const i = +ld.dataset.lsdo, item = lsState.unlinked[i], w = byId.get(document.getElementById("lsPick").value); w.ls.push(item); lsState.unlinked.splice(i, 1); lsState.linking = null; toast(`Linked to ${esc(w.s)}: ${3 + i * 2} past sales applied`); render(); return; }
+  const ld = t.closest("[data-lsdo]"); if (ld) { const i = +ld.dataset.lsdo, item = lsState.unlinked[i], w = byId.get(lsState.choice[i]); delete lsState.choice[i]; delete picks["ls" + i]; w.ls.push(item); lsState.unlinked.splice(i, 1); lsState.linking = null; toast(`Linked to ${esc(w.s)}: ${3 + i * 2} past sales applied`); render(); return; }
   // menus
   const pf = t.closest("[data-prof]"); if (pf) { menuSel = pf.dataset.prof; render(); return; }
   if (t.closest("[data-invite]") || t.closest("[data-recon]")) { toast("Not part of this mock"); return; }

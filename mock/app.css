@@ -52,3 +52,14 @@ body[data-device="tablet"] .tabletonly{display:inline}
   body.inlesson .topbar,body.inlesson .mobilenav{display:none}
 }
 .switch{display:inline-block;vertical-align:middle}
+/* the wine picker */
+.wpick{max-width:460px;min-width:min(100%,240px)}
+.wpick-list{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.wpick-list button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;min-height:52px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.wpick-list button:hover,.wpick-list button:focus-visible{border-color:var(--accent)}
+.wpick-list .wsub,.wpick.chosen .wsub{display:block}
+.wpick-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-top:2px}
+.wpick-none{color:var(--ink-2);font-size:14px;padding:6px 2px}
+.wpick.chosen{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-height:52px}
+.wpick.chosen .wpick-name{flex:1;min-width:0}
+.table .wpick{min-width:250px}

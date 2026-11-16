@@ -358,3 +358,59 @@ RENDER.me = () => {
   </div>`;
 };
 RENDER.today = () => officeToday();
+
+// ---------- the wine picker: search, never a dropdown of every wine ----------
+// Wherever someone chooses a wine, they type any part of the producer, wine, grape, region or vintage.
+// Capitals and accents don't matter, every word typed must match, and up to 8 results show with their stock.
+// Before anything is typed, a picker can offer a few suggestions (a wine's comparisons, tonight's glass list).
+const wpFold = s => String(s == null ? "" : s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+function findWines(q, n = 8) {
+  const words = wpFold(q).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const starts = w => (wpFold(w.s).startsWith(words[0]) || wpFold(w.p).startsWith(words[0]) ? 0 : 1);
+  return WINES.concat(state.added)
+    .filter(w => { const hay = wpFold([w.p, w.c, w.s, w.v, w.gr, w.rg, w.co, w.sec].join(" ")); return words.every(t => hay.includes(t)); })
+    .sort((a, b) => starts(a) - starts(b) || a.s.localeCompare(b.s)).slice(0, n);
+}
+const picks = {}; // picker id -> { q, open, onPick, suggest, none }
+function winePicker(id, { value = null, onPick, label = "Wine", suggest = [], q = "", disabled = false, none = "", keepOpen = false } = {}) {
+  const p = picks[id] = picks[id] || { q, open: !value };
+  Object.assign(p, { onPick, suggest, none, keepOpen });
+  const w = value && (byId.get(value) || state.added.find(x => x.id === value));
+  if (w && !p.open) return `<div class="wpick chosen">${glyph(w.t)}<span class="wpick-name"><b>${esc(w.s)}</b> <span class="muted num">${esc(w.v)}</span><span class="wsub">${esc(w.p)} · ${esc(w.sec)}</span></span>
+    ${disabled ? "" : `<button type="button" class="btn ghost" data-wpick-change="${id}" aria-label="Change ${esc(label)}">Change</button>`}</div>`;
+  return `<div class="wpick"><input class="input" type="search" data-wpick-q="${id}" value="${esc(p.q)}" placeholder="Search: producer, wine, grape or region" aria-label="${esc(label)}: type to search" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="wpl-${id}" aria-expanded="true">
+    <ul class="wpick-list" id="wpl-${id}" role="listbox" aria-label="Matching wines">${wpickItems(id)}</ul></div>`;
+}
+function wpickItems(id) {
+  const p = picks[id], typed = p.q.trim();
+  const hits = typed ? findWines(p.q) : p.suggest.map(x => byId.get(x) || state.added.find(a => a.id === x)).filter(Boolean).slice(0, 6);
+  if (!hits.length) return typed ? `<li class="wpick-none">No wine matches “${esc(typed)}”.${p.none ? " " + p.none : ""}</li>` : "";
+  return (typed ? "" : '<li class="wpick-head">Suggested</li>') + hits.map(w => `<li role="option" aria-selected="false"><button type="button" data-wpick-opt="${id}" data-id="${w.id}">${glyph(w.t)}<span><b>${esc(w.s)}</b> <span class="muted num">${esc(w.v)}</span><span class="wsub">${esc(w.p)} · ${esc(w.sec)} · ${stockText(w.id)}</span></span></button></li>`).join("");
+}
+function choosePick(id, wineId) {
+  const p = picks[id];
+  p.q = ""; p.open = !!p.keepOpen;
+  if (p.onPick) p.onPick(wineId);
+  if (p.keepOpen) { const n = view.querySelector(`[data-wpick-q="${id}"]`); if (n) n.focus(); }
+}
+document.addEventListener("input", e => {
+  const inp = e.target.closest("[data-wpick-q]"); if (!inp) return;
+  const id = inp.dataset.wpickQ; picks[id].q = inp.value;
+  document.getElementById("wpl-" + id).innerHTML = wpickItems(id);
+});
+document.addEventListener("click", e => {
+  const opt = e.target.closest("[data-wpick-opt]"); if (opt) { choosePick(opt.dataset.wpickOpt, opt.dataset.id); return; }
+  const ch = e.target.closest("[data-wpick-change]");
+  if (ch) { const id = ch.dataset.wpickChange; picks[id].open = true; picks[id].reopened = true; render(); const n = view.querySelector(`[data-wpick-q="${id}"]`); if (n) n.focus(); }
+});
+// Keys: Enter takes the first match; the arrows move through the matches; Escape keeps the wine already chosen.
+document.addEventListener("keydown", e => {
+  const inp = e.target.closest("[data-wpick-q]"), opt = e.target.closest("[data-wpick-opt]");
+  const id = inp ? inp.dataset.wpickQ : opt ? opt.dataset.wpickOpt : null; if (!id) return;
+  const opts = [...document.querySelectorAll(`#wpl-${id} [data-wpick-opt]`)], i = opts.indexOf(e.target);
+  if (e.key === "Enter" && inp) { e.preventDefault(); if (opts[0]) opts[0].click(); }
+  else if (e.key === "ArrowDown") { e.preventDefault(); (opts[i + 1] || opts[0] || {}).focus?.(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); if (i > 0) opts[i - 1].focus(); else if (inp || i === 0) view.querySelector(`[data-wpick-q="${id}"]`).focus(); }
+  else if (e.key === "Escape" && picks[id].reopened) { picks[id].open = false; picks[id].reopened = false; picks[id].q = ""; render(); }
+});
