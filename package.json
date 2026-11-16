@@ -2,5 +2,12 @@
   "name": "wine-learner",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test" }
+  "scripts": {
+    "test": "node --test",
+    "mock": "python3 mock/build.py",
+    "test:mock": "node mock/e2e/smoke.cjs && node mock/e2e/flows.cjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0"
+  }
 }

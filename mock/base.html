@@ -1,0 +1,881 @@
+<title>Apricity Wine Office</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: a back-office app. Sidebar of screens on wide screens, a scrolling tab row on phones; each screen is a working mock with example data. */
+:root{
+  --bg:#f6f4ef; --surface:#fffefb; --ink:#191d1a; --ink-2:#353b37; --ink-3:#474e49; --line:#cfd3cc; --soft:#ecebe5;
+  --accent:#6b1d3c; --on-accent:#ffffff; --warn:#7a3b00; --warn-bg:#fbeedd; --ok:#1d5a33; --ok-bg:#e2f3df; --no:#8e1d1d; --no-bg:#fbe5e3; --term:#0645ad;
+  --t-sparkling:#2a6fc4; --t-white:#d99400; --t-red:#d23c3b; --t-sweet:#15936a;
+  --font:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121513; --surface:#1a1e1b; --ink:#eef0ec; --ink-2:#cdd3ce; --ink-3:#b4bcb6; --line:#363f39; --soft:#232824;
+  --accent:#f2b3cc; --on-accent:#2a0d19; --warn:#ffc58a; --warn-bg:#3a2a14; --ok:#9be0b3; --ok-bg:#132b1b; --no:#ffb3ad; --no-bg:#361616; --term:#9ec5ff;
+  --t-sparkling:#4a93ea; --t-white:#d79a1c; --t-red:#ea5a59; --t-sweet:#28b585; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121513; --surface:#1a1e1b; --ink:#eef0ec; --ink-2:#cdd3ce; --ink-3:#b4bcb6; --line:#363f39; --soft:#232824;
+  --accent:#f2b3cc; --on-accent:#2a0d19; --warn:#ffc58a; --warn-bg:#3a2a14; --ok:#9be0b3; --ok-bg:#132b1b; --no:#ffb3ad; --no-bg:#361616; --term:#9ec5ff;
+  --t-sparkling:#4a93ea; --t-white:#d79a1c; --t-red:#ea5a59; --t-sweet:#28b585; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.45;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{line-height:1.2;margin:0;text-wrap:balance}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- frame ---------- */
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:16px 12px;position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.brand{font-weight:700;font-size:19px;padding:0 8px}
+.brand small{display:block;font-weight:500;font-size:13px;color:var(--ink-3)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 10px;border-radius:10px;color:var(--ink-2);text-decoration:none;font-weight:600}
+.nav a[aria-current="page"]{background:var(--soft);color:var(--ink);box-shadow:inset 3px 0 0 var(--accent)}
+.nav a .count{margin-left:auto;font-size:13px;background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:0 7px}
+.nav .grp{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);padding:10px 10px 2px}
+.main:focus{outline:none}
+.main{min-width:0;padding-block:18px 60px;padding-left:max(24px, env(safe-area-inset-left, 0px));padding-right:max(24px, env(safe-area-inset-right, 0px))}
+.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:18px}
+.topbar h1{font-size:26px;margin-right:auto}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:20px;padding:2px;background:var(--surface)}
+.seg button{border:0;background:transparent;border-radius:18px;min-height:38px;padding:0 12px;font-weight:600;color:var(--ink-2);font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.example{font-size:13px;font-weight:600;color:var(--warn);background:var(--warn-bg);border-radius:10px;padding:3px 10px}
+.mobilenav{display:none}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{display:none}
+  .mobilenav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 14px;padding:0 max(16px, env(safe-area-inset-left, 0px))}
+  .mobilenav::-webkit-scrollbar{display:none}
+  .mobilenav a{flex:none;min-height:42px;display:flex;align-items:center;padding:0 12px;border-radius:21px;border:1px solid var(--line);background:var(--surface);text-decoration:none;color:var(--ink-2);font-weight:600;font-size:15px}
+  .mobilenav a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+  .main{padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+  .mbrand{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .mbrand b{font-size:18px}
+  .topbar .example{display:none}
+}
+@media (min-width:861px){.mbrand{display:none}}
+
+/* ---------- signing in ---------- */
+.account{position:relative;display:flex;align-items:center;gap:10px}
+.who{display:flex;flex-direction:column;line-height:1.2;text-align:right}
+.who small{color:var(--ink-3);font-size:13px}
+.who b{font-size:15px}
+.picker{position:absolute;right:0;top:calc(100% + 8px);z-index:60;width:min(320px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.2);padding:10px;display:flex;flex-direction:column;gap:6px}
+.picker p{margin:2px 6px 6px;font-size:14px;color:var(--ink-3)}
+.picker button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;min-height:56px}
+.picker button b{font-size:16px}
+.picker button span{font-size:13px;color:var(--ink-3)}
+.picker button:hover{border-color:var(--accent)}
+body[data-role="guest"] .app{grid-template-columns:minmax(0,1fr)}
+body[data-role="guest"] .side,body[data-role="guest"] .mobilenav{display:none}
+.guestpage{max-width:560px;margin:0 auto;background:#f9c6ba;border-radius:20px;overflow:hidden;color:#111}
+.guestnote{max-width:560px;margin:0 auto 12px;color:var(--ink-2);font-size:15px}
+
+/* ---------- building blocks ---------- */
+.grid{display:grid;gap:16px}
+.cols-2{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+.cols-3{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+.panel h2{font-size:18px;margin-bottom:10px}
+.panel h3{font-size:15px;margin:14px 0 6px;color:var(--ink-3);letter-spacing:.05em;text-transform:uppercase}
+.muted{color:var(--ink-3)}
+.small{font-size:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);font-weight:600;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.big{min-height:56px;font-size:18px;border-radius:14px;padding:0 22px}
+.btn.danger{background:var(--no);border-color:var(--no);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);background:var(--surface);font-weight:600;color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;border-radius:9px;padding:1px 8px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.badge.low{border-color:var(--warn);color:var(--warn);background:var(--warn-bg)}
+.badge.out{border-color:var(--no);color:var(--no);background:var(--no-bg)}
+.badge.ok{border-color:var(--ok);color:var(--ok);background:var(--ok-bg)}
+.badge.est{border-style:dashed;border-color:var(--warn);color:var(--warn)}
+.glyph{flex:none;vertical-align:-2px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label,.lab{font-weight:600;font-size:14px;color:var(--ink-2)}
+.input,select.input,textarea.input{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface)}
+textarea.input{min-height:72px;resize:vertical}
+.formgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.hint{font-size:13px;color:var(--ink-3)}
+.questions{margin-top:22px;border:2px dashed var(--line);border-radius:16px;padding:14px 16px;background:transparent}
+.questions h2{font-size:16px;margin-bottom:6px}
+.questions ul{margin:0;padding-left:20px}
+.questions li{margin:4px 0}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.table th{font-size:13px;color:var(--ink-3);font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.table td.r,.table th.r{text-align:right}
+.table tr.clickable{cursor:pointer}
+.table tr.clickable:hover td{background:var(--soft)}
+.scroll{overflow-x:auto;max-width:100%}
+.wname{font-weight:600}
+.wsub{font-size:13px;color:var(--ink-3)}
+.bar{height:8px;border-radius:4px;background:var(--soft);overflow:hidden;min-width:60px}
+.bar span{display:block;height:100%;background:var(--ok)}
+.bar.low span{background:var(--warn)}
+.bar.out span{background:var(--no)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:90;background:var(--ink);color:var(--bg);border-radius:14px;padding:12px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
+.toast button{background:transparent;border:1px solid currentColor;color:inherit;border-radius:10px;min-height:38px;padding:0 12px;font-weight:700}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100vw);z-index:80;background:var(--surface);border-left:1px solid var(--line);box-shadow:-10px 0 30px rgba(0,0,0,.18);overflow:auto;padding:18px 18px calc(24px + env(safe-area-inset-bottom,0px));padding-right:max(18px, env(safe-area-inset-right, 0px))}
+.drawer .x{position:absolute;right:max(12px, env(safe-area-inset-right, 0px));top:12px;width:44px;height:44px;border-radius:22px;border:1px solid var(--line);background:var(--bg);font-size:22px}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:79}
+.ledger{list-style:none;margin:0;padding:0}
+.ledger li{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.ledger .k{font-weight:700;grid-row:span 2}
+.ledger .amt{font-weight:700;font-variant-numeric:tabular-nums}
+.amt.neg{color:var(--no)} .amt.pos{color:var(--ok)}
+.kpi{display:flex;flex-direction:column;gap:2px}
+.kpi b{font-size:26px;font-variant-numeric:tabular-nums}
+.statusdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ok);margin-right:6px}
+.statusdot.amber{background:var(--warn)}
+
+/* ---------- take off stock (tablet) ---------- */
+.steps{display:flex;gap:6px;margin-bottom:14px}
+.steps span{flex:1;height:6px;border-radius:3px;background:var(--soft)}
+.steps span.on{background:var(--accent)}
+.bigchoices{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr))}
+.bigchoice{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;min-height:84px;padding:12px 14px;border-radius:16px;border:2px solid var(--line);background:var(--surface);box-shadow:0 4px 0 var(--line)}
+.bigchoice:active{transform:translateY(2px);box-shadow:0 2px 0 var(--line)}
+.bigchoice .t{font-weight:700;font-size:17px}
+.bigchoice .s{font-size:14px;color:var(--ink-3)}
+.bigchoice[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 4px 0 var(--accent)}
+
+/* ---------- editor ---------- */
+.parts{display:grid;gap:16px}
+.partno{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:15px;margin-right:8px}
+.scorechips{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.scorechips button{min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:14px;padding:2px}
+.scorechips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.photo{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start}
+@media (max-width:500px){.photo{grid-template-columns:1fr}}
+.frame34{width:150px;aspect-ratio:3/4;max-width:100%;border-radius:12px;border:2px dashed var(--line);display:grid;place-items:center;overflow:hidden;background:var(--soft);color:var(--ink-3);text-align:center;font-size:13px;padding:6px}
+.frame34 img{width:100%;height:100%;object-fit:cover}
+.checks{list-style:none;margin:0;padding:0}
+.checks li{display:flex;gap:8px;padding:6px 0;font-size:15px}
+.checks .i{font-weight:800;width:18px;flex:none}
+.checks .pass{color:var(--ok)} .checks .warnc{color:var(--warn)} .checks .fail{color:var(--no)}
+.sticky{position:sticky;top:14px}
+.typeahead{position:relative}
+.typeahead ul{position:absolute;left:0;right:0;top:100%;z-index:20;list-style:none;margin:4px 0 0;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);max-height:240px;overflow:auto}
+.typeahead li button{width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:8px;min-height:40px}
+.typeahead li button:hover{background:var(--soft)}
+
+/* ---------- stock take ---------- */
+.countrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:52px;height:52px;border-radius:14px;border:2px solid var(--line);background:var(--surface);font-size:26px;font-weight:700;line-height:1}
+.stepper .cntin{width:64px;min-height:52px;text-align:center;font-size:22px;font-weight:700}
+.diff{font-size:14px;font-weight:700}
+
+/* ---------- menus ---------- */
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.switch{position:relative;width:52px;height:30px;flex:none}
+.switch input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:15px;background:var(--line);transition:background .15s}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:12px;background:var(--surface);transition:transform .15s}
+.switch input:checked+span{background:var(--accent)}
+.switch input:checked+span::after{transform:translateX(22px)}
+.switch input:focus-visible+span{outline:3px solid var(--accent);outline-offset:2px}
+.locked{font-size:13px;color:var(--ink-3)}
+.phone{width:min(390px,100%);margin:0 auto;border:10px solid var(--ink);border-radius:36px;overflow:hidden;background:#f9c6ba;height:680px;display:flex;flex-direction:column}
+.phone .scr{overflow:auto;flex:1;color:#111}
+/* the guest menu inside the phone keeps the menu site's own colours, in both themes */
+.gm{padding:16px;font-family:var(--font)}
+.gm h2{font-size:22px;color:#111;margin:0 0 4px;text-align:center}
+.gm .gsec{font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:14px;color:#111;border-bottom:1.5px solid #111;padding-bottom:4px;margin:18px 0 6px}
+.gm .gw{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.18);display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:start}
+.gm .gw img,.gm .gw .ph{width:44px;height:58px;border-radius:6px;object-fit:cover;background:rgba(0,0,0,.08);grid-row:span 3}
+.gm .gn{font-weight:700;color:#111}
+.gm .gd{font-size:14px;color:#3a3a3a}
+.gm .gp{font-weight:700;color:#111;text-align:right;white-space:nowrap}
+.gm .gnote{grid-column:2 / -1;font-size:14px;color:#3a3a3a;font-style:italic}
+.gm .tags{grid-column:2 / -1;display:flex;gap:4px;flex-wrap:wrap}
+.gm .tags span{font-size:12px;border:1px solid #3a3a3a;border-radius:8px;padding:0 6px;color:#111}
+.gm .so{color:#8e1d1d;font-weight:700;font-size:13px}
+.gm .uniq{color:#111}
+
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app">
+  <aside class="side" aria-label="Screens">
+    <div class="brand">Apricity Wine Office<small>Mock for feedback · example data</small></div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+  <main class="main" id="main" tabindex="-1">
+    <div class="mbrand"><b>Apricity Wine Office</b><span class="example">Example data</span></div>
+    <nav class="mobilenav" id="mnav" aria-label="Screens"></nav>
+    <div class="topbar">
+      <h1 id="title">Today</h1>
+      <span class="example">Mock with example stock and sales</span>
+      <div class="account" id="account"></div>
+    </div>
+    <div id="view"></div>
+  </main>
+</div>
+<div id="overlay"></div>
+<div id="toastbox" aria-live="polite"></div>
+
+<script>
+/*__DATA__*/
+</script>
+<script>
+// ======================================================================
+// Example data. Wines, prices and notes are the real list; stock, sales,
+// suppliers, people and Lightspeed items are invented for the mock.
+// ======================================================================
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = n => (n == null ? "" : "£" + n);
+const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
+const TYPES = ["sparkling", "white", "rose", "orange", "red", "sweet"];
+const TYPE_LABEL = { sparkling: "Sparkling", white: "White", rose: "Rosé", orange: "Orange", red: "Red", sweet: "Sweet" };
+function glyph(type, size = 16) {
+  const h = size / 2, r = size * 0.36, col = { sparkling: "var(--t-sparkling)", sweet: "var(--t-sweet)", red: "var(--t-red)", rose: "var(--t-red)", white: "var(--t-white)", orange: "var(--t-white)" }[type];
+  let s;
+  if (type === "sparkling") s = `<path d="M0 ${-r * 1.25}L${r * 1.05} 0L0 ${r * 1.25}L${-r * 1.05} 0Z" fill="${col}"/>`;
+  else if (type === "orange") s = `<rect x="${-r * .9}" y="${-r * .9}" width="${r * 1.8}" height="${r * 1.8}" fill="${col}"/>`;
+  else if (type === "sweet") s = `<path d="M0 ${-r * 1.15}L${r * 1.15} ${r * .85}L${-r * 1.15} ${r * .85}Z" fill="${col}"/>`;
+  else if (type === "rose") s = `<circle r="${r * .8}" fill="none" stroke="${col}" stroke-width="${Math.max(2, size * .13)}"/>`;
+  else s = `<circle r="${r}" fill="${col}"/>`;
+  return `<svg class="glyph" width="${size}" height="${size}" viewBox="${-h} ${-h} ${size} ${size}" aria-hidden="true">${s}</svg>`;
+}
+
+const PEOPLE = ["Sam", "Ana", "Kai", "Jo", "Priya"]; // example names
+const SUPPLIERS = [
+  { name: "Les Caves", lead: 3, email: "orders@example-caves.co.uk" },
+  { name: "Tutto Wines", lead: 4, email: "orders@example-tutto.co.uk" },
+  { name: "Modal Wines", lead: 5, email: "orders@example-modal.co.uk" },
+  { name: "Gergovie", lead: 7, email: "orders@example-gergovie.co.uk" },
+  { name: "Wasted Wine Club", lead: 2, email: "hello@example-wasted.co.uk" }
+];
+const BOTTLE = 750;
+const NOW = new Date("2026-11-16T18:30:00");
+
+const state = {
+  role: "guest",   // signed out: the public guest menu
+  stock: {},       // id -> full bottles in stock
+  open: {},        // id -> ml left in the open bottle (wines by the glass only)
+  use: {},         // id -> bottles used per week
+  off: new Set(),  // off tonight
+  moves: [],       // movement log, newest first
+  added: [],       // wines added in the editor during this visit
+  who: null
+};
+WINES.forEach(w => {
+  const h = hash(w.id), h2 = hash(w.id + "x"), h3 = hash(w.id + "y");
+  const glass = w.gl != null;
+  const use = glass ? 1.2 + h * 2.2 : (w.b > 200 ? 0.1 + h * 0.4 : 0.2 + h * 1.4);
+  let n = Math.round(glass ? 10 + h2 * 20 : (w.b > 200 ? 2 + h2 * 5 : 3 + h2 * 15));
+  if (h3 < 0.05) n = Math.min(n, 1);
+  state.stock[w.id] = n;
+  if (glass) state.open[w.id] = Math.round(100 + h2 * 500);
+  state.use[w.id] = Math.round(use * 10) / 10;
+  w.supplier = SUPPLIERS[Math.floor(h3 * SUPPLIERS.length)].name;
+  w.cost = Math.round((w.b || w.gl * 5) * (0.28 + h * 0.06));
+  w.ls = glass ? [`${w.s} ${w.v} Gls`, ...(w.b ? [`${w.s} ${w.v} Btl`] : [])] : [`${w.s} ${w.v} Btl`];
+});
+// a few headline examples so the mock tells a story
+[["matthieu-cosse-fronsac", 3, 3.4], ["pranzegg-rosso-per-tutti", 3, 4.1], ["mas-du-libian-bout-dzan", 18, 4.2], ["guillaume-selosse-largillier", 1, 0.2],
+ ["domaine-henri-bourgeois-sancerre-la-vigne-blanche", 3, 2.6], ["radikon-pop-bianco", 1, 2.3]]
+  .forEach(([id, s, u]) => { if (state.stock[id]) { state.stock[id] = s; state.use[id] = u; } });
+
+const byId = new Map(WINES.map(w => [w.id, w]));
+const totalBottles = id => state.stock[id];
+const totalMl = id => totalBottles(id) * BOTTLE + (state.open[id] || 0);
+const sales28 = id => Math.round(state.use[id] * 4);
+function daysLeft(id) {
+  if (sales28(id) < 3) return null;
+  return Math.max(0, Math.round(totalMl(id) / (state.use[id] * BOTTLE / 7)));
+}
+function status(id) {
+  const t = totalBottles(id), d = daysLeft(id);
+  if (t === 0 && !(state.open[id] > 0)) return "out";
+  if ((d != null && d < 14) || t <= 2) return "low";
+  return "ok";
+}
+const stockText = id => `${totalBottles(id)} btl${state.open[id] ? ` + ${state.open[id]} ml open` : ""}`;
+
+// example movement history
+(function seedMoves() {
+  const kinds = [["sale", -1, "Lightspeed"], ["sale", -1, "Lightspeed"], ["pour", -125, "Lightspeed"], ["pairing", -1, "Pairing"], ["delivery", 12, "Les Caves"], ["manual", -1, "Staff tasting"], ["sale", -1, "Lightspeed"]];
+  const ids = ["mas-du-libian-bout-dzan", "matthieu-cosse-fronsac", "pranzegg-rosso-per-tutti", "mas-foulaquier-loiseau", "radikon-pop-bianco", "roebuck-estates-classic-cuvee", "domaine-henri-bourgeois-sancerre-la-vigne-blanche"].filter(id => byId.has(id));
+  for (let i = 0; i < 26; i++) {
+    const [kind, amt, why] = kinds[i % kinds.length], id = ids[i % ids.length];
+    const t = new Date(NOW - i * 47 * 60000 - (i > 12 ? 86400000 : 0));
+    state.moves.push({ id, kind, amt, why, who: kind === "sale" || kind === "pour" ? "Lightspeed" : PEOPLE[i % PEOPLE.length], at: t });
+  }
+})();
+
+// ======================================================================
+// Screens
+// ======================================================================
+const ROLES = {
+  floor: { label: "Floor staff", who: null, note: "The service tablet, shared by the team" },
+  sommelier: { label: "Sommelier", who: "Sommelier", note: "Wines, stock, deliveries, Lightspeed, menus" },
+  manager: { label: "Manager", who: "Manager", note: "Everything, plus the venue and the team" }
+};
+const SCREENS = [
+  { id: "guest-menu", label: "Wine list", roles: ["guest"] },
+  { id: "today", label: "Today", roles: ["manager", "sommelier", "floor"] },
+  { id: "stock", label: "Stock", roles: ["manager", "sommelier", "floor"] },
+  { id: "take-off", label: "Take off stock", roles: ["manager", "sommelier", "floor"] },
+  { id: "add-wine", label: "Add a wine", roles: ["manager", "sommelier"], grp: "Wines" },
+  { id: "edit-wine", label: "Edit a wine", roles: ["manager", "sommelier"] },
+  { id: "delivery", label: "Book in a delivery", roles: ["manager", "sommelier"], grp: "Stock" },
+  { id: "stock-take", label: "Stock take", roles: ["manager", "sommelier", "floor"] },
+  { id: "pairings", label: "Pairings", roles: ["manager", "sommelier", "floor"] },
+  { id: "lightspeed", label: "Lightspeed", roles: ["manager", "sommelier"], grp: "Set-up" },
+  { id: "menus", label: "Guest menus", roles: ["manager", "sommelier"] },
+  { id: "venue", label: "Venue and team", roles: ["manager"] }
+];
+const view = document.getElementById("view"), overlay = document.getElementById("overlay");
+const home = () => (state.role === "guest" ? "guest-menu" : "today");
+function current() { const h = location.hash.replace("#", ""); const s = SCREENS.find(x => x.id === h && x.roles.includes(state.role)); return s ? s.id : home(); }
+function accountHTML() {
+  if (state.role === "guest") return `<button type="button" class="btn" data-signin aria-expanded="${!!state.picking}">Sign in</button>${state.picking ? `<div class="picker" role="dialog" aria-label="Sign in as"><p>Mock sign-in: pick who you are. The real thing uses an email code or a Google account.</p>${Object.entries(ROLES).map(([k, r]) => `<button type="button" data-as="${k}"><b>${r.label}</b><span>${r.note}</span></button>`).join("")}</div>` : ""}`;
+  const r = ROLES[state.role];
+  return `<div class="who"><small>${state.role === "floor" ? "Service tablet" : "Signed in as"}</small><b>${r.label}</b></div><button type="button" class="btn ghost" data-logout>Log out</button>`;
+}
+function navHTML(cur, mobile) {
+  const low = WINES.filter(w => status(w.id) !== "ok").length;
+  return SCREENS.filter(s => s.roles.includes(state.role)).map(s =>
+    `${!mobile && s.grp ? `<div class="grp">${s.grp}</div>` : ""}<a href="#${s.id}"${s.id === cur ? ' aria-current="page"' : ""}>${esc(s.label)}${s.id === "stock" && !mobile ? `<span class="count num">${low} low</span>` : ""}</a>`).join("");
+}
+// A typed count is saved when its box loses focus, which can happen while the page is being redrawn: never redraw inside a redraw.
+let rendering = false, again = false;
+function render() {
+  if (rendering) { again = true; return; } // redraw once the current draw finishes
+  rendering = true;
+  try { let n = 0; do { again = false; draw(); } while (again && ++n < 5); } finally { rendering = false; }
+}
+function draw() {
+  const cur = current();
+  document.getElementById("nav").innerHTML = navHTML(cur, false);
+  document.getElementById("mnav").innerHTML = navHTML(cur, true);
+  document.body.dataset.role = state.role;
+  document.getElementById("account").innerHTML = accountHTML();
+  const s = SCREENS.find(x => x.id === cur);
+  document.getElementById("title").textContent = s.label;
+  view.innerHTML = RENDER[cur]();
+  if (AFTER[cur]) AFTER[cur]();
+}
+const questions = () => ""; // feedback questions are asked in person
+const canEdit = () => state.role !== "floor";
+function toast(msg, undo) {
+  const box = document.getElementById("toastbox");
+  box.innerHTML = `<div class="toast" role="status"><span>${msg}</span>${undo ? '<button type="button" id="undoBtn">Undo</button>' : ""}</div>`;
+  clearTimeout(toast.t);
+  if (undo) document.getElementById("undoBtn").onclick = () => { undo(); box.innerHTML = ""; render(); toast("Undone"); };
+  toast.t = setTimeout(() => { box.innerHTML = ""; }, undo ? 10000 : 3500);
+}
+function record(id, kind, amt, why) {
+  const m = { id, kind, amt, why, who: state.who || ROLES[state.role].label, at: new Date() };
+  state.moves.unshift(m);
+  return m;
+}
+const wineRowCells = w => `<div class="row" style="gap:8px;flex-wrap:nowrap">${glyph(w.t)}<div style="min-width:0"><div class="wname">${esc(w.s)} <span class="muted num">${esc(w.v)}</span></div><div class="wsub">${esc(w.p)} · ${esc(w.sec)}</div></div></div>`;
+const RENDER = {}, AFTER = {};
+
+// ---------- Today ----------
+RENDER.today = () => (state.role === "floor" ? floorToday() : officeToday());
+// Floor staff: tonight's glass list, what is off, and taking bottles off. No costs, Lightspeed or ordering.
+function floorToday() {
+  const glass = WINES.filter(w => w.gl != null);
+  const offs = WINES.filter(w => state.off.has(w.id));
+  const taken = state.moves.filter(m => ["manual", "pairing"].includes(m.kind)).slice(0, 6);
+  return `<div class="row" style="margin-bottom:16px"><a class="btn big" href="#take-off">Take off stock</a><a class="btn ghost big" href="#stock-take">Stock take</a></div>
+  <div class="grid cols-2" style="align-items:start">
+    <div class="panel"><h2>By the glass tonight</h2><div class="scroll"><table class="table"><thead><tr><th>Wine</th><th class="r">Left</th><th></th></tr></thead><tbody>
+      ${glass.map(w => `<tr class="clickable" data-wine="${w.id}"><td>${wineRowCells(w)}</td><td class="r num">${stockText(w.id)}</td><td class="r">${state.off.has(w.id) ? '<span class="badge out">Off tonight</span>' : status(w.id) === "low" ? '<span class="badge low">Low</span>' : ""}</td></tr>`).join("")}
+    </tbody></table></div><p class="hint">Tap a wine to mark it Off tonight or take some off stock.</p></div>
+    <div class="grid" style="gap:16px">
+      <div class="panel"><h2>Off tonight</h2>${offs.length ? `<div class="row">${offs.map(w => `<span class="badge out">${esc(w.s)}</span>`).join("")}</div>` : '<p class="muted">Everything on the list is available.</p>'}<p class="hint">Hidden from the guest menu until 4am.</p></div>
+      <div class="panel"><h2>Taken off tonight</h2>${taken.length ? `<ul class="ledger">${taken.map(ledgerItem).join("")}</ul>` : '<p class="muted">Nothing yet.</p>'}</div>
+    </div></div>`;
+}
+function officeToday() {
+  const low = WINES.filter(w => status(w.id) === "low").sort((a, b) => (daysLeft(a.id) ?? 99) - (daysLeft(b.id) ?? 99));
+  const out = WINES.filter(w => status(w.id) === "out");
+  const today = state.moves.filter(m => m.at.toDateString() === NOW.toDateString() || m.at > NOW);
+  const manual = today.filter(m => ["manual", "pairing"].includes(m.kind));
+  return `<div class="grid cols-3">
+    <div class="panel kpi"><span class="muted">Running out soon</span><b>${low.length}</b><span class="small muted">under 14 days, or the last 2 bottles</span></div>
+    <div class="panel kpi"><span class="muted">Out of stock</span><b>${out.length}</b><span class="small muted">hidden from the guest menu</span></div>
+    <div class="panel kpi"><span class="muted">Lightspeed</span><b style="font-size:20px"><span class="statusdot"></span>Connected</b><span class="small muted">last sale 6 minutes ago · last night's check fixed 2</span></div>
+  </div>
+  <div class="grid cols-2" style="margin-top:16px">
+    <div class="panel"><h2>Running out soon</h2>
+      <div class="scroll"><table class="table"><thead><tr><th>Wine</th><th class="r">In stock</th><th class="r">Runs out</th></tr></thead><tbody>
+      ${low.slice(0, 8).map(w => `<tr class="clickable" data-wine="${w.id}"><td>${wineRowCells(w)}</td><td class="r num">${stockText(w.id)}</td><td class="r"><span class="badge low num">${daysLeft(w.id) == null ? "last bottles" : `about ${daysLeft(w.id)} days`}</span></td></tr>`).join("")}
+      </tbody></table></div>
+      <p><a class="btn ghost" href="#stock">See all stock</a></p></div>
+    <div class="panel"><h2>Taken off by hand today</h2>
+      ${manual.length ? `<ul class="ledger">${manual.slice(0, 6).map(ledgerItem).join("")}</ul>` : '<p class="muted">Nothing yet tonight.</p>'}
+      <div class="row" style="margin-top:12px"><a class="btn big" href="#take-off">Take off stock</a><a class="btn ghost" href="#delivery">Book in a delivery</a></div></div>
+  </div>`;
+}
+function ledgerItem(m) {
+  const w = byId.get(m.id) || state.added.find(x => x.id === m.id) || { s: m.id };
+  const amt = (m.amt > 0 ? "+" : "") + (Math.abs(m.amt) >= 50 ? `${m.amt} ml` : `${m.amt} btl`);
+  const t = m.at.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + (m.at.toDateString() !== NOW.toDateString() && m.at < NOW ? " yesterday" : "");
+  return `<li><span class="k">${esc({ sale: "Sale", pour: "Glass", pairing: "Pairing", delivery: "Delivery", manual: "By hand", count: "Count", undo: "Undo" }[m.kind] || m.kind)}</span><span>${esc(w.s)} · ${esc(m.why)}</span><span class="amt num ${m.amt < 0 ? "neg" : m.amt > 0 ? "pos" : ""}">${esc(amt)}</span><span class="muted">${esc(m.who)}</span><span class="muted num">${t}</span></li>`;
+}
+
+// ---------- Stock ----------
+const stockUI = { filter: "all", q: "" };
+RENDER.stock = () => {
+  const f = stockUI;
+  let list = WINES.concat(state.added).filter(w => {
+    if (f.q && !(`${w.p} ${w.c} ${w.s} ${w.gr} ${w.rg}`.toLowerCase().includes(f.q.toLowerCase()))) return false;
+    if (f.filter === "low" && status(w.id) === "ok") return false;
+    if (f.filter === "glass" && w.gl == null) return false;
+    if (f.filter === "slow" && sales28(w.id) >= 3) return false;
+    return true;
+  });
+  list.sort((a, b) => ({ out: 0, low: 1, ok: 2 }[status(a.id)] - { out: 0, low: 1, ok: 2 }[status(b.id)]) || (daysLeft(a.id) ?? 999) - (daysLeft(b.id) ?? 999));
+  const chip = (k, label) => `<button type="button" class="chip" data-filter="${k}" aria-pressed="${f.filter === k}">${label}</button>`;
+  return `<div class="row" style="margin-bottom:12px">
+      <input class="input" id="stockSearch" placeholder="Find a wine, grape or region" value="${esc(f.q)}" style="max-width:320px" aria-label="Find a wine">
+      ${chip("all", "All")}${chip("low", "Running low")}${chip("glass", "By the glass")}${chip("slow", "Not selling")}
+    </div>
+    <div class="panel" style="padding:4px 12px"><div class="scroll"><table class="table">
+      <thead><tr><th>Wine</th><th class="r">In stock</th><th class="r">Used a week</th><th>Runs out</th>${canEdit() ? '<th class="r">Cost</th>' : ""}</tr></thead>
+      <tbody>${list.map(w => { const st = status(w.id), d = daysLeft(w.id);
+        return `<tr class="clickable" data-wine="${w.id}"><td>${wineRowCells(w)}${state.off.has(w.id) ? ' <span class="badge out">Off tonight</span>' : ""}</td>
+        <td class="r num"><b>${stockText(w.id)}</b></td>
+        <td class="r num">${state.use[w.id]} btl</td>
+        <td><span class="badge ${st === "ok" ? "" : st} num">${st === "out" ? "Out" : d == null ? "Not enough sales" : `about ${d} days`}</span></td>${canEdit() ? `<td class="r num">${money(w.cost)}</td>` : ""}</tr>`; }).join("")}
+      </tbody></table></div></div>
+    <p class="hint">${list.length} wines. Tap a wine for its history and to take off stock. "Used a week" counts Lightspeed sales, glass and pairing pours and bottles taken off by hand over the last 28 days, with the last 7 counting double.</p>
+    ${questions(["Which columns would you actually use during service, and which only for ordering?", "Should floor staff see cost prices? (In this mock they don't: switch to Floor staff to check.)"])}`;
+};
+AFTER.stock = () => {
+  const s = document.getElementById("stockSearch");
+  s.addEventListener("input", () => { stockUI.q = s.value; const pos = s.selectionStart; render(); const n = document.getElementById("stockSearch"); n.focus(); n.setSelectionRange(pos, pos); });
+};
+function openWine(id) {
+  const w = byId.get(id) || state.added.find(x => x.id === id);
+  const moves = state.moves.filter(m => m.id === id);
+  overlay.innerHTML = `<div class="scrim" data-close></div><div class="drawer" role="dialog" aria-modal="true" aria-labelledby="dtitle">
+    <button type="button" class="x" data-close aria-label="Close">×</button>
+    <div class="row" style="padding-right:50px">${glyph(w.t, 20)}<h2 id="dtitle" style="font-size:22px">${esc(w.n || w.p + ", " + w.c)} <span class="muted num">${esc(w.v)}</span></h2></div>
+    <p class="muted" style="margin:4px 0 10px">${esc(w.gr)} · ${esc(w.rg)} · ${w.b ? money(w.b) + " bottle" : ""}${w.gl ? ` · ${money(w.gl)} glass` : ""}</p>
+    <p class="num" style="margin:10px 0"><b>${stockText(id)}</b> · ${state.use[id]} bottles a week · ${status(id) === "ok" ? "plenty" : daysLeft(id) == null ? "last bottles" : "runs out in about " + daysLeft(id) + " days"}</p>
+    <div class="row">
+      <a class="btn" href="#take-off" data-close data-prefill="${id}">Take off stock</a>
+      <button type="button" class="btn ghost" data-offtonight="${id}">${state.off.has(id) ? "Back on tonight" : "Off tonight"}</button>
+      ${canEdit() ? `<a class="btn ghost" href="#edit-wine" data-close data-editwine="${id}">Edit wine</a>` : ""}
+    </div>
+    <h3 style="margin:18px 0 4px;font-size:15px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em">History</h3>
+    ${moves.length ? `<ul class="ledger">${moves.map(ledgerItem).join("")}</ul>` : '<p class="muted">No movements in the example data for this wine yet. Every sale, pour, delivery and count would be listed here, newest first.</p>'}
+    ${canEdit() ? `<p class="hint">Supplier: ${esc(w.supplier)} · cost ${money(w.cost)} · Lightspeed: ${w.ls.map(esc).join(", ")}</p>` : ""}
+  </div>`;
+  overlay.querySelector(".x").focus();
+}
+
+// ---------- Take off stock (tablet) ----------
+const tk = { step: 0, wine: null, amount: "bottle", reason: null, q: "" };
+const REASONS = [["Pairing", "Opened for a pairing"], ["Staff tasting", "Tasted by the team"], ["Breakage", "Dropped or broken"], ["Corked or faulty", "Returned or not served"], ["Comp", "Given to a table"], ["Other", "Add a note"]];
+RENDER["take-off"] = () => {
+  const steps = `<div class="steps" aria-hidden="true">${[0, 1, 2, 3].map(i => `<span class="${i <= tk.step ? "on" : ""}"></span>`).join("")}</div>`;
+  let body = "";
+  if (tk.step === 0) {
+    body = `<h2 style="font-size:22px;margin-bottom:10px">Who is this?</h2><p class="muted" style="margin-top:0">The tablet stays signed in; each change still records a person.</p>
+      <div class="bigchoices">${PEOPLE.map(p => `<button type="button" class="bigchoice" data-who="${p}"><span class="t">${p}</span><span class="s">Floor</span></button>`).join("")}</div>`;
+  } else if (tk.step === 1) {
+    const glass = WINES.filter(w => w.gl != null).slice(0, 8);
+    const hits = tk.q ? WINES.filter(w => `${w.p} ${w.c} ${w.s}`.toLowerCase().includes(tk.q.toLowerCase())).slice(0, 8) : [];
+    const card = w => `<button type="button" class="bigchoice" data-pick="${w.id}"><span class="row" style="gap:6px">${glyph(w.t)}<span class="t">${esc(w.s)}</span></span><span class="s num">${esc(w.v)} · ${stockText(w.id)}</span></button>`;
+    body = `<h2 style="font-size:22px;margin-bottom:10px">Which wine?</h2>
+      <input class="input" id="tkSearch" placeholder="Search, or scan the label" value="${esc(tk.q)}" style="max-width:420px;min-height:52px;font-size:18px" aria-label="Search wines">
+      ${tk.q ? `<h3 class="lab" style="margin:14px 0 8px">Matches</h3><div class="bigchoices">${hits.map(card).join("") || '<p class="muted">No wine matches.</p>'}</div>` : `
+      <h3 class="lab" style="margin:14px 0 8px">By the glass tonight</h3><div class="bigchoices">${glass.map(card).join("")}</div>`}`;
+  } else if (tk.step === 2) {
+    const w = byId.get(tk.wine);
+    const byGlass = w.gl != null;
+    const opts = [["bottle", "A bottle", "750 ml"], ...(byGlass ? [["glass", "A glass", w.gs || "125ml"], ["rest", "The rest of the open bottle", state.open[w.id] ? `${state.open[w.id]} ml left` : "no bottle open"]] : [])];
+    body = `<h2 style="font-size:22px;margin-bottom:10px">How much ${esc(w.s)}?</h2><div class="bigchoices">${opts.map(([k, t, s]) => `<button type="button" class="bigchoice" data-amount="${k}" ${k === "rest" && !state.open[w.id] ? "disabled" : ""}><span class="t">${t}</span><span class="s">${s}</span></button>`).join("")}</div>
+      ${byGlass ? "" : '<p class="hint" style="margin-top:10px">Not sold by the glass, so stock is counted in whole bottles.</p>'}`;
+  } else {
+    body = `<h2 style="font-size:22px;margin-bottom:10px">Why?</h2><div class="bigchoices">${REASONS.map(([t, s]) => `<button type="button" class="bigchoice" data-reason="${t}"><span class="t">${t}</span><span class="s">${s}</span></button>`).join("")}</div>
+      <div class="field" style="margin-top:12px;max-width:420px"><label for="tkNote">Note (for Other)</label><input class="input" id="tkNote" placeholder="e.g. given to the kitchen for a sauce"></div>`;
+  }
+  return `<div class="grid cols-2" style="align-items:start">
+    <div class="panel">${steps}${body}
+      ${tk.step > 0 ? `<p style="margin-top:14px"><button type="button" class="btn ghost" data-back>Back</button>${tk.step > 0 ? ` <span class="muted small">${esc(tk.who || state.who || "")}${tk.wine ? " · " + esc(byId.get(tk.wine).s) : ""}</span>` : ""}</p>` : ""}</div>
+    <div class="panel"><h2>Taken off tonight</h2>${(() => { const l = state.moves.filter(m => ["manual", "pairing"].includes(m.kind)).slice(0, 8); return l.length ? `<ul class="ledger">${l.map(ledgerItem).join("")}</ul>` : '<p class="muted">Nothing yet.</p>'; })()}
+      <p class="hint">Made a mistake? Undo shows for 10 seconds; after that, the person who made it can undo it until the end of the night, and a manager any time.</p></div>
+  </div>
+  ${questions(["Is three taps (wine, amount, reason) quick enough mid-service?", "Are these the right reasons? Anything missing (kitchen use, sample for a rep)?", "Should pairing bottles be taken off when opened, or at the end of the night?"])}`;
+};
+AFTER["take-off"] = () => {
+  if (state.who && tk.step === 0) { tk.step = 1; render(); return; }
+  const s = document.getElementById("tkSearch");
+  if (s) s.addEventListener("input", () => { tk.q = s.value; const p = s.selectionStart; render(); const n = document.getElementById("tkSearch"); n.focus(); n.setSelectionRange(p, p); });
+};
+function finishTakeOff(reason) {
+  const w = byId.get(tk.wine), note = (document.getElementById("tkNote") || {}).value;
+  let amt, why = reason + (reason === "Other" && note ? `: ${note}` : "");
+  const before = { stock: state.stock[w.id], open: state.open[w.id] };
+  if (tk.amount === "bottle") { state.stock[w.id] = Math.max(0, state.stock[w.id] - 1); amt = -1; }
+  else if (tk.amount === "glass") { const ml = parseInt(w.gs) || 125; state.open[w.id] = Math.max(0, (state.open[w.id] || 0) - ml); amt = -ml; }
+  else { amt = -(state.open[w.id] || 0); state.open[w.id] = 0; }
+  const m = record(w.id, reason === "Pairing" ? "pairing" : "manual", amt, why);
+  tk.wine = null; tk.q = "";
+  // On the shared tablet every change asks who made it; a signed-in sommelier or manager is already known.
+  if (state.role === "floor") { state.who = null; tk.step = 0; } else tk.step = 1;
+  render();
+  toast(`${esc(w.s)}: ${tk.amount === "bottle" ? "1 bottle" : Math.abs(amt) + " ml"} taken off (${esc(reason)})`, () => { state.stock[w.id] = before.stock; state.open[w.id] = before.open; state.moves.splice(state.moves.indexOf(m), 1); });
+}
+
+// ---------- Add / edit a wine ----------
+const ed = { mode: "add", wine: null, photo: null, scores: {}, flavours: [], making: [], ls: [], glass: false, prodQ: "" };
+const FLAVOURS = ["lemon", "lime", "grapefruit", "green apple", "pear", "quince", "peach", "apricot", "strawberry", "raspberry", "cherry", "plum", "blackberry", "blackcurrant", "orange peel", "flowers", "herbs", "pepper", "spice", "licorice", "earth", "leather", "smoke", "flint", "chalk", "salt", "honey", "nuts", "toast", "brioche", "vanilla", "tea"];
+const MAKING = ["organic", "biodynamic", "no added sulfur", "skin contact", "whole bunch", "oak aged", "traditional method"];
+const SCALE = { Sweetness: ["Dry", "Off-dry", "Medium", "Sweet", "Lusc."], Acidity: ["Low", "Med−", "Med", "Med+", "High"], Tannin: ["Low", "Med−", "Med", "Med+", "High"], Body: ["Light", "Med−", "Med", "Med+", "Full"], Oak: ["None", "Subtle", "Notic.", "Pron.", "Dom."], Wildness: ["Classic", "Mostly", "Some", "Clearly", "Divisive"] };
+const LS_ITEMS = ["Nowack S.A. Btl", "Du Grappin Macon-Villages Gls", "Du Grappin Macon-Villages Btl", "Roc des Anges Alquimia Gls", "Garance Pinot Noir Gls", "House White 175ml", "Coravin 75ml pour"];
+function editorHTML() {
+  const w = ed.wine, val = (k, d = "") => esc(w ? w[k] ?? d : d);
+  const scoreRow = n => `<div class="field"><span class="lab">${n}</span><div class="scorechips" role="group" aria-label="${n}">${SCALE[n].map((s, i) => `<button type="button" data-score="${n}" data-v="${i + 1}" aria-pressed="${ed.scores[n] === i + 1}">${i + 1}<br>${s}</button>`).join("")}</div></div>`;
+  return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));align-items:start">
+  <div class="parts" style="grid-column:span 2;min-width:0">
+    ${ed.mode === "edit" ? `<div class="panel"><div class="row"><label class="lab" for="pickWine">Wine</label><select class="input" id="pickWine" style="max-width:420px">${WINES.map(x => `<option value="${x.id}"${w && w.id === x.id ? " selected" : ""}>${esc(x.s)} · ${esc(x.p)}</option>`).join("")}</select></div>
+      <div class="row" style="margin-top:10px"><span class="lab">Vintages</span><span class="badge ok num">${val("v")} · on sale · ${stockText(w.id)}</span><button type="button" class="btn ghost" data-addvintage>Add vintage</button></div>
+      <p class="hint">A new vintage copies the notes and price, starts its own stock, and the old one stays on sale until it runs out.</p></div>` : ""}
+    <section class="panel"><h2><span class="partno">1</span>On the list</h2><div class="formgrid">
+      <div class="field typeahead"><label for="fProducer">Producer</label><input class="input" id="fProducer" value="${val("p")}" autocomplete="off" placeholder="Start typing: existing producers appear">
+        <ul id="prodList" hidden></ul></div>
+      <div class="field"><label for="fCuvee">Cuvée</label><input class="input" id="fCuvee" value="${val("c")}" placeholder="e.g. Les Grandes Vignes"></div>
+      <div class="field"><label for="fSection">Section and style</label><select class="input" id="fSection">${SECTIONS.map(s => `<option${w && w.sec === s ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></div>
+      <div class="field"><label for="fGrapes">Grapes</label><input class="input" id="fGrapes" value="${val("gr")}" placeholder="e.g. Chenin Blanc"></div>
+      <div class="field"><label for="fRegion">Region</label><input class="input" id="fRegion" value="${val("rg")}" placeholder="e.g. Loire"></div>
+      <div class="field"><label for="fPlace">Village or appellation</label><input class="input" id="fPlace" value="${val("pl")}" placeholder="optional: pins it on the map"></div>
+    </div><label class="row" style="margin-top:10px"><input type="checkbox" id="fUnique" ${w && w.u ? "checked" : ""}> <span>Unique expression (♢)</span></label></section>
+
+    <section class="panel"><h2><span class="partno">2</span>Vintage and price</h2><div class="formgrid">
+      <div class="field"><label for="fVintage">Vintage</label><input class="input" id="fVintage" value="${val("v")}" placeholder="2024 or NV"></div>
+      <div class="field"><label for="fSize">Bottle size</label><select class="input" id="fSize"><option>75cl</option><option>150cl magnum</option><option>37.5cl half</option><option>50cl</option></select></div>
+      <div class="field"><label for="fPrice">Bottle price (£)</label><input class="input num" id="fPrice" inputmode="decimal" value="${val("b")}"></div>
+      <div class="field"><label for="fCost">Cost price (£)</label><input class="input num" id="fCost" inputmode="decimal" value="${val("cost")}"></div>
+      <div class="field"><label for="fSupplier">Supplier</label><select class="input" id="fSupplier">${SUPPLIERS.map(s => `<option${w && w.supplier === s.name ? " selected" : ""}>${s.name}</option>`).join("")}</select></div>
+    </div>
+    <label class="row" style="margin-top:12px"><input type="checkbox" id="fGlass" ${ed.glass ? "checked" : ""}> <span>Sold by the glass</span></label>
+    ${ed.glass ? `<div class="formgrid" style="margin-top:8px"><div class="field"><label for="fGlassPrice">Glass price (£)</label><input class="input num" id="fGlassPrice" inputmode="decimal" value="${val("gl")}"></div>
+      <div class="field"><label for="fGlassSize">Glass size</label><select class="input" id="fGlassSize"><option>125ml</option><option>175ml</option><option>75ml</option><option>100ml</option></select></div></div>` : ""}
+    <h3>Lightspeed items</h3>
+    <div class="row">${ed.ls.map((x, i) => `<span class="badge ok">${esc(x)} <button type="button" data-unls="${i}" aria-label="Remove ${esc(x)}" style="border:0;background:none;padding:0 2px">×</button></span>`).join("") || '<span class="muted small">None linked yet</span>'}</div>
+    <div class="field typeahead" style="margin-top:8px;max-width:420px"><label for="fLs">Link a Lightspeed item</label><input class="input" id="fLs" placeholder="Search the Lightspeed menu" autocomplete="off"><ul id="lsList" hidden></ul>
+      <span class="hint">Each item is linked to this vintage and an amount: a bottle (750 ml) or a glass (its size).</span></div></section>
+
+    <section class="panel"><h2><span class="partno">3</span>Stock</h2>
+      ${ed.mode === "edit" ? `<p class="num">In stock: <b>${stockText(w.id)}</b></p><p class="hint">Stock changes through deliveries, sales, moves and counts, never by typing a new number, so every bottle can be traced.</p><a class="btn ghost" href="#delivery">Book in a delivery</a>`
+      : `<div class="formgrid"><div class="field"><label for="fOpen">Opening stock (bottles)</label><input class="input num" id="fOpen" inputmode="numeric" value="12"></div></div>
+      <p class="hint">Or add it with a cost through <a href="#delivery">Book in a delivery</a>.</p>`}</section>
+
+    <section class="panel"><h2><span class="partno">4</span>Notes and photo</h2>
+      <div class="photo"><div class="frame34" id="photoFrame">${ed.photo ? `<img src="${ed.photo}" alt="Bottle photo preview">` : "Front label, upright, plain background"}</div>
+        <div class="field"><label for="fPhoto">Bottle photo</label><input type="file" id="fPhoto" accept="image/*" capture="environment" class="input" style="min-height:auto">
+          <span class="hint">Cropped to 3:4. On a phone this opens the camera.</span>
+          <label for="fCredit" class="lab" style="margin-top:8px">Photo credit</label><input class="input" id="fCredit" placeholder="e.g. Our photo, or 'With permission of the producer'"></div></div>
+      <div class="grid cols-2" style="margin-top:14px">${["Sweetness", "Acidity", "Tannin", "Body", "Oak", "Wildness"].map(scoreRow).join("")}</div>
+      <h3>Flavours (up to 4)</h3><div class="row">${FLAVOURS.map(f => `<button type="button" class="chip" data-flav="${f}" aria-pressed="${ed.flavours.includes(f)}" ${!ed.flavours.includes(f) && ed.flavours.length >= 4 ? "disabled" : ""}>${f}</button>`).join("")}</div>
+      <h3>Making</h3><div class="row">${MAKING.map(f => `<button type="button" class="chip" data-mk="${f}" aria-pressed="${ed.making.includes(f)}">${f}</button>`).join("")}</div>
+      <div class="formgrid" style="margin-top:12px;grid-template-columns:1fr">
+        <div class="field"><label for="fNote">Style note (for staff)</label><textarea class="input" id="fNote">${val("note")}</textarea></div>
+        <div class="field"><label for="fGuest">Guest line (one sentence to say at the table)</label><input class="input" id="fGuest" value="${val("gu")}"></div>
+        <div class="field"><label for="fSource">Source</label><select class="input" id="fSource"><option>estimate</option><option>tasted</option></select></div>
+      </div></section>
+  </div>
+  <aside class="panel sticky"><h2>Before publishing</h2><ul class="checks" id="checks"></ul>
+    <div class="row" style="margin-top:12px"><button type="button" class="btn big" data-publish>${ed.mode === "edit" ? "Publish changes" : "Publish"}</button><button type="button" class="btn ghost" data-draft>Save draft</button></div>
+    <label class="row" style="margin-top:10px"><input type="checkbox" id="fHidden"> <span class="small">In stock but hidden from the guest menu</span></label>
+    ${ed.mode === "edit" ? `<h3>History</h3><ul class="ledger small"><li><span class="k">Price</span><span>£100 → £105</span><span></span><span class="muted">Sommelier</span><span class="muted">3 Nov</span></li><li><span class="k">Notes</span><span>Guest line added</span><span></span><span class="muted">Sommelier</span><span class="muted">28 Oct</span></li></ul><button type="button" class="btn ghost" data-retire>Retire this wine</button>` : ""}
+  </aside></div>`;
+}
+RENDER["add-wine"] = () => { if (ed.mode !== "add") { Object.assign(ed, { mode: "add", wine: null, photo: null, scores: {}, flavours: [], making: [], ls: [], glass: false }); } return editorHTML() + questions(["Is anything missing from adding a wine? Is anything here you would never fill in?", "Would you take the photo on your phone while adding the wine, or add photos later in a batch?", "Should a wine with no notes be allowed on the guest menu?"]); };
+RENDER["edit-wine"] = () => {
+  if (ed.mode !== "edit" || !ed.wine) loadForEdit(ed.editId || "matthieu-cosse-fronsac");
+  return editorHTML() + questions(["How often do prices or vintages change, and who should be allowed to change them?", "When a new vintage arrives, do you sell both side by side, or switch on a date?"]);
+};
+function loadForEdit(id) { const w = byId.get(id); Object.assign(ed, { mode: "edit", wine: w, photo: null, scores: w.sc ? Object.fromEntries(Object.entries(w.sc).map(([k, v]) => [k[0].toUpperCase() + k.slice(1), v])) : {}, flavours: (w.fl || []).slice(0, 4), making: (w.mk || []).slice(), ls: w.ls.slice(), glass: w.gl != null }); }
+function editorChecks() {
+  const v = id => ((document.getElementById(id) || {}).value || "").trim();
+  const p = v("fProducer"), c = v("fCuvee"), price = v("fPrice");
+  const dup = ed.mode === "add" && p && c && WINES.some(w => w.p.toLowerCase() === p.toLowerCase() && w.c.toLowerCase() === c.toLowerCase());
+  const items = [
+    [p && c ? "pass" : "fail", p && c ? "Producer and cuvée" : "Add the producer and cuvée"],
+    [dup ? "fail" : "pass", dup ? "A wine with this name is already on the list" : "Name is new to the list"],
+    [price ? "pass" : "fail", price ? "Bottle price set" : "Add a bottle price"],
+    [ed.glass && !v("fGlassPrice") ? "fail" : "pass", ed.glass ? (v("fGlassPrice") ? "Glass price and size set" : "Add the glass price") : "Not sold by the glass"],
+    [ed.ls.length ? "pass" : "warnc", ed.ls.length ? `${ed.ls.length} Lightspeed item${ed.ls.length > 1 ? "s" : ""} linked` : "No Lightspeed item: sales won't come off stock"],
+    [ed.photo ? "pass" : "warnc", ed.photo ? "Photo added" : "No photo yet (optional)"],
+    [v("fNote") || Object.keys(ed.scores).length ? "pass" : "warnc", v("fNote") || Object.keys(ed.scores).length ? "Has notes" : "No notes: shows a Needs notes badge"]
+  ];
+  const el = document.getElementById("checks");
+  if (el) el.innerHTML = items.map(([k, t]) => `<li class="${k}"><span class="i" aria-hidden="true">${k === "pass" ? "✓" : k === "fail" ? "✗" : "!"}</span><span>${t}</span></li>`).join("");
+  const pub = document.querySelector("[data-publish]");
+  if (pub) pub.disabled = items.some(([k]) => k === "fail");
+}
+function bindEditor() {
+  editorChecks();
+  const prod = document.getElementById("fProducer"), pl = document.getElementById("prodList");
+  const producers = [...new Set(WINES.map(w => w.p))].sort();
+  prod.addEventListener("input", () => {
+    const q = prod.value.toLowerCase(); const hits = q ? producers.filter(p => p.toLowerCase().includes(q)).slice(0, 6) : [];
+    pl.innerHTML = hits.map(p => `<li><button type="button" data-prod="${esc(p)}">${esc(p)}</button></li>`).join(""); pl.hidden = !hits.length;
+  });
+  const ls = document.getElementById("fLs"), ll = document.getElementById("lsList");
+  ls.addEventListener("input", () => {
+    const q = ls.value.toLowerCase(); const all = LS_ITEMS.concat(WINES.flatMap(w => w.ls));
+    const hits = q ? all.filter(x => x.toLowerCase().includes(q)).slice(0, 6) : [];
+    ll.innerHTML = hits.map(x => `<li><button type="button" data-ls="${esc(x)}">${esc(x)}</button></li>`).join(""); ll.hidden = !hits.length;
+  });
+  document.getElementById("fGlass").onchange = e => { ed.glass = e.target.checked; keepForm(() => render()); };
+  document.getElementById("fPhoto").onchange = e => {
+    const f = e.target.files[0]; if (!f) return; const r = new FileReader();
+    r.onload = () => { ed.photo = r.result; document.getElementById("photoFrame").innerHTML = `<img src="${ed.photo}" alt="Bottle photo preview">`; editorChecks(); };
+    r.readAsDataURL(f);
+  };
+  const pick = document.getElementById("pickWine");
+  if (pick) pick.onchange = () => { loadForEdit(pick.value); render(); };
+}
+// Keeps typed form values across a redraw of the editor.
+function keepForm(fn) {
+  const vals = {}; document.querySelectorAll(".parts input, .parts select, .parts textarea").forEach(el => { if (el.id && el.type !== "file") vals[el.id] = el.type === "checkbox" ? el.checked : el.value; });
+  fn();
+  Object.entries(vals).forEach(([id, v]) => { const el = document.getElementById(id); if (el) { if (el.type === "checkbox") el.checked = v; else el.value = v; } });
+  editorChecks();
+}
+AFTER["add-wine"] = bindEditor; AFTER["edit-wine"] = bindEditor;
+
+// ---------- Book in a delivery ----------
+const dl = { supplier: "Les Caves", lines: [{ id: "mas-du-libian-bout-dzan", qty: 12, cost: 21 }, { id: "matthieu-cosse-fronsac", qty: 6, cost: 31 }], q: "" };
+RENDER.delivery = () => {
+  const total = dl.lines.reduce((a, l) => a + l.qty * l.cost, 0);
+  const hits = dl.q ? WINES.filter(w => `${w.p} ${w.c} ${w.s}`.toLowerCase().includes(dl.q.toLowerCase())).slice(0, 6) : [];
+  return `<div class="grid cols-2" style="align-items:start"><div class="panel">
+    <div class="formgrid"><div class="field"><label for="dSupplier">Supplier</label><select class="input" id="dSupplier">${SUPPLIERS.map(s => `<option${s.name === dl.supplier ? " selected" : ""}>${s.name}</option>`).join("")}</select></div>
+      <div class="field"><label for="dDate">Date</label><input class="input" id="dDate" type="date" value="2026-11-16"></div></div>
+    <div class="scroll" style="margin-top:12px"><table class="table"><thead><tr><th>Wine</th><th class="r">Bottles</th><th class="r">Cost each</th><th class="r">Line</th><th></th></tr></thead><tbody>
+      ${dl.lines.map((l, i) => { const w = byId.get(l.id); return `<tr><td>${wineRowCells(w)}</td><td class="r"><input class="input num" style="width:76px;text-align:right" data-dqty="${i}" inputmode="numeric" value="${l.qty}" aria-label="Bottles of ${esc(w.s)}"></td><td class="r"><input class="input num" style="width:86px;text-align:right" data-dcost="${i}" inputmode="decimal" value="${l.cost}" aria-label="Cost of ${esc(w.s)}"></td><td class="r num">${money(l.qty * l.cost)}</td><td><button type="button" class="btn ghost" data-drm="${i}" aria-label="Remove ${esc(w.s)}">×</button></td></tr>`; }).join("")}
+    </tbody></table></div>
+    <div class="field typeahead" style="margin-top:12px;max-width:420px"><label for="dAdd">Add a wine</label><input class="input" id="dAdd" placeholder="Search, or scan the barcode" value="${esc(dl.q)}" autocomplete="off">
+      ${hits.length ? `<ul>${hits.map(w => `<li><button type="button" data-dpick="${w.id}">${esc(w.s)} · ${esc(w.p)}</button></li>`).join("")}</ul>` : ""}
+      <span class="hint">Not on the list yet? It is added as a draft for you to finish in <a href="#add-wine">Add a wine</a>.</span></div>
+  </div>
+  <aside class="panel sticky"><h2>Delivery from ${esc(dl.supplier)}</h2><p class="num" style="font-size:20px"><b>${dl.lines.reduce((a, l) => a + l.qty, 0)} bottles · ${money(total)}</b></p>
+    <p class="muted">Booking in adds the bottles to stock and records the cost price for each wine.</p>
+    <button type="button" class="btn big" data-bookin ${dl.lines.length ? "" : "disabled"}>Book in delivery</button></aside></div>
+  ${questions(["How do deliveries arrive: an invoice to type from, or a list from the supplier you could import?", "Do you want cost price per delivery (it changes), or one cost per wine?"])}`;
+};
+AFTER.delivery = () => {
+  const a = document.getElementById("dAdd");
+  a.addEventListener("input", () => { dl.q = a.value; const p = a.selectionStart; render(); const n = document.getElementById("dAdd"); n.focus(); n.setSelectionRange(p, p); });
+  document.getElementById("dSupplier").onchange = e => { dl.supplier = e.target.value; render(); };
+  view.querySelectorAll("[data-dqty]").forEach(el => el.onchange = () => { dl.lines[+el.dataset.dqty].qty = Math.max(0, parseInt(el.value) || 0); render(); });
+  view.querySelectorAll("[data-dcost]").forEach(el => el.onchange = () => { dl.lines[+el.dataset.dcost].cost = Math.max(0, parseFloat(el.value) || 0); render(); });
+};
+
+// ---------- Stock take ----------
+const stt = { phase: "count", counts: {} };
+RENDER["stock-take"] = () => {
+  const list = WINES.concat(state.added);
+  if (stt.phase === "review") {
+    const diffs = Object.entries(stt.counts).map(([id, n]) => ({ id, n, exp: state.stock[id] })).filter(d => d.n !== d.exp);
+    return `<div class="panel"><h2>Review the count</h2><p class="muted">${Object.keys(stt.counts).length} of ${list.length} wines counted. ${diffs.length ? `${diffs.length} differ from what the system expected:` : "Everything counted matches."}</p>
+      ${diffs.length ? `<div class="scroll"><table class="table"><thead><tr><th>Wine</th><th class="r">Expected</th><th class="r">Counted</th><th class="r">Difference</th></tr></thead><tbody>${diffs.map(d => `<tr><td>${wineRowCells(byId.get(d.id))}</td><td class="r num">${d.exp}</td><td class="r num">${d.n}</td><td class="r num"><b class="${d.n < d.exp ? "amt neg" : "amt pos"}">${d.n > d.exp ? "+" : ""}${d.n - d.exp}</b></td></tr>`).join("")}</tbody></table></div>` : ""}
+      <div class="row" style="margin-top:12px">${canEdit() ? '<button type="button" class="btn big" data-approve>Approve and adjust stock</button>' : '<span class="badge low">Waiting for the sommelier to approve</span>'}<button type="button" class="btn ghost" data-recount>Back to counting</button></div></div>`;
+  }
+  const done = Object.keys(stt.counts).length;
+  const row = w => { const n = stt.counts[w.id], exp = state.stock[w.id];
+    return `<div class="countrow"><div>${wineRowCells(w)}${n != null ? `<div class="diff ${n === exp ? "amt pos" : "amt neg"}">${n === exp ? "Matches" : `Expected ${exp} (${n > exp ? "+" : ""}${n - exp})`}</div>` : '<div class="hint">Expected number shows once counted</div>'}</div>
+      <div class="stepper"><button type="button" data-cnt="${w.id}" data-d="-1" aria-label="One fewer ${esc(w.s)}">−</button><input class="input num cntin" data-cntin="${w.id}" inputmode="numeric" value="${n ?? ""}" placeholder="–" aria-label="Count of ${esc(w.s)}"><button type="button" data-cnt="${w.id}" data-d="1" aria-label="One more ${esc(w.s)}">+</button></div></div>`; };
+  const groups = SECTIONS.map(sec => ({ sec, ws: list.filter(w => w.sec === sec) })).filter(g => g.ws.length);
+  return `<div class="grid cols-2" style="align-items:start"><div class="panel">
+    ${groups.map(g => `<h3 style="margin-top:6px">${esc(g.sec)}</h3>${g.ws.map(row).join("")}`).join("")}
+  </div><aside class="panel sticky"><h2>Progress</h2><p class="num">${done} of ${list.length} wines counted</p>
+    <div class="bar"><span style="width:${Math.round(done / list.length * 100)}%"></span></div>
+    <p class="hint">Counted on phones, in the list's own order. The expected number is hidden until a wine is counted, so people count rather than confirm. Sales during the count are allowed for by time.</p>
+    <button type="button" class="btn big" data-review>Finish and review</button></aside></div>`;
+};
+
+// ---------- Pairings ----------
+const pr = { mode: "tracked", courses: [
+  { course: "Snacks", id: "roebuck-estates-classic-cuvee", ml: 75 }, { course: "First starter", id: "mas-foulaquier-loiseau", ml: 75 },
+  { course: "Second starter", id: "radikon-pop-bianco", ml: 75 }, { course: "Fish", id: "montanetthoden-vezelay-galerne", ml: 75 },
+  { course: "Main", id: "matthieu-cosse-fronsac", ml: 100 }, { course: "Pre-dessert", id: "mas-amiel-maury-vintage", ml: 50 }, { course: "Dessert", id: "domaine-de-souch-cuvee-mariekattalin", ml: 50 }
+].filter(c => byId.has(c.id)), covers: 14, actual: {} };
+RENDER.pairings = () => {
+  const total = pr.courses.reduce((a, c) => a + c.ml, 0);
+  return `<div class="row" style="margin-bottom:12px"><div class="seg" role="group" aria-label="Pairing mode"><button type="button" data-pmode="simple" aria-pressed="${pr.mode === "simple"}">Simple (now)</button><button type="button" data-pmode="tracked" aria-pressed="${pr.mode === "tracked"}">Tracked (later)</button></div></div>
+  ${pr.mode === "simple" ? `<div class="panel"><h2>Simple pairings</h2><p>Nothing to set up. When a bottle is opened for the pairing, take it off: <b>Take off stock → the wine → a bottle → Pairing</b>. Partly used bottles count as gone that night.</p><a class="btn big" href="#take-off">Take off stock</a>
+    <h3>Pairing bottles taken off this week</h3><ul class="ledger">${state.moves.filter(m => m.kind === "pairing").slice(0, 6).map(ledgerItem).join("") || '<li class="muted">None yet</li>'}</ul></div>`
+  : `<div class="grid cols-2" style="align-items:start"><div class="panel"><h2>7-course pairing</h2><p class="muted small">Lightspeed item: <b>7 Course Pairing</b> · ${total} ml a cover · from 10 Nov</p>
+    <div class="scroll"><table class="table"><thead><tr><th>Course</th><th>Wine</th><th class="r">Pour</th></tr></thead><tbody>
+    ${pr.courses.map((c, i) => `<tr><td class="wname">${esc(c.course)}</td><td><select class="input" data-pwine="${i}" aria-label="Wine for ${esc(c.course)}" ${canEdit() ? "" : "disabled"}>${WINES.map(w => `<option value="${w.id}"${w.id === c.id ? " selected" : ""}>${esc(w.s)} ${esc(w.v)}</option>`).join("")}</select></td><td class="r"><select class="input num" data-pml="${i}" style="width:96px" aria-label="Pour for ${esc(c.course)}" ${canEdit() ? "" : "disabled"}>${[50, 75, 100, 125].map(n => `<option${n === c.ml ? " selected" : ""}>${n}</option>`).join("")}</select></td></tr>`).join("")}
+    </tbody></table></div><p class="hint">Changing tonight's wine for one course is one change here; each Lightspeed sale of the pairing takes every course's pour, times the covers, off that wine's open bottle.</p></div>
+    <aside class="panel"><h2>End of night check</h2><p class="muted small">${pr.covers} covers tonight. Expected left in each open bottle, against a quick look.</p>
+      ${pr.courses.map((c, i) => { const used = c.ml * pr.covers, exp = Math.max(0, (Math.ceil(used / BOTTLE) * BOTTLE) - used), act = pr.actual[i] ?? exp;
+        return `<div class="field" style="margin:10px 0"><label for="pa${i}">${esc(byId.get(c.id).s)}: expected ${exp} ml</label><input type="range" id="pa${i}" data-pact="${i}" min="0" max="750" step="25" value="${act}"><span class="hint num">Looks like ${act} ml${Math.abs(act - exp) > 125 ? ' · <b style="color:var(--warn)">more than a glass out: add a reason</b>' : ""}</span></div>`; }).join("")}
+      <button type="button" class="btn" data-pcheck>Save check</button></aside></div>`}
+  ${questions(["Do the pairings change nightly or by menu? Would you set them up before each service?", "Is the pairing sold as one item in Lightspeed, per cover?", "Would an end-of-night check like this be realistic, or one step too many?"])}`;
+};
+AFTER.pairings = () => {
+  view.querySelectorAll("[data-pwine]").forEach(el => el.onchange = () => { pr.courses[+el.dataset.pwine].id = el.value; toast("Tonight's pairing updated"); render(); });
+  view.querySelectorAll("[data-pml]").forEach(el => el.onchange = () => { pr.courses[+el.dataset.pml].ml = +el.value; render(); });
+  view.querySelectorAll("[data-pact]").forEach(el => el.oninput = () => { pr.actual[+el.dataset.pact] = +el.value; const hint = el.nextElementSibling; const i = +el.dataset.pact, c = pr.courses[i], used = c.ml * pr.covers, exp = Math.max(0, (Math.ceil(used / BOTTLE) * BOTTLE) - used); hint.innerHTML = `Looks like ${el.value} ml${Math.abs(el.value - exp) > 125 ? ' · <b style="color:var(--warn)">more than a glass out: add a reason</b>' : ""}`; });
+};
+
+// ---------- Lightspeed ----------
+const lsState = { unlinked: ["Nowack S.A. Btl", "Du Grappin Macon-Villages Gls", "Roc des Anges Alquimia Gls"], linking: null };
+RENDER.lightspeed = () => `<div class="grid cols-3">
+  <div class="panel kpi"><span class="muted">Connection</span><b style="font-size:20px"><span class="statusdot"></span>Connected</b><span class="small muted">Restaurant K-Series · last sale 18:24</span></div>
+  <div class="panel kpi"><span class="muted">Wines linked</span><b class="num">${WINES.length} of ${WINES.length + lsState.unlinked.length}</b><span class="small muted">${WINES.reduce((a, w) => a + w.ls.length, 0)} Lightspeed items</span></div>
+  <div class="panel kpi"><span class="muted">Last night's check (4:30am)</span><b class="num" style="font-size:20px">2 added · 1 reversed</b><span class="small muted">matched 212 sales from Sunday</span></div></div>
+  <div class="grid cols-2" style="margin-top:16px;align-items:start">
+  <div class="panel"><h2>Sold, but not linked</h2><p class="muted small">These Lightspeed items sold but aren't linked to a wine, so their sales haven't come off stock. Linking one applies its past sales.</p>
+    ${lsState.unlinked.map((x, i) => `<div class="countrow"><div><div class="wname">${esc(x)}</div><div class="wsub num">${3 + i * 2} sold since 10 Nov</div></div>
+      ${lsState.linking === i ? `<div class="row"><select class="input" id="lsPick" style="max-width:220px" aria-label="Wine to link">${WINES.map(w => `<option value="${w.id}">${esc(w.s)} ${esc(w.v)}</option>`).join("")}</select><select class="input" id="lsAmt" style="width:auto" aria-label="Amount"><option>a bottle (750 ml)</option><option>a glass (125 ml)</option><option>a glass (75 ml)</option></select><button type="button" class="btn" data-lsdo="${i}">Link</button></div>`
+      : `<button type="button" class="btn ghost" data-lslink="${i}">Link…</button>`}</div>`).join("") || '<p class="ok" style="color:var(--ok);font-weight:600">Everything that sold is linked.</p>'}
+  </div>
+  <div class="panel"><h2>Last night's check</h2><ul class="ledger">
+    <li><span class="k">Added</span><span>Fronsac 2020 Btl · paid 22:41, notification missed</span><span class="amt neg num">−1 btl</span><span class="muted">Table 7</span><span class="muted">Sun</span></li>
+    <li><span class="k">Added</span><span>Bout d'Zan 2024 Gls · paid 23:05</span><span class="amt neg num">−125 ml</span><span class="muted">Bar</span><span class="muted">Sun</span></li>
+    <li><span class="k">Reversed</span><span>Rosso per tutti Gls · recorded twice</span><span class="amt pos num">+125 ml</span><span class="muted">Table 3</span><span class="muted">Sun</span></li></ul>
+    <h3>Items and amounts</h3><p class="small">Each Lightspeed item is linked to one vintage and an amount: <b>Fronsac 2020 Btl</b> → 750 ml, <b>Fronsac 2020 Gls</b> → 125 ml, <b>7 Course Pairing</b> → the pairing's pours.</p></div></div>
+  ${questions(["Are all wines, including glasses and Coravin pours, set up as their own items in Lightspeed today?", "Who in the team would fix an unlinked item: you, or the manager?"])}`;
+
+// ---------- Guest menus ----------
+const PROFILES = {
+  apricity: { name: "Apricity table menu", fields: { headings: true, grapes: true, region: true, prices: true, glass: true, unique: true, note: false, taste: false, tags: false, photo: false, where: false, pairs: false }, soldout: "hide" },
+  example: { name: "Example venue (tasting notes)", fields: { headings: true, grapes: true, region: true, prices: true, glass: true, unique: false, note: true, taste: true, tags: true, photo: true, where: true, pairs: false }, soldout: "show" }
+};
+const FIELD_LABELS = [["headings", "Section and style headings"], ["grapes", "Grapes"], ["region", "Region"], ["prices", "Bottle price"], ["glass", "Glass price and size"], ["unique", "Unique expression mark (♢)"], ["note", "Style note under the wine"], ["taste", "Taste profile in words"], ["tags", "Flavours and making tags"], ["photo", "Bottle photo"], ["where", "Where it is from (place)"], ["pairs", "Pairs with"]];
+let menuSel = "apricity";
+function guestMenu(prof, full) {
+  const f = prof.fields;
+  const words = w => { if (!w.sc) return ""; const b = ["light", "light", "medium-bodied", "full", "full-bodied"][(w.sc.body || 3) - 1], a = (w.sc.acidity || 3) >= 4 ? "fresh" : (w.sc.acidity || 3) <= 2 ? "soft" : ""; return [b, a].filter(Boolean).join(", "); };
+  const line = w => { const out = totalBottles(w.id) === 0 && !(state.open[w.id] > 0); if (out && prof.soldout === "hide") return "";
+    return `<div class="gw">${f.photo ? `<span class="ph" aria-hidden="true"></span>` : ""}<div${f.photo ? "" : ' style="grid-column:1 / 3"'}><div class="gn">${esc(w.p)}, ${esc(w.c)} ${esc(w.v)}${f.unique && w.u ? ' <span class="uniq">♢</span>' : ""}</div>
+      <div class="gd">${[f.grapes ? w.gr : "", f.region ? w.rg : "", f.where && w.pl ? w.pl : ""].filter(Boolean).map(esc).join(" · ")}</div>
+      ${out ? '<div class="so">Sold out</div>' : ""}</div>
+      <div class="gp num">${[f.glass && w.gl ? `${money(w.gl)}${w.gs ? " " + esc(w.gs) : ""}` : "", f.prices && w.b ? money(w.b) : ""].filter(Boolean).join(" / ")}</div>
+      ${f.note && (w.gu || w.note) ? `<div class="gnote">${esc(w.gu || w.note)}</div>` : ""}
+      ${f.taste && words(w) ? `<div class="gnote" style="font-style:normal">${esc(words(w))}</div>` : ""}
+      ${f.tags && (w.fl || []).length ? `<div class="tags">${(w.fl || []).concat(w.mk || []).slice(0, 5).map(t => `<span>${esc(t)}</span>`).join("")}</div>` : ""}</div>`; };
+  const glass = WINES.filter(w => w.gl != null && !state.off.has(w.id)).slice(0, full ? 99 : 10);
+  const secs = (full ? SECTIONS : SECTIONS.slice(0, 4)).map(s => ({ s, list: WINES.concat(state.added).filter(w => w.sec === s && w.b && !state.off.has(w.id)).slice(0, full ? 999 : 4) }));
+  return `<div class="gm"><h2>Wine</h2><p style="text-align:center;margin:0;color:#3a3a3a;font-size:14px">${full ? "Apricity" : "Example: part of the list"}</p>
+    ${f.headings ? '<div class="gsec">By the glass</div>' : ""}${glass.map(line).join("")}
+    ${secs.map(x => `${f.headings ? `<div class="gsec">${esc(x.s)}</div>` : ""}${x.list.map(line).join("")}`).join("")}</div>`;
+}
+RENDER.menus = () => {
+  const prof = PROFILES[menuSel];
+  return `<div class="row" style="margin-bottom:12px">${Object.entries(PROFILES).map(([k, p]) => `<button type="button" class="chip" data-prof="${k}" aria-pressed="${k === menuSel}">${esc(p.name)}</button>`).join("")}</div>
+  <div class="grid cols-2" style="align-items:start"><div class="panel"><h2>What guests see</h2>
+    ${FIELD_LABELS.map(([k, l]) => `<div class="switchrow"><span>${l}</span><label class="switch"><input type="checkbox" data-field="${k}" ${prof.fields[k] ? "checked" : ""} aria-label="${l}"><span></span></label></div>`).join("")}
+    <div class="switchrow"><span>Producer, cuvée and vintage</span><span class="locked">Always shown</span></div>
+    <div class="switchrow"><span>Cost, stock, supplier, supplier questions</span><span class="locked">Never shown</span></div>
+    <div class="field" style="margin-top:12px"><label for="soldout">When a wine is out of stock</label><select class="input" id="soldout"><option value="hide"${prof.soldout === "hide" ? " selected" : ""}>Hide it</option><option value="show"${prof.soldout === "show" ? " selected" : ""}>Show "Sold out"</option></select></div>
+    <p class="hint">Apricity's profile matches today's wine list exactly. The menu site reads it as a feed shaped like today's sheet, so nothing else changes.</p></div>
+    <div><div class="phone" aria-label="Preview of the guest menu on a phone"><div class="scr">${guestMenu(prof)}</div></div></div></div>
+  ${questions(["Does Apricity's preview match the list you want guests to see?", "Would you ever show a short note or photos to guests, perhaps on the website only?", "Sold out: hide the wine, or show it as sold out?"])}`;
+};
+
+// ---------- What a guest sees (signed out) ----------
+RENDER["guest-menu"] = () => `<p class="guestnote">Signed out, this is all anyone sees: the guest wine list, as the menu site shows it. Staff sign in at the top.</p>
+  <div class="guestpage">${guestMenu(PROFILES.apricity, true)}</div>`;
+
+// ---------- Venue and team ----------
+const team = [["Manager", "Manager"], ["Sommelier", "Sommelier / wine lead"], ...PEOPLE.map(p => [p, "Floor staff"])];
+RENDER.venue = () => `<div class="grid cols-2" style="align-items:start">
+  <div class="panel"><h2>Team and roles</h2><div class="scroll"><table class="table"><thead><tr><th>Name</th><th>Role</th><th>Signs in with</th></tr></thead><tbody>
+    ${team.map(([n, r], i) => `<tr><td class="wname">${esc(n)}</td><td><select class="input" aria-label="Role for ${esc(n)}">${["Manager", "Sommelier / wine lead", "Floor staff"].map(x => `<option${x === r ? " selected" : ""}>${x}</option>`).join("")}</select></td><td class="muted small">${i < 2 ? "Google account" : "Email code"}</td></tr>`).join("")}
+    <tr><td class="muted">Service tablet</td><td>Floor staff (shared)</td><td class="muted small">Stays signed in; asks who on each change</td></tr></tbody></table></div>
+    <p><button type="button" class="btn ghost" data-invite>Invite someone</button></p></div>
+  <div class="panel"><h2>Venue</h2>
+    <h3>Glass sizes</h3><div class="row"><span class="badge">125ml</span><span class="badge">175ml</span><span class="badge">75ml</span><span class="badge">100ml</span></div>
+    <div class="formgrid" style="margin-top:12px"><div class="field"><label for="warn">Running-out warning</label><select class="input" id="warn"><option>14 days or 2 bottles</option><option>7 days or 1 bottle</option><option>21 days or 3 bottles</option></select></div>
+      <div class="field"><label for="dayend">Service day ends</label><select class="input" id="dayend"><option>4:00am</option><option>3:00am</option><option>5:00am</option></select></div></div>
+    <h3>Lightspeed</h3><p class="small"><span class="statusdot"></span>Connected to Restaurant K-Series · <button type="button" class="btn ghost" data-recon>Reconnect</button></p></div></div>
+  ${questions(["Who should be a manager, a sommelier, and floor staff?", "Do the settings for where sales come from match how the bar is stocked?"])}`;
+
+// ======================================================================
+// Events
+// ======================================================================
+document.addEventListener("click", e => {
+  const t = e.target;
+  if (t.closest("[data-signin]")) { state.picking = !state.picking; render(); return; }
+  const as = t.closest("[data-as]");
+  if (as) { state.role = as.dataset.as; state.who = ROLES[state.role].who; state.picking = false; tk.step = 0; tk.wine = null; overlay.innerHTML = ""; toast(`Signed in as ${ROLES[state.role].label}`); if (location.hash === "#today") render(); else location.hash = "#today"; return; }
+  if (t.closest("[data-logout]")) { state.role = "guest"; state.who = null; overlay.innerHTML = ""; toast("Logged out"); if (location.hash === "#guest-menu") render(); else location.hash = "#guest-menu"; return; }
+  if (state.picking && !t.closest(".picker")) { state.picking = false; render(); }
+  if (t.closest("[data-close]")) { const a = t.closest("[data-prefill]"), ew = t.closest("[data-editwine]"); overlay.innerHTML = ""; if (a) { tk.wine = a.dataset.prefill; tk.step = state.who ? 2 : 0; } if (ew) { ed.editId = ew.dataset.editwine; ed.wine = null; ed.mode = ""; } if (!t.closest("a")) return; }
+  const wr = t.closest("tr[data-wine]"); if (wr) { openWine(wr.dataset.wine); return; }
+  const off = t.closest("[data-offtonight]"); if (off) { const id = off.dataset.offtonight; state.off.has(id) ? state.off.delete(id) : state.off.add(id); toast(state.off.has(id) ? "Off tonight: hidden from the guest menu until 4am" : "Back on the menu"); render(); openWine(id); return; }
+  const f = t.closest("[data-filter]"); if (f) { stockUI.filter = f.dataset.filter; render(); return; }
+  // take off
+  const who = t.closest("[data-who]"); if (who) { state.who = tk.who = who.dataset.who; tk.step = tk.wine ? 2 : 1; render(); return; }
+  const pick = t.closest("[data-pick]"); if (pick) { tk.wine = pick.dataset.pick; tk.step = 2; render(); return; }
+  const am = t.closest("[data-amount]"); if (am) { tk.amount = am.dataset.amount; tk.step = 3; render(); return; }
+  const rs = t.closest("[data-reason]"); if (rs) { finishTakeOff(rs.dataset.reason); return; }
+  if (t.closest("[data-back]")) { tk.step = Math.max(state.role === "floor" ? 0 : 1, tk.step - 1); if (tk.step === 0) state.who = null; render(); return; }
+  // editor
+  const sc = t.closest("[data-score]"); if (sc) { const n = sc.dataset.score, v = +sc.dataset.v; ed.scores[n] = ed.scores[n] === v ? undefined : v; keepForm(() => render()); return; }
+  const fl = t.closest("[data-flav]"); if (fl) { const i = ed.flavours.indexOf(fl.dataset.flav); i >= 0 ? ed.flavours.splice(i, 1) : ed.flavours.push(fl.dataset.flav); keepForm(() => render()); return; }
+  const mk = t.closest("[data-mk]"); if (mk) { const i = ed.making.indexOf(mk.dataset.mk); i >= 0 ? ed.making.splice(i, 1) : ed.making.push(mk.dataset.mk); keepForm(() => render()); return; }
+  const prod = t.closest("[data-prod]"); if (prod) { document.getElementById("fProducer").value = prod.dataset.prod; document.getElementById("prodList").hidden = true; editorChecks(); return; }
+  const lsb = t.closest("[data-ls]"); if (lsb) { ed.ls.push(lsb.dataset.ls); keepForm(() => render()); return; }
+  const unls = t.closest("[data-unls]"); if (unls) { ed.ls.splice(+unls.dataset.unls, 1); keepForm(() => render()); return; }
+  if (t.closest("[data-publish]")) {
+    const v = id => (document.getElementById(id) || {}).value || "";
+    if (ed.mode === "add") {
+      const id = "new-" + Date.now(), w = { id, p: v("fProducer"), c: v("fCuvee"), n: v("fProducer") + ", " + v("fCuvee"), s: v("fCuvee") || v("fProducer"), v: v("fVintage") || "NV", sec: v("fSection"), t: /red/i.test(v("fSection")) ? "red" : /ros/i.test(v("fSection")) ? "rose" : /spark|champ/i.test(v("fSection")) ? "sparkling" : /orange/i.test(v("fSection")) ? "orange" : /sweet/i.test(v("fSection")) ? "sweet" : "white", gr: v("fGrapes"), rg: v("fRegion"), b: +v("fPrice") || null, gl: ed.glass ? +v("fGlassPrice") || null : null, supplier: v("fSupplier"), cost: +v("fCost") || null, ls: ed.ls.slice() };
+      state.added.push(w); byId.set(id, w);
+      state.stock[id] = parseInt(v("fOpen")) || 0; state.use[id] = 0;
+      record(id, "delivery", totalBottles(id), "Opening stock");
+      toast(`${esc(w.s)} published: on the menu, in stock and in the study tool`);
+      Object.assign(ed, { mode: "", wine: null }); location.hash = "#stock";
+    } else toast("Changes published");
+    return;
+  }
+  if (t.closest("[data-draft]")) { toast("Draft saved. Only the back office can see it."); return; }
+  if (t.closest("[data-retire]")) { toast("In the real thing this asks first, then takes the wine off every menu and keeps its history"); return; }
+  if (t.closest("[data-addvintage]")) { toast("Adds a 2021 line with the same notes and price, and its own stock"); return; }
+  // delivery
+  const dp = t.closest("[data-dpick]"); if (dp) { dl.lines.push({ id: dp.dataset.dpick, qty: 6, cost: byId.get(dp.dataset.dpick).cost }); dl.q = ""; render(); return; }
+  const dr = t.closest("[data-drm]"); if (dr) { dl.lines.splice(+dr.dataset.drm, 1); render(); return; }
+  if (t.closest("[data-bookin]")) { const n = dl.lines.reduce((a, l) => a + l.qty, 0); dl.lines.forEach(l => { state.stock[l.id] += l.qty; record(l.id, "delivery", l.qty, dl.supplier); }); dl.lines = []; toast(`${n} bottles booked in from ${esc(dl.supplier)}`); render(); return; }
+  // stock take
+  const cn = t.closest("[data-cnt]"); if (cn) { const k = cn.dataset.cnt, y = scrollY; stt.counts[k] = Math.max(0, (stt.counts[k] ?? 0) + +cn.dataset.d); render(); scrollTo(0, y); return; }
+  if (t.closest("[data-review]")) { stt.phase = "review"; render(); return; }
+  if (t.closest("[data-recount]")) { stt.phase = "count"; render(); return; }
+  if (t.closest("[data-approve]")) { let n = 0; Object.entries(stt.counts).forEach(([id, c]) => { const d = c - state.stock[id]; if (d) { state.stock[id] = c; record(id, "count", d, "Stock take"); n++; } }); stt.counts = {}; stt.phase = "count"; toast(`Approved: ${n} adjustment${n === 1 ? "" : "s"} recorded`); render(); return; }
+  // pairings
+  const pm = t.closest("[data-pmode]"); if (pm) { pr.mode = pm.dataset.pmode; render(); return; }
+  if (t.closest("[data-pcheck]")) { toast("Check saved. Differences over a glass would ask for a reason."); return; }
+  // lightspeed
+  const ll = t.closest("[data-lslink]"); if (ll) { lsState.linking = +ll.dataset.lslink; render(); return; }
+  const ld = t.closest("[data-lsdo]"); if (ld) { const i = +ld.dataset.lsdo, item = lsState.unlinked[i], w = byId.get(document.getElementById("lsPick").value); w.ls.push(item); lsState.unlinked.splice(i, 1); lsState.linking = null; toast(`Linked to ${esc(w.s)}: ${3 + i * 2} past sales applied`); render(); return; }
+  // menus
+  const pf = t.closest("[data-prof]"); if (pf) { menuSel = pf.dataset.prof; render(); return; }
+  if (t.closest("[data-invite]") || t.closest("[data-recon]")) { toast("Not part of this mock"); return; }
+});
+document.addEventListener("change", e => {
+  const fd = e.target.closest("[data-field]"); if (fd) { PROFILES[menuSel].fields[fd.dataset.field] = fd.checked; const y = scrollY; render(); scrollTo(0, y); return; }
+  if (e.target.id === "soldout") { PROFILES[menuSel].soldout = e.target.value; render(); }
+  const ci = e.target.closest("[data-cntin]"); if (ci) { const v = parseInt(ci.value), k = ci.dataset.cntin, y = scrollY; if (isNaN(v)) delete stt.counts[k]; else stt.counts[k] = Math.max(0, v); render(); scrollTo(0, y); }
+});
+document.addEventListener("input", e => { if (e.target.closest(".parts")) editorChecks(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && overlay.innerHTML) overlay.innerHTML = ""; });
+addEventListener("hashchange", () => { overlay.innerHTML = ""; render(); scrollTo(0, 0); document.getElementById("main").focus({ preventScroll: true }); });
+render();
+</script>

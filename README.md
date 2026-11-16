@@ -2,6 +2,8 @@
 
 A web tool that helps the floor team learn the wine list quickly, then answers guest questions in seconds during service. The design is in [`docs/wine-study/SPEC.md`](docs/wine-study/SPEC.md). This is **phase 1, the data foundation**.
 
+**Next: one app.** The study tool is joining the stock, POS and menu system in one app, Apricity Wine. The clickable mock is in [`mock/`](mock/README.md). The production spec and the plan are in [`docs/app/`](docs/app/PRODUCTION-SPEC.md).
+
 ## What phase 1 does
 
 - **Reads the live wine list.** Every wine in the restaurant's *apricity_wines* sheet appears, joined to its study notes by a wine key (producer plus cuvée, lower case, no accents or punctuation, no vintage). Glass and bottle rows merge into one wine with two prices.
