@@ -577,8 +577,11 @@ body[data-role="guest"] .gsearch{display:none}
   .tabbar a{flex:1;min-height:52px;display:grid;place-items:center;border-radius:12px;text-decoration:none;color:var(--ink-2);font-weight:700;font-size:15px}
   .tabbar a[aria-current="page"]{background:var(--soft);color:var(--ink);box-shadow:inset 0 3px 0 var(--accent)}
   .main{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px))}
-  body.inlesson .tabbar,body[data-role="guest"] .tabbar{display:none}
-  body:not(.inlesson):not([data-role="guest"]) .toast{bottom:calc(76px + env(safe-area-inset-bottom, 0px))}
+  body[data-role="guest"] .tabbar{display:none}
+  body:not([data-role="guest"]) .toast{bottom:calc(76px + env(safe-area-inset-bottom, 0px))}
+  /* a lesson keeps the menus: its answer bar sits just above the bottom bar */
+  body:not([data-role="guest"]) .feedback{bottom:calc(61px + env(safe-area-inset-bottom, 0px))}
+  body.inlesson .toast{bottom:auto;top:12px}
   .gsearch{max-width:none;order:5;flex-basis:100%}
 }
 body.fullmap .main{padding-bottom:0}
@@ -608,7 +611,7 @@ body[data-device="tablet"] .tabletonly{display:inline}
 .team .btn{white-space:nowrap}
 @media (max-width:860px){
   body:not([data-role="guest"]) .topbar .account{display:none}
-  body.inlesson .topbar,body.inlesson .mobilenav{display:none}
+  body.inlesson .topbar{display:none}
 }
 .switch{display:inline-block;vertical-align:middle}
 /* the wine picker */
