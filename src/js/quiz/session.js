@@ -2,6 +2,7 @@
 // are due. A wine answered wrong comes back later in the same lesson (as on Duolingo). A wine's box moves on its
 // first answer in the lesson; later answers are practice.
 import { questionFor } from "./questions.js";
+import { termQuestionFor } from "./terms.js";
 import { grade, isDue } from "./progress.js";
 
 export const LESSON_LENGTH = 10;
@@ -45,9 +46,20 @@ export class Session {
   get total() { return this.queue.length; }
   get done() { return this.index >= this.queue.length; }
 
+  // Progress records: a wine's under progress.wines, a term's (gradeId "term:<id>") under progress.terms.
+  rec(gradeId) { return gradeId.startsWith("term:") ? this.progress.terms[gradeId.slice(5)] : this.progress.wines[gradeId]; }
+  setRec(gradeId, r) { if (gradeId.startsWith("term:")) this.progress.terms[gradeId.slice(5)] = r; else this.progress.wines[gradeId] = r; }
+
   next() {
     while (!this.done) {
       const item = this.queue[this.index];
+      if (item.term) {
+        const gid = "term:" + item.term.id;
+        const q = this.kb.terms ? termQuestionFor(item.term, this.kb.terms, this.all, this.rng, { rec: this.rec(gid), avoid: this.lastType, hint: item.hint }) : null;
+        if (q) { this.current = { ...q, gradeId: gid }; this.lastType = q.type; return this.current; }
+        this.queue.splice(this.index, 1);
+        continue;
+      }
       const prefer = item.prefer || (item.first ? ["identify", "sayIt"] : []);
       // Recall (typed answers) only once the wine has left box 1, i.e. was answered right on an earlier day.
       const id = item.wine.id, rec = this.progress.wines[id];
@@ -64,28 +76,31 @@ export class Session {
   // Records an answer to the current question. For Say it, `correct` is the learner's own grade.
   answer(correct) {
     const q = this.current, id = q.gradeId, now = this.now();
-    if (!this.startBox.has(id)) this.startBox.set(id, (this.progress.wines[id] || {}).box || 0);
+    if (!this.startBox.has(id)) this.startBox.set(id, (this.rec(id) || {}).box || 0);
     if (!this.graded.has(id)) {
       this.graded.set(id, !!correct);
-      this.progress.wines[id] = grade(this.progress.wines[id], !!correct, now);
+      this.setRec(id, grade(this.rec(id), !!correct, now));
     } else if (correct) {
       // Practice: a later right answer counts towards finishing the lesson, but does not move the box.
-      this.progress.wines[id] = Object.assign({}, this.progress.wines[id], { right: (this.progress.wines[id].right || 0) + 1 });
+      this.setRec(id, Object.assign({}, this.rec(id), { right: (this.rec(id).right || 0) + 1 }));
     }
     if (!correct && this.extra < MAX_EXTRA) {
       this.extra++;
       const at = Math.min(this.queue.length, this.index + 3); // a few questions later
-      this.queue.splice(at, 0, { wine: this.queue[this.index].wine });
+      const { wine, term, hint } = this.queue[this.index];
+      this.queue.splice(at, 0, term ? { term, hint } : { wine });
     }
     this.answered++;
     this.index++;
     return { correct: !!correct };
   }
 
+  // Wines and terms are counted apart: "3 of 4 wines right first time", "2 wine words practised".
   summary() {
-    const firstRight = [...this.graded.values()].filter(Boolean).length;
-    const movedUp = [...this.graded.entries()].filter(([id, ok]) => ok && (this.progress.wines[id].box > (this.startBox.get(id) || 0))).map(([id]) => id);
-    const missed = [...this.graded.entries()].filter(([, ok]) => !ok).map(([id]) => id);
-    return { wines: this.graded.size, firstRight, movedUp, missed, questions: this.answered };
+    const entries = [...this.graded.entries()], wineE = entries.filter(([id]) => !id.startsWith("term:")), termE = entries.filter(([id]) => id.startsWith("term:"));
+    const up = ([id, ok]) => ok && this.rec(id).box > (this.startBox.get(id) || 0);
+    return { wines: wineE.length, firstRight: wineE.filter(([, ok]) => ok).length, movedUp: wineE.filter(up).map(([id]) => id), missed: wineE.filter(([, ok]) => !ok).map(([id]) => id),
+      terms: termE.length, termsRight: termE.filter(([, ok]) => ok).length, termsMissed: termE.filter(([, ok]) => !ok).map(([id]) => id.slice(5)),
+      termsLearnt: termE.filter(([id]) => this.rec(id).box >= 5 && (this.startBox.get(id) || 0) < 5).map(([id]) => id.slice(5)), questions: this.answered };
   }
 }

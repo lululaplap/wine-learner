@@ -29,12 +29,12 @@ export const isDue = (rec, now = Date.now()) => !!rec && rec.box > 0 && rec.due 
 export const isKnown = rec => !!rec && rec.box >= KNOWN;
 
 export function emptyProgress() {
-  return { wines: {}, sessions: [], sigs: null, changed: [] };
+  return { wines: {}, terms: {}, sessions: [], sigs: null, changed: [] };
 }
 
 export function loadProgress(name) {
   const p = store.get("progress:" + name, null);
-  return p && p.wines ? Object.assign(emptyProgress(), p) : emptyProgress();
+  return p && p.wines ? Object.assign(emptyProgress(), p, { terms: p.terms || {} }) : emptyProgress();
 }
 
 export function saveProgress(name, p) {

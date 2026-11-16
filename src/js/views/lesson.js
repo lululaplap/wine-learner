@@ -8,9 +8,11 @@ import { planLesson, Session, LESSON_LENGTH, BEFORE_SERVICE_LENGTH } from "../qu
 import { TYPE_NAMES, comparatorLine, shuffle } from "../quiz/questions.js";
 import { vocabulary, suggest, checkTyped } from "../quiz/answer.js";
 import { learner } from "./path.js";
+import { termIndexFor, pickTerms, withTerms, TERM_TYPE_NAMES, shortDefinition } from "../quiz/terms.js";
 import { isOpen, openExtras, askToday, dontAskToday, SCALE_WORDS, SCORE_NAMES, gridScores, compareTasting, tastingText, saveTasting } from "../quiz/tasting.js";
 
 const MAX_TASTE = 4;
+
 
 let active = null; // { id, session, name, phase: "ask" | "feedback" | "end", picked, result }
 
@@ -22,7 +24,17 @@ function start(id, ctx) {
   const tastedIn = list => list.some(w => w.tasted);
   let plan, title, allowEstimates = !tastedIn(all), kind = "lesson";
   let tasteFrom = []; // the wines this lesson offers to taste first, if they are open
-  if (id === "open") {
+  const terms = termIndexFor(ctx);
+  if (id === "words") {
+    // Wine words: ten questions on the glossary alone. Due terms first, then up to four new ones,
+    // starting with the terms our wines use most.
+    kind = "words"; title = "Wine words";
+    const pool = terms ? terms.terms.slice().sort((a, b) => terms.byTerm.get(b.id).wines.length - terms.byTerm.get(a.id).wines.length) : [];
+    plan = terms ? pickTerms(terms, p, { pool, n: LESSON_LENGTH, newMax: 4, now }).map(it => ({ term: it.term, hint: it.hint })) : [];
+    // Short of due and new terms: practise the ones met most recently, so the lesson still has a few questions.
+    if (plan.length < 4 && terms) pool.filter(t => p.terms[t.id] && p.terms[t.id].box < 5 && !plan.some(x => x.term.id === t.id)).sort((a, b) => p.terms[b.id].last - p.terms[a.id].last)
+      .slice(0, 4 - plan.length).forEach(t => plan.push({ term: t }));
+  } else if (id === "open") {
     kind = "open"; title = "Taste what's open";
     const extras = openExtras(all, now).slice(0, MAX_TASTE);
     if (!extras.length) return null;
@@ -40,6 +52,7 @@ function start(id, ctx) {
     title = stage ? `Review: ${stage.title}` : "Review";
     plan = planLesson({ newWines: [], wines: pool, progress: p, now, length: LESSON_LENGTH });
     if (stage) allowEstimates = !tastedIn(stage.wines);
+    if (terms) plan = withTerms(plan, pickTerms(terms, p, { wines: pool, newMax: 0, now }), LESSON_LENGTH);
   } else {
     const lesson = stages.flatMap(s => s.lessons).find(l => l.id === id);
     if (!lesson) return null;
@@ -48,8 +61,10 @@ function start(id, ctx) {
     plan = planLesson({ newWines: lesson.wines, wines: all, progress: p, now });
     allowEstimates = !tastedIn(stage.wines);
     tasteFrom = lesson.wines;
+    // Wine words where they fit: terms the lesson's own wines use, due ones first, at most one new.
+    if (terms) plan = withTerms(plan, pickTerms(terms, p, { wines: lesson.wines, now }), LESSON_LENGTH);
   }
-  const session = new Session({ kind, lessonId: id, plan, all, progress: p, allowEstimates, kb: { regionsById: ctx.regions ? ctx.regions.byId : null } });
+  const session = new Session({ kind, lessonId: id, plan, all, progress: p, allowEstimates, kb: { regionsById: ctx.regions ? ctx.regions.byId : null, terms } });
   session.next();
   const toTaste = tasteFrom.filter(w => isOpen(w, now)).slice(0, MAX_TASTE);
   const ask = toTaste.length && session.current && (id === "open" || askToday(now));
@@ -114,7 +129,7 @@ function nextTaste() {
   active.phase = t.i < t.list.length ? "taste" : "ask";
 }
 
-const typeChip = q => `<span class="qtype">${esc(TYPE_NAMES[q.type])}</span>`;
+const typeChip = q => `<span class="qtype">${esc(TYPE_NAMES[q.type] || TERM_TYPE_NAMES[q.type] || "")}</span>`;
 
 function questionHTML(q, ctx) {
   const w = ctx.byId.get(q.wineId);
@@ -124,13 +139,14 @@ function questionHTML(q, ctx) {
       ${active.phase === "ask" ? '<button type="button" class="btn big reveal" data-reveal>Show the guest line</button>' : ""}`;
   }
   if (q.input) return typedHTML(q, ctx);
-  if (q.type === "match") return matchHTML(q);
+  if (q.type === "match" || q.type === "termMatch") return matchHTML(q);
+  if (q.multi) return multiHTML(q);
   const opts = q.options.map((o, i) => {
     let cls = "opt";
     if (active.phase !== "ask") cls += o.correct ? " right" : active.picked === i ? " wrong" : " faded";
     return `<button type="button" class="${cls}" data-opt="${i}" ${active.phase !== "ask" ? "disabled" : ""}><span class="optkey" aria-hidden="true">${i + 1}</span><span>${esc(o.label)}</span></button>`;
   }).join("");
-  return `${typeChip(q)}<h1 class="qprompt">${esc(q.prompt)}</h1><div class="opts" role="group" aria-label="Answers">${opts}</div>`;
+  return `${typeChip(q)}<h1 class="qprompt">${esc(q.prompt)}</h1><div class="opts${q.long ? " long" : ""}" role="group" aria-label="Answers">${opts}</div>`;
 }
 
 // ---------- typed answers ----------
@@ -198,7 +214,7 @@ function matchHTML(q) {
     return `<button type="button" class="mbtn${done ? " done" : ""}${sel ? " sel" : ""}${flash ? " miss" : ""}" data-m="${side}${i}" ${done || active.phase !== "ask" ? "disabled" : ""} aria-pressed="${sel}">${esc(label)}</button>`;
   };
   return `${typeChip(q)}<h1 class="qprompt">${esc(q.prompt)}</h1>
-    <div class="matchgrid" role="group" aria-label="Tap a wine, then its ${esc(q.by)}">
+    <div class="matchgrid${q.type === "termMatch" ? " terms" : ""}" role="group" aria-label="Tap a ${esc(q.leftWord || "wine")}, then its ${esc(q.by)}">
       <div class="mcol">${q.pairs.map((p, i) => btn("L", i, p.left)).join("")}</div>
       <div class="mcol">${m.rights.map(i => btn("R", i, q.pairs[i].right)).join("")}</div>
     </div>
@@ -219,7 +235,34 @@ function onMatchTap(code) {
   }
 }
 
+// Find them all: tap every wine that fits, then Check. Right only if exactly the right wines are chosen.
+function multiHTML(q) {
+  const sel = active.multi || (active.multi = new Set()), asking = active.phase === "ask";
+  const opts = q.options.map((o, i) => {
+    let cls = "opt pick";
+    if (!asking) cls += o.correct ? (sel.has(i) ? " right" : " missed") : sel.has(i) ? " wrong" : " faded";
+    return `<button type="button" class="${cls}" data-multi="${i}" aria-pressed="${sel.has(i)}" ${asking ? "" : "disabled"}><span class="optkey" aria-hidden="true">${sel.has(i) ? "✓" : ""}</span><span>${esc(o.label)}</span></button>`;
+  }).join("");
+  return `${typeChip(q)}<h1 class="qprompt">${esc(q.prompt)}</h1><div class="opts" role="group" aria-label="Wines: tap each one that fits">${opts}</div>
+    ${asking ? `<p class="typedhelp">${sel.size} chosen</p><button type="button" class="btn big" data-check-multi ${sel.size ? "" : "disabled"}>Check</button>` : ""}`;
+}
+
+// The answer screen for a wine word: the term and its meaning, and the wine it was about, if any.
+function termFeedbackHTML(q, ctx) {
+  const ok = active.result, t = ctx.glossary.byId.get(q.termId), w = q.wineId ? ctx.byId.get(q.wineId) : null;
+  let answer = ok ? "" : `<p class="fb-answer">The answer: <strong>${esc(q.answer)}</strong></p>`;
+  if (q.type === "termMatch") answer = ok ? "" : `<p class="fb-answer">${active.match.mistakes} mismatch${active.match.mistakes > 1 ? "es" : ""}.</p>`;
+  if (q.multi && !ok) answer = `<p class="fb-answer">The ${q.options.filter(o => o.correct).length}: <strong>${esc(q.answer)}</strong></p>`;
+  return `<div class="feedback ${ok ? "ok" : "no"}" role="status"><div class="fb-inner">
+      <p class="fb-head">${ok ? "Correct!" : "Not quite"}</p>${answer}
+      ${t ? `<p class="fb-guest"><strong>${esc(t.term)}</strong>: ${esc(t.definition)}</p>` : ""}
+      ${w ? `<p class="fb-cmp"><a class="winelink" href="#/wine/${encodeURIComponent(w.id)}">${esc(w.short)}: open the card</a></p>` : ""}
+      <div class="fb-actions"><button type="button" class="btn big" data-continue>Continue</button></div>
+    </div></div>`;
+}
+
 function feedbackHTML(q, ctx) {
+  if (q.termId) return termFeedbackHTML(q, ctx);
   const w = ctx.byId.get(q.wineId), ok = active.result;
   const used = new Set();
   const isSay = q.type === "sayIt";
@@ -247,8 +290,11 @@ function endHTML(ctx) {
   const s = active.session.summary();
   const names = ids => ids.map(id => ctx.byId.get(id)).filter(Boolean).map(w => `<a class="winelink" href="#/wine/${encodeURIComponent(w.id)}">${esc(w.short)}</a>`).join(", ");
   return `<div class="lessonend">
-    <h1>Lesson complete</h1>
-    <p class="endscore"><strong>${s.firstRight} of ${s.wines}</strong> wines right first time</p>
+    <h1>${active.session.kind === "words" ? "Wine words done" : "Lesson complete"}</h1>
+    ${s.wines ? `<p class="endscore"><strong>${s.firstRight} of ${s.wines}</strong> wines right first time</p>` : ""}
+    ${s.terms ? `<p class="endscore"><strong>${s.termsRight} of ${s.terms}</strong> wine words right first time</p>` : ""}
+    ${s.termsLearnt.length ? `<p>Learnt, and no longer asked: ${esc(s.termsLearnt.map(id => (ctx.glossary.byId.get(id) || {}).term).filter(Boolean).join(", "))}</p>` : ""}
+    ${s.termsMissed.length ? `<p>Words to practise: ${esc(s.termsMissed.map(id => (ctx.glossary.byId.get(id) || {}).term).filter(Boolean).join(", "))}. They come back first next time.</p>` : ""}
     ${s.movedUp.length ? `<p>Moving up: ${names(s.movedUp)}</p>` : ""}
     ${s.missed.length ? `<p>To practise: ${names(s.missed)}. They come back first next time.</p>` : ""}
     <p><a class="btn big" href="#/learn" data-finish>Back to the path</a></p>
@@ -267,7 +313,7 @@ export function renderLesson(id, ctx) {
   const pct = Math.round((s.index / Math.max(1, s.total)) * 100);
   const top = `<div class="lessontop"><a class="closebtn" href="#/learn" aria-label="Leave the lesson">×</a>
     <div class="bar lessonbar" role="progressbar" aria-label="Lesson progress" aria-valuemin="0" aria-valuemax="${s.total}" aria-valuenow="${s.index}"><span style="width:${pct}%"></span></div></div>`;
-  if (active.phase === "empty") return `<div class="lessonview">${top}<div class="lessonend"><h1>Nothing to review</h1><p>No wines are due yet. Try the next lesson on the path.</p><p><a class="btn big" href="#/learn">Back to the path</a></p></div></div>`;
+  if (active.phase === "empty") return `<div class="lessonview">${top}<div class="lessonend"><h1>Nothing to review</h1><p>${active.id === "words" ? "No wine words are due. The ones you have met are resting until their next review, and the rest are learnt." : "No wines are due yet. Try the next lesson on the path."}</p><p><a class="btn big" href="#/learn">Back to the path</a></p></div></div>`;
   if (active.phase === "end") { active.endShown = true; return `<div class="lessonview">${top}${endHTML(ctx)}</div>`; }
   const q = s.current;
   return `<div class="lessonview"><p class="lessontitle">${esc(active.title)}</p>${top}
@@ -293,6 +339,13 @@ export function onLessonClick(e, ctx) {
     if (input) { input.value = sugg.dataset.sugg; active.typed = input.value; input.focus(); }
     const ul = document.getElementById("suggest"); if (ul) ul.innerHTML = "";
     return false;
+  }
+  const mu = t.closest("[data-multi]");
+  if (mu && active.phase === "ask") { const i = +mu.dataset.multi, sel = active.multi || (active.multi = new Set()); sel.has(i) ? sel.delete(i) : sel.add(i); return true; }
+  if (t.closest("[data-check-multi]") && active.phase === "ask") {
+    const sel = active.multi || new Set(), q = s.current;
+    active.result = q.options.every((o, i) => o.correct === sel.has(i));
+    s.answer(active.result); save(); active.phase = "feedback"; return true;
   }
   const mb = t.closest("[data-m]");
   if (mb && active.phase === "ask") { onMatchTap(mb.dataset.m); return true; }
@@ -339,7 +392,7 @@ function onTasteClick(t) {
 
 function advance() {
   const s = active.session;
-  active.picked = null; active.result = null; active.typed = ""; active.check = null; active.match = null;
+  active.picked = null; active.result = null; active.typed = ""; active.check = null; active.match = null; active.multi = null;
   if (s.next()) { active.phase = "ask"; return; }
   active.phase = "end";
   const sum = s.summary();
