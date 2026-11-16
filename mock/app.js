@@ -213,7 +213,10 @@ function draw() {
   if (isTablet() && state.area !== "learn" && c.id !== "wine") Study.store.remove("learner");
   if (state.area === "service") document.documentElement.setAttribute("data-theme", "dark"); else document.documentElement.removeAttribute("data-theme");
   Object.assign(document.body.dataset, { role: state.role, device: acct().device || "", mode: state.area === "service" ? "service" : "learn", area: state.area });
-  document.body.classList.toggle("inlesson", c.id === "lesson");
+  // Any lesson drops the page title; a lesson from the path also drops the menus on phones, to give the questions the
+  // screen. Before service keeps them, as it is started from Tonight in the middle of getting ready.
+  document.body.classList.toggle("lessonpage", c.id === "lesson");
+  document.body.classList.toggle("inlesson", c.id === "lesson" && c.arg !== "service");
   document.body.classList.toggle("fullmap", c.id === "regions" || c.id === "connections");
   document.getElementById("nav").innerHTML = navHTML(c);
   document.getElementById("mnav").innerHTML = mnavHTML(c);

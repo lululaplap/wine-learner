@@ -12,7 +12,7 @@ npm run mock          # writes mock/dist/wine-app.html
 npm run test:mock     # every screen for every account, then the stock and learning flows on laptop, phone and iPad
 ```
 
-Open `mock/dist/wine-app.html` in a browser. Signed out, it shows the guest wine list; *Sign in* offers five example accounts:
+Open `mock/dist/wine-app.html` in a browser, or `/mock/` on the GitHub Pages site (it forwards to the built page). Signed out, it shows the guest wine list; *Sign in* offers five example accounts:
 
 | Account | Roles | Shows |
 | --- | --- | --- |
