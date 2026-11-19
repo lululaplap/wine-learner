@@ -373,6 +373,15 @@ let finder = null;
 const finderIdx = () => (finder && finder.n === ctx.data.wines.length ? finder.idx : (finder = { n: ctx.data.wines.length, idx: Study.searchIndex(ctx.data.wines, ctx.regions) }).idx);
 const findHits = (q, n = 8) => Study.search(finderIdx(), q, { limit: n }).map(x => ({ w: byId.get(x.wine.id) || state.added.find(a => a.id === x.wine.id), why: x.why })).filter(x => x.w);
 const findWines = (q, n = 8) => findHits(q, n).map(x => x.w);
+// "Did you mean “chardonnay”?" when a search finds nothing; data-dym-for names which box it fills.
+const dymButton = (q, box) => { const d = Study.didYouMean(finderIdx(), q); return d ? ` <button type="button" class="linkbtn" data-dym="${esc(d)}" data-dym-for="${esc(box)}">Did you mean “${esc(d)}”?</button>` : ""; };
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-dym-for]"); if (!b) return;
+  const box = b.dataset.dymFor, q = b.dataset.dym;
+  if (box === "gq") { const el = document.getElementById("gq"); el.value = q; searchWines(q); el.focus(); }
+  else if (box === "tk") { tk.q = q; render(); const el = document.getElementById("tkSearch"); if (el) { el.focus(); el.setSelectionRange(q.length, q.length); } }
+  else if (picks[box]) { picks[box].q = q; const el = view.querySelector(`[data-wpick-q="${box}"]`); if (el) { el.value = q; el.focus(); } document.getElementById("wpl-" + box).innerHTML = wpickItems(box); }
+});
 const picks = {}; // picker id -> { q, open, onPick, suggest, none }
 function winePicker(id, { value = null, onPick, label = "Wine", suggest = [], q = "", disabled = false, none = "", keepOpen = false } = {}) {
   const p = picks[id] = picks[id] || { q, open: !value };
@@ -387,7 +396,7 @@ function wpickItems(id) {
   const p = picks[id], typed = p.q.trim();
   const found = typed ? findHits(p.q) : p.suggest.map(x => ({ w: byId.get(x) || state.added.find(a => a.id === x) })).filter(x => x.w).slice(0, 6);
   const hits = found.map(x => x.w), why = new Map(found.map(x => [x.w.id, x.why]));
-  if (!hits.length) return typed ? `<li class="wpick-none">No wine matches “${esc(typed)}”.${p.none ? " " + p.none : ""}</li>` : "";
+  if (!hits.length) return typed ? `<li class="wpick-none">No wine matches “${esc(typed)}”.${dymButton(typed, id) || (p.none ? " " + p.none : "")}</li>` : "";
   return (typed ? "" : '<li class="wpick-head">Suggested</li>') + hits.map(w => `<li role="option" aria-selected="false"><button type="button" data-wpick-opt="${id}" data-id="${w.id}">${glyph(w.t)}<span><b>${esc(w.s)}</b> <span class="muted num">${esc(w.v)}</span><span class="wsub">${esc(w.p)} · ${esc(w.sec)} · ${stockText(w.id)}</span>${why.get(w.id) ? `<span class="wsub why">${esc(why.get(w.id))}</span>` : ""}</span></button></li>`).join("");
 }
 function choosePick(id, wineId) {

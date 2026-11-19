@@ -109,7 +109,7 @@ function searchWines(q) {
   const ul = document.getElementById("gres");
   if (!q.trim()) { ul.hidden = true; ul.innerHTML = ""; return; }
   const hits = Study.search(finderIdx(), q, { limit: 8 });
-  ul.innerHTML = hits.length ? hits.map(({ wine: s, why }) => `<li><a href="#/wine/${encodeURIComponent(s.id)}">${Study.glyph(s.type, 16)}<span><span>${esc(s.name)}</span><br><span class="sub">${esc(why || [s.grapes, s.regionGroup].filter(Boolean).join(" · "))}</span></span></a></li>`).join("") : '<li class="sub" style="padding:10px">No wine matches. Try a grape, a region or a style.</li>';
+  ul.innerHTML = hits.length ? hits.map(({ wine: s, why }) => `<li><a href="#/wine/${encodeURIComponent(s.id)}">${Study.glyph(s.type, 16)}<span><span>${esc(s.name)}</span><br><span class="sub">${esc(why || [s.grapes, s.regionGroup].filter(Boolean).join(" · "))}</span></span></a></li>`).join("") : `<li class="sub" style="padding:10px">No wine matches.${dymButton(q, "gq") || " Try a grape, a region or a style."}</li>`;
   ul.hidden = false;
 }
 document.addEventListener("click", e => { if (e.target.closest("#gres a") || !e.target.closest(".gsearch")) { const ul = document.getElementById("gres"); if (!ul.hidden) { ul.hidden = true; if (e.target.closest("#gres a")) document.getElementById("gq").value = ""; } } });

@@ -21,6 +21,15 @@ const http = require('http'), fs = require('fs'), path = require('path');
   check((await p.locator('#view tbody').innerText()).includes("Bout d'Zan"), 'Stock screen: the filter finds it');
   await p.fill('#gq', 'bout dzan'); await p.waitForTimeout(80);
   check(/Bout d'Zan/.test(await p.locator('#gres').innerText()), 'mock search bar: "bout dzan", no apostrophe');
+  await p.fill('#gq', 'shardoney'); await p.waitForTimeout(80);
+  check(/Did you mean “chardonnay”/.test(await p.locator('#gres').innerText()), 'mock search bar: "shardoney" offers "Did you mean chardonnay?"');
+  await p.click('#gres [data-dym]'); await p.waitForTimeout(80);
+  check(await p.inputValue('#gq') === 'chardonnay' && /Chardonnay/.test(await p.locator('#gres').innerText()), 'tapping it searches for chardonnay');
+  await p.fill('#gq', ''); await p.waitForTimeout(50);
+  await go('#take-off'); await p.fill('#tkSearch', 'shardoney'); await p.waitForTimeout(100); await p.click('#view [data-dym-for="tk"]'); await p.waitForTimeout(100);
+  check((await p.locator('[data-pick]').count()) > 0, 'Take off stock: "Did you mean" fills the search and finds wines');
+  await go('#delivery'); await p.fill('[data-wpick-q="dadd"]', 'shardoney'); await p.waitForTimeout(80); await p.click('#wpl-dadd [data-dym]'); await p.waitForTimeout(80);
+  check((await p.locator('#wpl-dadd [data-wpick-opt]').count()) > 0, 'wine picker: "Did you mean" fills the search and finds wines');
   if (errs.length) { failed = true; console.log('mock errors', errs); }
   // the study tool itself, served as GitHub Pages serves it
   const root = path.resolve(__dirname, '../..');
@@ -39,9 +48,13 @@ const http = require('http'), fs = require('fs'), path = require('path');
   check(await s.evaluate(() => document.activeElement && document.activeElement.id === 'listq'), 'study tool: the search box keeps focus while typing');
   await s.fill('#listq', ''); await s.waitForTimeout(100);
   check(/By the glass/.test(await s.locator('#listbody').innerText()), 'study tool: clearing the box brings the full list back');
+  await s.fill('#listq', 'shardoney'); await s.waitForTimeout(150); await s.click('#listbody [data-dym]'); await s.waitForTimeout(150);
+  check(await s.inputValue('#listq') === 'chardonnay' && /Chardonnay/.test(await s.locator('#listbody').innerText()), 'study tool wine list: "Did you mean" fills the box and finds wines');
   await s.evaluate(() => location.hash = '#/map'); await s.waitForTimeout(1500);
   await s.fill('#q', 'cotes du rhone'); await s.waitForTimeout(200);
   check(/Bout d'Zan/.test(await s.locator('#results').innerText()), 'study tool, connections map: its search finds it');
+  await s.fill('#q', 'shardoney'); await s.waitForTimeout(200); await s.click('#results [data-dym]'); await s.waitForTimeout(200);
+  check(/Chardonnay/.test(await s.locator('#results').innerText()), 'study tool map: "Did you mean" works there too');
   if (errs2.length) { failed = true; console.log('study tool errors', errs2); }
   server.close(); await b.close(); process.exit(failed ? 1 : 0);
 })();

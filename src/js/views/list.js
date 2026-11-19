@@ -1,7 +1,7 @@
 // The whole list in the order the wine sheet gives it: by the glass first, then bottles by style.
 // Type chips narrow it with one tap; no typing needed.
 import { esc, wineRow, glyph, typeLabel } from "../ui.js";
-import { searchIndex, search } from "../search.js";
+import { searchIndex, search, didYouMean } from "../search.js";
 
 const TYPES = ["sparkling", "white", "rose", "orange", "red", "sweet"];
 
@@ -14,7 +14,10 @@ export function listMatches(ctx, state) {
 }
 export function matchesHTML(ctx, state) {
   const found = listMatches(ctx, state);
-  if (!found.length) return `<p class="intro">No wine matches “${esc(state.q)}”. Try a grape, a region or a style a guest mentions.</p>`;
+  if (!found.length) {
+    const dym = didYouMean(finderFor(ctx), state.q || "");
+    return `<p class="intro">No wine matches “${esc(state.q)}”.${dym ? ` <button type="button" class="linkbtn" data-dym="${esc(dym)}">Did you mean “${esc(dym)}”?</button>` : " Try a grape, a region or a style a guest mentions."}</p>`;
+  }
   return `<section class="listsec" aria-labelledby="sec-found"><h2 id="sec-found">Matches <span class="n">${found.length}</span></h2><div class="rows">${found.map(x => `<div class="found">${wineRow(x.wine)}${x.why ? `<p class="why">${esc(x.why)}</p>` : ""}</div>`).join("")}</div></section>`;
 }
 

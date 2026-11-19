@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { toRows } from "../src/js/csv.js";
 import { buildWines, buildRegions } from "../src/js/data.js";
-import { searchIndex, search, words } from "../src/js/search.js";
+import { searchIndex, search, words, didYouMean, distance } from "../src/js/search.js";
 
 const read = p => readFileSync(new URL("../" + p, import.meta.url), "utf8");
 const { wines } = buildWines(toRows(read("sheets/wine.csv")), toRows(read("sheets/study.csv")));
@@ -64,4 +64,40 @@ test("small words alone find nothing, and so does an empty box", () => {
   assert.deepEqual(found(""), []);
   assert.deepEqual(found("du de la"), []);
   assert.deepEqual(words("Côtes du Rhône"), ["cote", "rhone"]);
+});
+
+// ---------- spelling ----------
+test("slips are forgiven by length: a swap in 4 letters, one slip from 5, two from 8", () => {
+  assert.ok(found("pinot nior").includes("Frick Pinot Noir"));       // 4 letters: two letters swapped
+  assert.ok(found("reisling").some(s => /Riesling/.test(s)));         // one swap
+  assert.ok(found("shardonay").some(s => /Chardonnay/.test(s)));      // two slips in a long word
+  assert.ok(found("chateneuf").includes("Bout d'Zan"));               // two letters missing
+  assert.deepEqual(found("rosa").filter(s => /Rosé/.test(s)), [], "4 letters: a wrong letter is not forgiven");
+  assert.equal(distance("abcd", "abdc"), 1);
+  assert.equal(distance("shardonay", "chardonnay"), 2);
+});
+
+test("a closer match always ranks first, wherever it is found", () => {
+  // "rioha" is one slip from Rioja (a region) and one slip from the start of "Richard" (a name): Rioja wins.
+  const top = search(idx, "rioha", { limit: 1 })[0].wine;
+  assert.match(top.regionGroup, /Rioja/);
+});
+
+test("words typed apart are tried joined up", () => {
+  assert.ok(found("chateau neuf").includes("Bout d'Zan"));
+});
+
+test("sound-alikes from the Misspellings column, which search uses but never shows", () => {
+  assert.ok(found("bojolais").length);
+  assert.ok(found("shablee").length);
+  assert.ok(found("shampain").length);
+  assert.ok(found("cotes du rone").includes("Bout d'Zan"));
+  search(idx, "bojolais", { limit: 0 }).forEach(x => assert.doesNotMatch(x.why, /bojolais/i));
+});
+
+test("did you mean: the nearest word on the list, only when it is close and finds wines", () => {
+  assert.equal(didYouMean(idx, "shardoney"), "chardonnay");
+  assert.equal(didYouMean(idx, "voignier"), "");   // no Viognier on the list, and nothing else that close
+  assert.equal(didYouMean(idx, "xyzzy"), "");
+  assert.equal(didYouMean(idx, "chardonnay"), ""); // already matches
 });

@@ -87,8 +87,11 @@ The wine study tool reads two sheets. Change either sheet and the tool updates b
 | Country | The country | France |
 | Latitude, Longitude | The middle of the region, in decimal degrees | 47.30, 0.70 |
 | Also matches | Other names that mean this region, separated by `;`: appellations, local spellings, and the region names used in the wine sheet | Sancerre; Muscadet; Loire Valley |
+| Misspellings | Ways guests and staff spell it that are too far off for search to catch by itself, separated by `;`. Search uses them; they are never shown. A slip of a letter or two needs no entry | Sansair; Sanser |
 | Known for | One plain sentence | France's longest river: Muscadet near the sea… |
 | Grapes | The main grapes | Chenin Blanc, Sauvignon Blanc, Cabernet Franc |
+
+**When a search finds nothing.** Search forgives a slip or two in a word (more in longer words) and offers *Did you mean…?* when a word is close to one on the list. If the team keeps typing a name it can't place (“bojolais”), add that spelling to the region's *Misspellings*.
 
 A wine whose region matches no row is listed in **Data check** under *Wines with no region on the map*. Add the name to a region's *Also matches* (or fix the spelling), and it appears on the map.
 

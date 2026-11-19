@@ -3,7 +3,7 @@
 import { esc, glyph, money, notesBadge, typeLabel } from "../ui.js";
 import { store } from "../store.js";
 import { linkTerms } from "../glossary.js";
-import { searchIndex, search } from "../search.js";
+import { searchIndex, search, didYouMean } from "../search.js";
 
 const SHAPES = { sparkling: "symbolDiamond", white: "symbolCircle", rose: "symbolCircle", orange: "symbolSquare", red: "symbolCircle", sweet: "symbolTriangle" };
 const TYPES = ["sparkling", "white", "rose", "orange", "red", "sweet"];
@@ -293,7 +293,7 @@ export async function mountMap(root, ctx) {
     const hits = found.map(x => x.wine), why = new Map(found.map(x => [x.wine.id, x.why]));
     resEl.innerHTML = hits.length ? hits.slice(0, 8).map(w => `<button type="button" data-wine="${w.id}">${glyph(w.type, 16)}<span>${esc(w.name)}<br><span class="sub">${esc(why.get(w.id) || [w.leadGrape, w.regionGroup].filter(Boolean).join(" · "))}</span></span></button>`).join("")
       + (hits.length > 8 ? `<div class="none">${hits.length - 8} more are highlighted on the map</div>` : "")
-      : `<div class="none">No wine matches “${esc(qEl.value)}”. Try a grape or a region.</div>`;
+      : (dym => `<div class="none">No wine matches “${esc(qEl.value)}”.${dym ? ` <button type="button" class="linkbtn" data-dym="${esc(dym)}">Did you mean “${esc(dym)}”?</button>` : " Try a grape or a region."}</div>`)(didYouMean(finder, qEl.value));
     const r = qEl.getBoundingClientRect();
     resEl.style.top = (r.bottom + 4) + "px";
     resEl.style.left = Math.max(16, Math.min(r.left, innerWidth - resEl.offsetWidth - 16, innerWidth - 376)) + "px";
@@ -301,6 +301,7 @@ export async function mountMap(root, ctx) {
   });
   resEl.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.dym) { qEl.value = b.dataset.dym; qEl.dispatchEvent(new Event("input")); qEl.focus(); return; }
     resEl.classList.remove("open"); qEl.value = ""; state.query = ""; qEl.blur(); select(b.dataset.wine);
   });
   const outside = e => { if (!e.target.closest(".search")) resEl.classList.remove("open"); };

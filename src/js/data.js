@@ -179,7 +179,9 @@ export function buildRegions(regionRows, wines) {
     if (!name || lat == null || lon == null) return;
     const reg = { id: "r-" + slugify(name), name, country: col(r, "country"), lat, lon,
       knownFor: col(r, "known for"), grapes: col(r, "grapes"), wines: [],
-      aliases: String(col(r, "also matches") || "").split(";").map(s => s.trim()).filter(Boolean) };
+      aliases: String(col(r, "also matches") || "").split(";").map(s => s.trim()).filter(Boolean),
+      // Spellings guests and staff type that are too far off to be caught as a slip ("Bojolais"); search only, never shown.
+      misspellings: String(col(r, "misspellings") || "").split(";").map(s => s.trim()).filter(Boolean) };
     regions.push(reg);
     [name, ...String(col(r, "also matches") || "").split(";")].map(normalise).filter(Boolean)
       .forEach(k => { if (!index.has(k)) index.set(k, reg); });

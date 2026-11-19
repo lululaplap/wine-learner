@@ -229,6 +229,8 @@ function focusQuestion() {
 
 // Type chips on the wine list: one listener for the life of the page.
 main.addEventListener("click", e => {
+  const dym = main.dataset.view === "list" && e.target.closest("[data-dym]");
+  if (dym) { listState.q = dym.dataset.dym; main.innerHTML = renderList(ctx, listState); const q = main.querySelector("#listq"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); return; }
   const b = main.dataset.view === "list" && e.target.closest("button.chip");
   if (!b) return;
   toggleType(listState, b);

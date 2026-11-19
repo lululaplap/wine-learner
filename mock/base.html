@@ -497,7 +497,7 @@ RENDER["take-off"] = () => {
     const card = w => `<button type="button" class="bigchoice" data-pick="${w.id}"><span class="row" style="gap:6px">${glyph(w.t)}<span class="t">${esc(w.s)}</span></span><span class="s num">${esc(w.v)} · ${stockText(w.id)}</span></button>`;
     body = `<h2 style="font-size:22px;margin-bottom:10px">Which wine?</h2>
       <input class="input" id="tkSearch" placeholder="Search: producer, wine, grape or region" value="${esc(tk.q)}" style="max-width:420px;min-height:52px;font-size:18px" aria-label="Search wines">
-      ${tk.q ? `<h3 class="lab" style="margin:14px 0 8px">Matches</h3><div class="bigchoices">${hits.map(card).join("") || '<p class="muted">No wine matches.</p>'}</div>` : `
+      ${tk.q ? `<h3 class="lab" style="margin:14px 0 8px">Matches</h3><div class="bigchoices">${hits.map(card).join("") || `<p class="muted">No wine matches.${dymButton(tk.q, "tk")}</p>`}</div>` : `
       <h3 class="lab" style="margin:14px 0 8px">By the glass tonight</h3><div class="bigchoices">${glass.map(card).join("")}</div>`}`;
   } else if (tk.step === 2) {
     const w = byId.get(tk.wine);
