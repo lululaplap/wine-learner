@@ -13,7 +13,8 @@ import { loadProgress, saveProgress, isKnown, isDue, grade, emptyProgress, KNOWN
 import { buildStages } from "./quiz/stages.js";
 import { SCALE_WORDS, SCORE_NAMES, gridScores } from "./quiz/tasting.js";
 import { store } from "./store.js";
+import { searchIndex, search } from "./search.js";
 globalThis.Study = { toRows, buildWines, buildRegions, SCORES, buildGlossary, useGlossary, linkTerms, esc, glyph, wineRow, badges, money,
   renderCard, renderList, toggleType, renderCheck, renderMapShell, mountMap, renderPath, onPathClick, onPathSubmit,
   renderLesson, onLessonClick, onLessonKey, onLessonInput, onLessonSubmit, renderRegionsShell, mountRegions,
-  loadProgress, saveProgress, isKnown, isDue, grade, emptyProgress, KNOWN, buildStages, SCALE_WORDS, SCORE_NAMES, gridScores, store };
+  loadProgress, saveProgress, isKnown, isDue, grade, emptyProgress, KNOWN, buildStages, SCALE_WORDS, SCORE_NAMES, gridScores, store, searchIndex, search };

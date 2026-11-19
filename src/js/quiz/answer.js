@@ -22,6 +22,9 @@ const SYNONYMS = [
 const SYN = new Map();
 SYNONYMS.forEach(group => group.forEach(n => SYN.set(fold(n), group.map(fold))));
 
+// Every name a grape goes by, folded: "garnacha" for Grenache, so search finds it under any of them.
+export const grapeNames = g => SYN.get(fold(g)) || [fold(g)];
+
 const NOT_GRAPES = new Set(["field blend", "native varieties", "others", "rosa"]);
 
 export const canonGrape = g => CANON[fold(g)] || String(g).replace(/\s*\(.*\)\s*$/, "").trim();

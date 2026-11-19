@@ -206,7 +206,15 @@ main.addEventListener("submit", e => {
   if (main.dataset.view === "learn") onPathSubmit(e, () => { main.innerHTML = renderPath(ctx); });
   else if (main.dataset.view === "lesson" && onLessonSubmit(e)) { main.innerHTML = renderLesson(main.dataset.lesson, ctx); focusQuestion(); }
 });
-main.addEventListener("input", e => { if (main.dataset.view === "lesson") onLessonInput(e, ctx); });
+main.addEventListener("input", e => {
+  if (main.dataset.view === "lesson") onLessonInput(e, ctx);
+  // The wine list's search: redraw only the results, so the box keeps focus as people type.
+  if (main.dataset.view === "list" && e.target.id === "listq") {
+    listState.q = e.target.value;
+    const fresh = document.createElement("div"); fresh.innerHTML = renderList(ctx, listState);
+    main.querySelector("#listbody").replaceWith(fresh.querySelector("#listbody"));
+  }
+});
 document.addEventListener("keydown", e => {
   if (main.dataset.view !== "lesson") return;
   const sel = onLessonKey(e);

@@ -433,8 +433,9 @@ function ledgerItem(m) {
 const stockUI = { filter: "all", q: "" };
 RENDER.stock = () => {
   const f = stockUI;
+  const found = f.q.trim() ? new Set(findWines(f.q, 0).map(w => w.id)) : null;
   let list = WINES.concat(state.added).filter(w => {
-    if (f.q && !(`${w.p} ${w.c} ${w.s} ${w.gr} ${w.rg}`.toLowerCase().includes(f.q.toLowerCase()))) return false;
+    if (found && !found.has(w.id)) return false;
     if (f.filter === "low" && status(w.id) === "ok") return false;
     if (f.filter === "glass" && w.gl == null) return false;
     if (f.filter === "slow" && sales28(w.id) >= 3) return false;

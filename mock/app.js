@@ -366,15 +366,13 @@ RENDER.today = () => officeToday();
 // Wherever someone chooses a wine, they type any part of the producer, wine, grape, region or vintage.
 // Capitals and accents don't matter, every word typed must match, and up to 8 results show with their stock.
 // Before anything is typed, a picker can offer a few suggestions (a wine's comparisons, tonight's glass list).
-const wpFold = s => String(s == null ? "" : s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-function findWines(q, n = 8) {
-  const words = wpFold(q).split(/\s+/).filter(Boolean);
-  if (!words.length) return [];
-  const starts = w => (wpFold(w.s).startsWith(words[0]) || wpFold(w.p).startsWith(words[0]) ? 0 : 1);
-  return WINES.concat(state.added)
-    .filter(w => { const hay = wpFold([w.p, w.c, w.s, w.v, w.gr, w.rg, w.co, w.sec].join(" ")); return words.every(t => hay.includes(t)); })
-    .sort((a, b) => starts(a) - starts(b) || a.s.localeCompare(b.s)).slice(0, n);
-}
+// Every search box in the app uses the study tool's one wine search (src/js/search.js): accents, small words and
+// plurals don't matter, grapes match under any name, regions under their other names (Côtes du Rhône), and a
+// guest's style (If you like) finds wines too, with the reason shown.
+let finder = null;
+const finderIdx = () => (finder && finder.n === ctx.data.wines.length ? finder.idx : (finder = { n: ctx.data.wines.length, idx: Study.searchIndex(ctx.data.wines, ctx.regions) }).idx);
+const findHits = (q, n = 8) => Study.search(finderIdx(), q, { limit: n }).map(x => ({ w: byId.get(x.wine.id) || state.added.find(a => a.id === x.wine.id), why: x.why })).filter(x => x.w);
+const findWines = (q, n = 8) => findHits(q, n).map(x => x.w);
 const picks = {}; // picker id -> { q, open, onPick, suggest, none }
 function winePicker(id, { value = null, onPick, label = "Wine", suggest = [], q = "", disabled = false, none = "", keepOpen = false } = {}) {
   const p = picks[id] = picks[id] || { q, open: !value };
@@ -387,9 +385,10 @@ function winePicker(id, { value = null, onPick, label = "Wine", suggest = [], q 
 }
 function wpickItems(id) {
   const p = picks[id], typed = p.q.trim();
-  const hits = typed ? findWines(p.q) : p.suggest.map(x => byId.get(x) || state.added.find(a => a.id === x)).filter(Boolean).slice(0, 6);
+  const found = typed ? findHits(p.q) : p.suggest.map(x => ({ w: byId.get(x) || state.added.find(a => a.id === x) })).filter(x => x.w).slice(0, 6);
+  const hits = found.map(x => x.w), why = new Map(found.map(x => [x.w.id, x.why]));
   if (!hits.length) return typed ? `<li class="wpick-none">No wine matches “${esc(typed)}”.${p.none ? " " + p.none : ""}</li>` : "";
-  return (typed ? "" : '<li class="wpick-head">Suggested</li>') + hits.map(w => `<li role="option" aria-selected="false"><button type="button" data-wpick-opt="${id}" data-id="${w.id}">${glyph(w.t)}<span><b>${esc(w.s)}</b> <span class="muted num">${esc(w.v)}</span><span class="wsub">${esc(w.p)} · ${esc(w.sec)} · ${stockText(w.id)}</span></span></button></li>`).join("");
+  return (typed ? "" : '<li class="wpick-head">Suggested</li>') + hits.map(w => `<li role="option" aria-selected="false"><button type="button" data-wpick-opt="${id}" data-id="${w.id}">${glyph(w.t)}<span><b>${esc(w.s)}</b> <span class="muted num">${esc(w.v)}</span><span class="wsub">${esc(w.p)} · ${esc(w.sec)} · ${stockText(w.id)}</span>${why.get(w.id) ? `<span class="wsub why">${esc(why.get(w.id))}</span>` : ""}</span></button></li>`).join("");
 }
 function choosePick(id, wineId) {
   const p = picks[id];

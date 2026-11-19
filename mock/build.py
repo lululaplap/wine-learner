@@ -106,10 +106,10 @@ rep('''document.addEventListener("input", e => { if (e.target.closest(".parts"))
 document.addEventListener("submit", e => { if (cur().id === "lesson" && Study.onLessonSubmit(e)) { view.innerHTML = Study.renderLesson(cur().arg, ctx); focusQuestion(); } });
 // The search at the top of every staff screen: any wine by producer, cuvée, grape or region.
 function searchWines(q) {
-  const ul = document.getElementById("gres"), f = q.trim().toLowerCase();
-  if (!f) { ul.hidden = true; ul.innerHTML = ""; return; }
-  const hits = ctx.data.wines.filter(s => `${s.producer} ${s.cuvee} ${s.name} ${s.grapes} ${s.regionGroup} ${s.country}`.toLowerCase().includes(f)).slice(0, 8);
-  ul.innerHTML = hits.length ? hits.map(s => `<li><a href="#/wine/${encodeURIComponent(s.id)}">${Study.glyph(s.type, 16)}<span><span>${esc(s.name)}</span><br><span class="sub">${esc([s.grapes, s.regionGroup].filter(Boolean).join(" · "))}</span></span></a></li>`).join("") : '<li class="sub" style="padding:10px">No wine matches.</li>';
+  const ul = document.getElementById("gres");
+  if (!q.trim()) { ul.hidden = true; ul.innerHTML = ""; return; }
+  const hits = Study.search(finderIdx(), q, { limit: 8 });
+  ul.innerHTML = hits.length ? hits.map(({ wine: s, why }) => `<li><a href="#/wine/${encodeURIComponent(s.id)}">${Study.glyph(s.type, 16)}<span><span>${esc(s.name)}</span><br><span class="sub">${esc(why || [s.grapes, s.regionGroup].filter(Boolean).join(" · "))}</span></span></a></li>`).join("") : '<li class="sub" style="padding:10px">No wine matches. Try a grape, a region or a style.</li>';
   ul.hidden = false;
 }
 document.addEventListener("click", e => { if (e.target.closest("#gres a") || !e.target.closest(".gsearch")) { const ul = document.getElementById("gres"); if (!ul.hidden) { ul.hidden = true; if (e.target.closest("#gres a")) document.getElementById("gq").value = ""; } } });

@@ -3,6 +3,7 @@
 import { esc, glyph, money, notesBadge, typeLabel } from "../ui.js";
 import { store } from "../store.js";
 import { linkTerms } from "../glossary.js";
+import { searchIndex, search } from "../search.js";
 
 const SHAPES = { sparkling: "symbolDiamond", white: "symbolCircle", rose: "symbolCircle", orange: "symbolSquare", red: "symbolCircle", sweet: "symbolTriangle" };
 const TYPES = ["sparkling", "white", "rose", "orange", "red", "sweet"];
@@ -69,8 +70,8 @@ export async function mountMap(root, ctx) {
   wines.forEach(w => {
     const t = hi > lo ? Math.max(0, Math.min(1, (Math.log(w.bottle || 70) - lo) / (hi - lo))) : 0.5;
     w.sizeF = 0.8 + 0.5 * t;
-    w.hay = norm([w.name, w.producer, w.cuvee, w.grapes, w.leadGrape, w.regionGroup, w.region, w.country, w.section].join(" "));
   });
+  const finder = searchIndex(wines, ctx.regions); // the shared wine search, as in every other search box
 
   const MODES = [
     { id: "links", label: "Connections" },
@@ -81,7 +82,7 @@ export async function mountMap(root, ctx) {
     { id: "producer", label: "Producer", key: w => w.producer, other: "One wine each" },
     { id: "price", label: "Price", key: w => band(w.bottle), order: BAND_ORDER }
   ];
-  const state = { mode: store.get("mapBy", "style"), sel: null, hidden: new Set(), showLinks: true, query: "" };
+  const state = { mode: store.get("mapBy", "style"), sel: null, hidden: new Set(), showLinks: true, query: "", matches: new Set() };
   if (!MODES.some(m => m.id === state.mode)) state.mode = "style";
 
   const stage = root.querySelector("#stage"), panel = root.querySelector("#panel");
@@ -216,7 +217,7 @@ export async function mountMap(root, ctx) {
     const sel = state.sel, nb = sel ? nbrs.get(sel) : null, q = state.query;
     wines.forEach(w => {
       w.isOff = state.hidden.has(w.type);
-      w.isDim = !w.isOff && ((sel && w.id !== sel && !nb.has(w.id)) || (!sel && q && !w.hay.includes(q)));
+      w.isDim = !w.isOff && ((sel && w.id !== sel && !nb.has(w.id)) || (!sel && q && !state.matches.has(w.id)));
     });
     nodeSel.classed("off", d => d.isOff).classed("dim", d => d.isDim).classed("sel", d => d.id === sel);
     gLinks.classed("off", !state.showLinks && !sel).classed("hassel", !!sel);
@@ -284,11 +285,13 @@ export async function mountMap(root, ctx) {
   const qEl = root.querySelector("#q"), resEl = root.querySelector("#results");
   qEl.addEventListener("input", () => {
     state.query = norm(qEl.value);
+    const found = state.query ? search(finder, qEl.value, { limit: 0 }) : [];
+    state.matches = new Set(found.map(x => x.wine.id));
     if (state.sel) { state.sel = null; renderPanel(); }
     refresh();
     if (!state.query) { resEl.classList.remove("open"); return; }
-    const hits = wines.filter(w => w.hay.includes(state.query));
-    resEl.innerHTML = hits.length ? hits.slice(0, 8).map(w => `<button type="button" data-wine="${w.id}">${glyph(w.type, 16)}<span>${esc(w.name)}<br><span class="sub">${esc(w.leadGrape)} · ${esc(w.regionGroup)}</span></span></button>`).join("")
+    const hits = found.map(x => x.wine), why = new Map(found.map(x => [x.wine.id, x.why]));
+    resEl.innerHTML = hits.length ? hits.slice(0, 8).map(w => `<button type="button" data-wine="${w.id}">${glyph(w.type, 16)}<span>${esc(w.name)}<br><span class="sub">${esc(why.get(w.id) || [w.leadGrape, w.regionGroup].filter(Boolean).join(" · "))}</span></span></button>`).join("")
       + (hits.length > 8 ? `<div class="none">${hits.length - 8} more are highlighted on the map</div>` : "")
       : `<div class="none">No wine matches “${esc(qEl.value)}”. Try a grape or a region.</div>`;
     const r = qEl.getBoundingClientRect();
