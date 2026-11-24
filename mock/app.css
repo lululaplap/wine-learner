@@ -78,3 +78,5 @@ body[data-device="tablet"] .tabletonly{display:inline}
 }
 @media (max-width:860px){.legendnote{flex-wrap:wrap;gap:2px 10px;right:12px;font-size:14px}.legendnote span{white-space:nowrap}}
 .wpick-list .why{font-style:italic}
+.pp-stock{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0 2px}
+.pp-stock .swap{flex-basis:100%;margin:0}

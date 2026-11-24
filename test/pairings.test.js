@@ -65,3 +65,15 @@ test("search finds a wine by its dish, and says so", () => {
   assert.equal(search(idx, "scallop", { limit: 1 })[0].wine.short, "Du Grappin Mâcon");
   assert.ok(search(idx, "jerusalem artichoke", { limit: 0 }).some(x => x.wine.short === "Alquimia"));
 });
+
+test("the Pairings screen: every course in order, every dish, its wine linked to its card, and the scripts", async () => {
+  const { renderPairings } = await import("../src/js/views/pairings.js");
+  const html = renderPairings({ pairings: P, glossary: null });
+  const order = ["Starter 1", "Starter 2", "Middle course", "Main", "Cheese", "Dessert"].map(c => html.indexOf(`>${c}`));
+  assert.ok(order.every((x, i) => x > 0 && (i === 0 || x > order[i - 1])), order.join());
+  P.pairings.forEach(p => assert.ok(html.includes(`href="#/wine/${encodeURIComponent(p.wine.id)}"`), p.dish));
+  assert.equal((html.match(/Script for the table/g) || []).length, P.pairings.length);
+  assert.match(html, /Serve the Maury or the Banyuls, whichever is on/);
+  assert.ok(!/href="#pp-/.test(html), "course shortcuts must not change the address");
+  assert.match(renderPairings({ pairings: null }), /No pairings yet/);
+});

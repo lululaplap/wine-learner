@@ -16,7 +16,7 @@ Open `mock/dist/wine-app.html` in a browser, or `/mock/` on the GitHub Pages sit
 
 | Account | Roles | Shows |
 | --- | --- | --- |
-| Sam | Floor | Floor staff on their own phone |
+| Sam | Floor | Floor staff on their own phone. Service has *Tonight*, *Wine list*, *Take off stock* and *Pairings* (the tasting menu with scripts, and which pairings are off tonight) |
 | Service tablet | Floor, shared | Asks *Who is this?* for stock changes and *Who's learning?* in Learn |
 | Sommelier | Floor, wine lead | Wines, tastings, stock, menus, team learning |
 | Manager | Floor, manager | Venue, people, stock, menus, team learning |

@@ -110,7 +110,7 @@ Capitals, accents and hyphens don't matter: `pet nat` also finds "Pét-nat". Onl
 
 ### Wine pairings
 
-One row per dish and wine. A dish served with either of two wines (the cheese: the Maury or the Banyuls, whichever is on) has a row for each wine. The wine card shows the course, the dish and the script; lessons ask which wine goes with each dish and which dish with each wine; search finds a wine by its dish.
+One row per dish and wine. A dish served with either of two wines (the cheese: the Maury or the Banyuls, whichever is on) has a row for each wine. The **Pairings** screen shows the whole menu course by course, and the wine card shows the course, the dish and the script; lessons ask which wine goes with each dish and which dish with each wine; search finds a wine by its dish.
 
 | Column | What to type | Example |
 | --- | --- | --- |

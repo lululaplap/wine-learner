@@ -8,6 +8,7 @@ import { esc, timeOf } from "./ui.js";
 import { renderCard } from "./views/card.js";
 import { renderList, toggleType } from "./views/list.js";
 import { renderCheck } from "./views/check.js";
+import { renderPairings } from "./views/pairings.js";
 import { renderMapShell, mountMap } from "./views/map.js";
 import { buildGlossary, useGlossary } from "./glossary.js";
 import { renderPath, onPathClick, onPathSubmit } from "./views/path.js";
@@ -19,7 +20,7 @@ const MODES = {
   learn: { label: "Learn", home: "learn", theme: "auto" },
   service: { label: "Service", home: "list", theme: "dark" }
 };
-const VIEWS = { learn: "Lessons", map: "Map", regions: "Regions", list: "Wine list", check: "Data check" };
+const VIEWS = { learn: "Lessons", map: "Map", regions: "Regions", list: "Wine list", pairings: "Pairings", check: "Data check" };
 const REFRESH_AFTER = 5 * 60 * 1000; // re-read the sheets when the tool comes back after five minutes
 
 const main = document.getElementById("main");
@@ -186,6 +187,8 @@ function route() {
     main.innerHTML = renderPath(ctx);
   } else if (v === "list") {
     main.innerHTML = renderList(ctx, listState);
+  } else if (v === "pairings") {
+    main.innerHTML = renderPairings(ctx);
   } else {
     main.innerHTML = renderCheck(ctx);
   }

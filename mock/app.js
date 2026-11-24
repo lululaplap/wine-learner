@@ -81,6 +81,13 @@ globalThis.studyHooks = {
   isOff: s => offNow(s.id),
   cardExtra: s => cardStock(s),
   cardFoot: s => cardFoot(s),
+  // The Pairings screen: whether each paired wine is there to pour tonight, and what to offer if not.
+  pairingExtra: s => {
+    const id = s.id, w = byId.get(id); if (!w) return "";
+    const off = state.off.has(id) || isOut(id), st = status(id), alt = off || st !== "ok" ? swaps(id) : [];
+    return `<p class="pp-stock">${off ? '<span class="badge out">Off tonight</span>' : st === "low" ? '<span class="badge low">Running low</span>' : '<span class="badge ok">On tonight</span>'}
+      <span class="num">${w.gl != null ? `about ${glassesLeft(id)} glasses` : stockText(id)}</span>${alt.length ? `<span class="swap">Offer ${alt.map(wineLinkM).join(" or ")} instead, and tell the guest.</span>` : ""}</p>`;
+  },
   sendTasting: (s, d, who) => { state.inbox.unshift({ id: s.id, who, at: new Date(), scores: Object.assign({}, d.scores), flavours: d.flavours.slice(), note: d.note }); }
 };
 // The wine card's stock part, which depends on where it was opened.
@@ -131,6 +138,7 @@ const SCREENS = [
   { id: "tonight", label: "Tonight", area: "service", roles: ALL },
   { id: "list", label: "Wine list", area: "service", roles: ALL, href: "#/list" },
   { id: "take-off", label: "Take off stock", area: "service", roles: ALL },
+  { id: "menu-pairings", label: "Pairings", area: "service", roles: ALL, href: "#/pairings" },
   { id: "path", label: "Lessons", area: "learn", roles: ALL, href: "#/learn" },
   { id: "before", label: "Before service", area: "learn", roles: ALL, href: "#/lesson/service" },
   { id: "regions", label: "Regions map", area: "learn", roles: ALL, href: "#/regions" },
@@ -145,7 +153,7 @@ const SCREENS = [
   { id: "tastings", label: "Tasting notes", area: "office", roles: WINELEAD },
   { id: "check", label: "Data check", area: "office", roles: WINELEAD },
   { id: "team", label: "Team learning", area: "office", roles: OFFICE, grp: "Team" },
-  { id: "pairings", label: "Pairings", area: "office", roles: ALL },
+  { id: "pairings", label: "Pairing pours", area: "office", roles: ALL },
   { id: "lightspeed", label: "Lightspeed", area: "office", roles: OFFICE, grp: "Set-up" },
   { id: "menus", label: "Guest menus", area: "office", roles: OFFICE },
   { id: "venue", label: "Venue and people", area: "office", roles: ["manager"] },
@@ -153,7 +161,7 @@ const SCREENS = [
   { id: "lesson", label: "Lesson", area: "learn", roles: ALL, hidden: true },
   { id: "wine", label: "Wine", roles: ALL, hidden: true }
 ];
-const STUDY_VIEWS = new Set(["list", "path", "lesson", "wine", "regions", "connections", "check"]);
+const STUDY_VIEWS = new Set(["list", "path", "lesson", "wine", "regions", "connections", "check", "menu-pairings"]);
 const view = document.getElementById("view"), overlay = document.getElementById("overlay");
 const inService = () => { const h = NOW.getHours(); return h >= 17 || h < 1; };
 const home = () => (state.role === "guest" ? "guest-menu" : state.role === "floor" ? (inService() ? "tonight" : "path") : "today");
@@ -165,7 +173,7 @@ function parseHash() {
   if ((m = h.match(/^#\/lesson\/(.+)/))) return { id: "lesson", arg: decodeURIComponent(m[1]) };
   if ((m = h.match(/^#\/wine\/(.+)/))) return { id: "wine", arg: decodeURIComponent(m[1]) };
   if ((m = h.match(/^#\/regions(?:\/(.+))?$/))) return { id: "regions", arg: m[1] ? decodeURIComponent(m[1]) : "" };
-  const alias = { "#/learn": "path", "#/map": "connections", "#/list": "list", "#/check": "check" };
+  const alias = { "#/learn": "path", "#/map": "connections", "#/list": "list", "#/check": "check", "#/pairings": "menu-pairings" };
   if (h === "#before") return { id: "lesson", arg: "service" };
   return { id: alias[h] || h.replace("#", ""), arg: "" };
 }
@@ -267,12 +275,15 @@ RENDER.tonight = () => {
       <div class="panel"><h2>Off tonight</h2>${offs.length ? `<ul class="plainlist">${offs.map(w => { const a = swaps(w.id); return `<li>${wineLinkM(w)} <span class="badge out">${state.off.has(w.id) ? "Off tonight" : "Sold out"}</span>${a.length ? `<div class="small">Offer ${a.map(wineLinkM).join(" or ")} instead.</div>` : ""}</li>`; }).join("")}</ul>` : '<p class="muted">Everything on the list is available.</p>'}<p class="hint">Hidden from the guest menu and skipped in Before service until 4am.</p></div>
       ${lowGlass.length ? `<div class="panel"><h2>Running low</h2><ul class="plainlist">${lowGlass.map(w => { const a = swaps(w.id, 1); return `<li>${wineLinkM(w)}: about ${glassesLeft(w.id)} glasses left.${a.length ? ` Then offer ${a.map(wineLinkM).join("")}.` : ""}</li>`; }).join("")}</ul></div>` : ""}
       ${fresh.length ? `<div class="panel"><h2>New on the list</h2><ul class="plainlist">${fresh.map(w => `<li>${wineLinkM(w)} <span class="muted">${esc(w.sec)}</span>${sw(w.id) && sw(w.id).guestLine ? `<div class="small">“${esc(sw(w.id).guestLine)}”</div>` : ""}</li>`).join("")}</ul><p><a class="btn ghost" href="#/learn">In everyone's lessons: New on the list</a></p></div>` : ""}
+      ${(() => { const hit = (ctx.pairings ? ctx.pairings.pairings : []).filter(p => p.wine && offNow(p.wine.id));
+        return `<div class="panel"><h2>Tasting menu</h2>${hit.length ? `<ul class="plainlist">${hit.map(p => { const w = byId.get(p.wine.id), a = swaps(p.wine.id); return `<li><b>${esc(p.dish)}</b> (${esc(p.course.toLowerCase())}): ${wineLinkM(w)} <span class="badge out">Off tonight</span>${a.length ? `<div class="small">Offer ${a.map(wineLinkM).join(" or ")} instead, and tell the guest.</div>` : ""}</li>`; }).join("")}</ul>` : '<p class="muted">Every pairing is on tonight.</p>'}<p><a class="btn ghost" href="#/pairings">All the pairings, with scripts</a></p></div>`; })()}
       <div class="panel"><h2>Open to taste</h2><p class="small">Every wine by the glass${extras.length ? ", plus:" : "."}</p>${extras.length ? `<ul class="plainlist">${extras.map(w => `<li>${wineLinkM(w)} <span class="muted">opened for a staff tasting</span></li>`).join("")}</ul><p><a class="btn ghost" href="#/lesson/open">Taste what's open</a></p>` : ""}</div>
       <div class="panel"><h2>Taken off tonight</h2>${taken.length ? `<ul class="ledger">${taken.map(ledgerItem).join("")}</ul>` : '<p class="muted">Nothing yet.</p>'}</div>
     </div></div>`;
 };
 
 // ---------- the study tool's screens ----------
+RENDER["menu-pairings"] = () => Study.renderPairings(ctx);
 RENDER.list = () => `<p class="muted" style="margin-top:0">Every wine on the list. Tap one for what to say and what is left. The search at the top finds any wine.</p>${Study.renderList(ctx, listState)}`;
 RENDER.path = () => Study.renderPath(ctx);
 RENDER.lesson = c => Study.renderLesson(c.arg, ctx);
