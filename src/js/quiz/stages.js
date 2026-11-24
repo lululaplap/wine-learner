@@ -12,6 +12,8 @@ const byTypeThenPrice = (a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexO
 export const STAGE_DEFS = [
   { id: "anchors", title: "The anchors", blurb: "Five reference wines. Learn these first and describe everything else against them.",
     test: w => w.anchor, sort: (a, b) => byTypeThenPrice(a, b) },
+  { id: "pairings", title: "The tasting menu", blurb: "Every wine on the tasting menu, course by course: the dish it goes with, and what to say.",
+    test: w => !!(w.pairings && w.pairings.length), sort: (a, b) => a.pairings[0].order - b.pairings[0].order || a.pairings[0].row - b.pairings[0].row },
   { id: "glass", title: "By the glass", blurb: "Everything we pour by the glass, then the sweet wines by the glass.",
     test: w => w.glass != null, sort: (a, b) => (a.type === "sweet") - (b.type === "sweet") || byTypeThenPrice(a, b) },
   { id: "under100", title: "Bottles under £100", blurb: "The bottles guests order most.",

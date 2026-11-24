@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { toRows } from "../src/js/csv.js";
-import { buildWines } from "../src/js/data.js";
+import { buildWines, buildPairings } from "../src/js/data.js";
 import { buildStages } from "../src/js/quiz/stages.js";
 import { grade, isDue, isKnown, emptyProgress, noteListChanges, stageProgress, lessonDone } from "../src/js/quiz/progress.js";
 import { GENERATORS, TYPES, TYPED, questionFor, ladderOf, comparatorLine } from "../src/js/quiz/questions.js";
@@ -11,6 +11,8 @@ import { planLesson, Session, rngFrom } from "../src/js/quiz/session.js";
 
 const read = p => readFileSync(new URL("../" + p, import.meta.url), "utf8");
 const { wines } = buildWines(toRows(read("sheets/wine.csv")), toRows(read("sheets/study.csv")));
+const pairings = buildPairings(toRows(read("sheets/pairings.csv")), wines);
+const stage = (stages, id) => stages.find(s => s.id === id);
 const byId = new Map(wines.map(w => [w.id, w]));
 const DAY = 86400000;
 
@@ -23,14 +25,19 @@ test("every wine is in exactly one stage, in lessons of up to 4", () => {
   stages.forEach(s => s.lessons.forEach(l => assert.ok(l.wines.length >= 1 && l.wines.length <= 4)));
   assert.equal(stages[0].wines.length, 5);
   assert.deepEqual(stages[0].wines.map(w => w.short).sort(), ["Bout d'Zan", "Fronsac", "L'Oiseau", "Rosso per tutti", "Vézelay Galerne"]);
-  assert.equal(stages[1].wines.length, 14); // 19 glass wines less the 5 anchors, which are all poured by the glass
-  assert.ok(stages[1].wines.every(w => w.glass != null));
-  assert.ok(stages[2].wines.every(w => w.bottle < 100));
+  // Then the tasting menu: every wine paired with a course that isn't an anchor (L'Oiseau and Fronsac are).
+  const menu = stage(stages, "pairings");
+  assert.equal(stages[1], menu);
+  assert.deepEqual(menu.wines.map(w => w.short), ["Riesling+", "Du Grappin Mâcon", "Alquimia", "Horsmonden", "Pop Bianco", "Villo Grillo", "Garance", "Maury", "Banyuls Rimage", "Melsheimer Spätlese", "Szóló Dolce"]);
+  assert.ok(menu.wines.every(w => w.pairings.length));
+  assert.equal(stage(stages, "glass").wines.length, 9); // 24 glass wines, less 4 anchors and the 11 tasting-menu wines, all poured by the glass
+  assert.ok(stage(stages, "glass").wines.every(w => w.glass != null));
+  assert.ok(stage(stages, "under100").wines.every(w => w.bottle < 100));
 });
 
 test("a new wine by the glass joins stage 2 by itself", () => {
   const extra = { ...wines.find(w => w.glass == null && w.bottle > 200), id: "new-glass", glass: 25, anchor: false };
-  assert.ok(buildStages([...wines, extra])[1].wines.some(w => w.id === "new-glass"));
+  assert.ok(stage(buildStages([...wines, extra]), "glass").wines.some(w => w.id === "new-glass"));
 });
 
 // ---------- scheduler ----------
@@ -92,8 +99,8 @@ for (const type of TYPES.filter(t => t !== "sayIt" && t !== "match" && !TYPED.ha
   });
 }
 
-test("Identify and Price can be asked about every wine", () => {
-  wines.forEach(w => {
+test("Identify and Price can be asked about every wine with notes", () => {
+  wines.filter(w => w.hasNotes).forEach(w => {
     assert.ok(GENERATORS.identify(w, wines, rngFrom(1)), "identify " + w.id);
     assert.ok(GENERATORS.price(w, wines, rngFrom(1)), "price " + w.id);
   });
@@ -167,8 +174,8 @@ test("questions on estimated fields say so; tasted-only mode skips them", () => 
   }
 });
 
-test("every wine can be asked about, and a new wine starts with Identify", () => {
-  wines.forEach(w => assert.equal(questionFor(w, wines, rngFrom(3), { prefer: ["identify"], recall: false }).type, "identify"));
+test("every wine with notes can be asked about, and a new wine starts with Identify", () => {
+  wines.filter(w => w.hasNotes).forEach(w => assert.equal(questionFor(w, wines, rngFrom(3), { prefer: ["identify"], recall: false }).type, "identify"));
 });
 
 test("the answer screen's comparator line", () => {
@@ -179,7 +186,7 @@ test("the answer screen's comparator line", () => {
 // ---------- lessons ----------
 test("a lesson has 10 questions, at most 4 new wines, and reviews that are due", () => {
   const stages = buildStages(wines), p = emptyProgress(), now = 10 * DAY;
-  const lesson = stages[2].lessons[0];
+  const lesson = stage(stages, "under100").lessons[0];
   const rest = wines.filter(w => !lesson.wines.includes(w));
   rest.slice(40, 50).forEach(w => (p.wines[w.id] = { box: 2, due: now - 1, right: 1 }));
   rest.slice(50, 60).forEach(w => (p.wines[w.id] = { box: 3, due: now + DAY, right: 2 }));

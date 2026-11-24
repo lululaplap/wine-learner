@@ -22,6 +22,8 @@ export function renderCheck(ctx) {
       `<ul class="plain">${report.clashes.map(c => `<li><code>${esc(c.key)}</code>: ${esc(c.a)} and ${esc(c.b)}</li>`).join("")}</ul>`, report.clashes.length)}
     ${block("More than one row in the wine sheet", "Two bottle rows (or two glass rows) match the same wine. The tool uses the first.",
       `<div class="rows">${report.duplicates.map(w => wineRow(w, { full: true })).join("")}</div>`, report.duplicates.length)}
+    ${ctx.pairings ? block("Tasting-menu pairings with no wine on the list", "The Wine pairings tab names a wine that isn't on the list. Fix its Wine key, or the wine sheet.",
+      `<ul class="plain">${ctx.pairings.unmatched.map(p => `<li>${esc(p.course)}, ${esc(p.dish)} → <code>${esc(p.key)}</code></li>`).join("")}</ul>`, ctx.pairings.unmatched.length) : ""}
     ${block("Flagged “check with supplier”", "Questions to settle with the supplier, then clear the Check cell.",
       `<ul class="plain checks">${report.checks.map(w => `<li><a class="winelink" href="#/wine/${encodeURIComponent(w.id)}">${esc(w.name)}</a>: ${esc(w.check)}</li>`).join("")}</ul>`, report.checks.length)}
   </div>`;

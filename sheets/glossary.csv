@@ -1,12 +1,12 @@
 Term,Also matches,Definition
 Traditional method,méthode traditionnelle; methode traditionnelle; Champagne method,"The way Champagne is made: the second fermentation, which makes the bubbles, happens inside each bottle. It gives fine bubbles and bready, brioche notes from time on the lees."
-Pét-nat,pet-nat; pétillant naturel; petillant naturel,"Short for pétillant naturel: a sparkling wine bottled before its first fermentation finishes, so the bubbles come from that one fermentation. Usually lightly fizzy, often cloudy, fruity and low in alcohol."
+Pét-nat,pet-nat; pétillant naturel; petillant naturel; ancestral method; méthode ancestrale,"Short for pétillant naturel: a sparkling wine bottled before its first fermentation finishes, so the bubbles come from that one fermentation. Usually lightly fizzy, often cloudy, fruity and low in alcohol."
 Charmat method,tank method; Charmat,"Sparkling wine made by a second fermentation in a large sealed tank, as for most Prosecco. It keeps the wine fruity and fresh, without the bready notes of the traditional method."
 Blanc de blancs,,"""White from whites"": a sparkling wine made only from white grapes, usually Chardonnay. Typically lean, citrusy and fine."
 Blanc de noirs,,"""White from blacks"": a white sparkling wine made from black grapes (Pinot Noir and Pinot Meunier) pressed gently so the juice stays pale. Fuller and red-fruited."
 Dosage,low dosage,"The small amount of sweetened wine added to a sparkling wine just before it is corked. It sets how dry the wine tastes: the lower the dosage, the drier."
 Brut nature,no added sugar; zero dosage; pas dosé; pas dose,A sparkling wine with no dosage (no sugar added before corking): the driest style there is.
-Lees,on the lees; sur lie,"The spent yeast left after fermentation. Leaving wine in contact with it adds texture and bready, nutty flavours."
+Lees,on the lees; sur lie; lees ageing; lees aging; lees-aged; on its lees,"The spent yeast left after fermentation. Leaving wine in contact with it adds texture and bready, nutty flavours."
 Grower,grower Champagne; growers; récoltant manipulant,"A Champagne made by the family that farms the vines, rather than by a large house buying grapes. Usually from one village or a few plots, with more character from place and vintage."
 Cava,,"Spain's traditional-method sparkling wine, mostly from Catalonia, usually from Macabeo, Parellada and Xarel·lo."
 Sekt,,"German for sparkling wine. The best, like this one, are made by the traditional method from Riesling."
@@ -16,7 +16,7 @@ Low-intervention,low intervention; minimal intervention,Made with as few additio
 Organic,organically,"Grown without synthetic fertilisers, weedkillers or pesticides. In the EU an organic wine must be certified."
 Biodynamic,biodynamics; biodynamically,"Organic farming plus a set of extra practices: herbal and mineral preparations, and timing work by the moon and seasons. The vineyard is run as one living system."
 No added sulfur,no sulfur; sans soufre; zero sulfur; no added sulphur,"Sulfur dioxide protects wine from oxygen and bacteria. Wines made without adding any taste fresher and more vibrant, but can be less stable, so keep them cool."
-Low sulfur,low-sulfur; low sulphur,"Made with only a small addition of sulfur dioxide, the usual preservative."
+Low sulfur,low-sulfur; low sulphur; minimal sulphur; minimal sulfur,"Made with only a small addition of sulfur dioxide, the usual preservative."
 Skin contact,skin-fermented; skin-contact; macerated,"Leaving the juice of white grapes on their skins, as for red wine. It adds colour (gold to amber), grip and flavours of dried fruit, tea and peel. Long skin contact makes an orange wine."
 Orange wine,orange wines; amber wine,"A white wine made like a red: fermented on its grape skins. Amber in colour, with some tannin and grip. Also called skin-contact or amber wine."
 Clarete,,A traditional Spanish style made by fermenting white and red grapes together. Sits between a rosé and a light red.
@@ -34,12 +34,12 @@ Oxidative,oxidised; oxidized; oxidative style,"Deliberately exposed to some air 
 Flor,sous voile; under flor,"A layer of yeast that grows on wine in barrels that are not topped up, as in sherry and Jura's vin jaune. It gives salty, nutty, almond flavours."
 Sherry-like,sherry,"Tasting of nuts, bruised apple and salt, like a dry sherry. Comes from flor or from oxidative ageing."
 Fortified,,"Wine with grape spirit added, which raises the alcohol and, if added during fermentation, keeps natural sweetness. Port and Maury are fortified."
-Late-harvest,late harvest,"Grapes left on the vine until well after the normal harvest so they shrivel and their sugar concentrates. Makes rich, sweet wines."
+Late-harvest,late harvest; late-harvest fruit,"Grapes left on the vine until well after the normal harvest so they shrivel and their sugar concentrates. Makes rich, sweet wines."
 Auslese,,"A German ripeness category: grapes picked late and selected bunch by bunch. Usually sweet, sometimes with noble rot."
 Spätlese,spatlese,"A German ripeness category meaning ""late harvest"". Riper than standard, from off-dry to sweet."
 Trocken,,German for dry.
 Tokaj,Tokaji,"A region of north-east Hungary and south-east Slovakia, famous for sweet wines from Furmint grapes affected by noble rot."
-Noble rot,botrytis,"A mould that, in the right misty autumn weather, shrivels ripe grapes and concentrates their sugar and acidity. It gives honey, apricot and marmalade flavours to sweet wines."
+Noble rot,botrytis; Aszú; Aszu; botrytised; botrytized,"A mould that, in the right misty autumn weather, shrivels ripe grapes and concentrates their sugar and acidity. It gives honey, apricot and marmalade flavours to sweet wines."
 Old vines,old vine; old-vine; vieilles vignes; vieille vigne; vinhas velhas,"Vines decades old (there is no legal minimum age). They give fewer, smaller grapes, often with more concentration."
 Young vines,young-vine; young vine,"Vines in their first years, which give lighter, fresher wines. Producers often bottle them separately from their top wine."
 Single-vineyard,single vineyard,"Made from the grapes of one named vineyard, so it shows that site's particular character."
@@ -71,3 +71,20 @@ Lean,,"Light and high in acidity, with little fat or richness. Not a fault: thin
 Texture,textured; texture-driven,"How a wine feels rather than tastes: smooth, waxy, creamy, grippy. Lees, skin contact and oak all add texture."
 Structured,structure,Having firm tannin and acidity that frame the fruit. Structured wines usually need food or time.
 Length,long finish; finish,How long the flavour lasts after you swallow. Long length is a sign of quality.
+Co-fermentation,co-fermented,Different grapes fermented together rather than blended afterwards.
+Demijohn,demijohns,"A large glass vessel for ageing wine, often left outdoors in the sun, as for Maury."
+Garrigue,,"The wild herbs and scrub of the Mediterranean south of France (thyme, rosemary, bay); used for herbal, savoury aromas."
+Gobelet,bush vine; bush-trained,"A traditional free-standing, bush-trained vine, with no wires."
+Hybrid grapes,hybrid; hybrids,"Crossings of vine varieties bred to resist disease and heat, such as Donauriesling or Muscaris."
+Maceration,macerations; maceration time,"Soaking grape skins in the juice or wine for colour, flavour and texture."
+Moelleux,,French for a gently sweet wine.
+Native yeast,native yeasts; wild yeast; wild yeasts; native-yeast; indigenous yeast,"Fermentation by the yeasts naturally present in the vineyard and cellar, rather than added ones."
+Reasoned viticulture,lutte raisonnée,"Low-chemical, eco-minded farming, short of organic certification."
+Regenerative farming,regenerative; regeneratively,Farming focused on restoring soil health and biodiversity.
+Rescued wine,rescued surplus wine; surplus wine,"Surplus wine saved from going to waste and made into something new, as for our Riesling+ with the Wasted Wine Club."
+Rimage,,"A young, vintage-dated Banyuls, bottled early to keep its fruit and freshness."
+Solera,,"A fractional ageing system that blends older and younger wine, as for sherry."
+Sustainable,sustainable farming; sustainably,"Farming with lower chemical use and an eye on the environment, without organic rules."
+Terroir,,"The soil, climate and landscape that shape a wine's character."
+Unfiltered,unfined; unfined and unfiltered; minimal filtration,"Not filtered or fined (clarified) before bottling; can be hazy, with more texture."
+Vin de voile,voile; under a veil,"A wine aged under a veil of flor yeast without topping up the barrel, giving nutty, saline flavours."

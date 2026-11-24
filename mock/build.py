@@ -146,7 +146,7 @@ rep('''<div class="field"><label for="dayend">Service day ends</label>''','''<di
       <div class="field"><label for="dayend">Service day ends</label>''')
 assert "ROLES" not in src.replace("ROLE_LABEL",""), [m.start() for m in re.finditer("ROLES", src)]
 # assemble: the sheets, the world outlines, the example wine list and the study bundle, in one page
-sheets={n: open(f"{R}/sheets/{n}.csv").read() for n in ["wine","study","glossary","regions","lists"]}
+sheets={n: open(f"{R}/sheets/{n}.csv").read() for n in ["wine","study","glossary","regions","lists","pairings"]}
 data="window.WORLD="+open(f"{R}/vendor/world-50m.json").read().strip()+";\n"
 data+="const SHEETS="+json.dumps(sheets, ensure_ascii=False)+";\n"
 data+=WINE_DATA+"\n</script>\n<script>\n"+STUDY_JS.replace("</script","<\\/script")

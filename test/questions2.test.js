@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { toRows } from "../src/js/csv.js";
-import { buildWines, buildRegions } from "../src/js/data.js";
+import { buildWines, buildRegions, buildPairings } from "../src/js/data.js";
 import { GENERATORS, TYPED, questionFor } from "../src/js/quiz/questions.js";
 import { parseGrapes, canonGrape, checkTyped, suggest, vocabulary, fold } from "../src/js/quiz/answer.js";
 import { planLesson, Session, rngFrom } from "../src/js/quiz/session.js";
@@ -12,6 +12,7 @@ import { buildStages } from "../src/js/quiz/stages.js";
 
 const read = p => readFileSync(new URL("../" + p, import.meta.url), "utf8");
 const { wines } = buildWines(toRows(read("sheets/wine.csv")), toRows(read("sheets/study.csv")));
+buildPairings(toRows(read("sheets/pairings.csv")), wines);
 const regions = buildRegions(toRows(read("sheets/regions.csv")), wines);
 const kb = { regionsById: regions.byId };
 const byShort = new Map(wines.map(w => [w.short, w]));
@@ -125,9 +126,9 @@ test("Name the grape: single-grape wines only", () => {
 });
 
 test("Where from: the region, its other names or the place all count", () => {
-  const q = one("typeRegion", "Sancerre");
+  const q = one("typeRegion", "Écu Muscadet");
   assert.equal(q.answer, "Loire");
-  ["Loire", "loire valley", "Sancerre"].forEach(t => assert.equal(checkTyped(t, q.accept).ok, true, t));
+  ["Loire", "loire valley", "Muscadet Sèvre et Maine"].forEach(t => assert.equal(checkTyped(t, q.accept).ok, true, t));
   assert.equal(checkTyped("Burgundy", q.accept).ok, false);
   const ye = one("typeRegion", "Ye-Ye");
   assert.equal(checkTyped("Lanzarote", ye.accept).ok, true);
@@ -162,7 +163,7 @@ test("typed questions wait until a wine has left box 1", () => {
 });
 
 test("a lesson on new wines asks no typed questions; a review of known wines does", () => {
-  const stages = buildStages(wines), lesson = stages[1].lessons[0];
+  const stages = buildStages(wines), lesson = stages.find(s => s.id === "glass").lessons[0];
   const fresh = emptyProgress();
   const s1 = new Session({ kind: "lesson", plan: planLesson({ newWines: lesson.wines, wines, progress: fresh, now: 0 }), all: wines, progress: fresh, rng: rngFrom(5), now: () => 0, kb });
   const types1 = []; while (s1.next()) { types1.push(s1.current.type); s1.answer(true); }

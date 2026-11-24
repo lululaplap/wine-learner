@@ -1,5 +1,5 @@
 import { toRows } from "./csv.js";
-import { buildWines, buildRegions, SCORES } from "./data.js";
+import { buildWines, buildRegions, buildPairings, SCORES } from "./data.js";
 import { buildGlossary, useGlossary, linkTerms } from "./glossary.js";
 import { esc, glyph, wineRow, badges, money } from "./ui.js";
 import { renderCard } from "./views/card.js";
@@ -14,7 +14,7 @@ import { buildStages } from "./quiz/stages.js";
 import { SCALE_WORDS, SCORE_NAMES, gridScores } from "./quiz/tasting.js";
 import { store } from "./store.js";
 import { searchIndex, search, didYouMean } from "./search.js";
-globalThis.Study = { toRows, buildWines, buildRegions, SCORES, buildGlossary, useGlossary, linkTerms, esc, glyph, wineRow, badges, money,
+globalThis.Study = { toRows, buildWines, buildRegions, buildPairings, SCORES, buildGlossary, useGlossary, linkTerms, esc, glyph, wineRow, badges, money,
   renderCard, renderList, toggleType, renderCheck, renderMapShell, mountMap, renderPath, onPathClick, onPathSubmit,
   renderLesson, onLessonClick, onLessonKey, onLessonInput, onLessonSubmit, renderRegionsShell, mountRegions,
   loadProgress, saveProgress, isKnown, isDue, grade, emptyProgress, KNOWN, buildStages, SCALE_WORDS, SCORE_NAMES, gridScores, store, searchIndex, search, didYouMean };

@@ -5,7 +5,8 @@ export const SHEETS = {
   study: "sheets/study.csv",
   lists: "sheets/lists.csv",
   glossary: "sheets/glossary.csv",
-  regions: "sheets/regions.csv"
+  regions: "sheets/regions.csv",
+  pairings: "sheets/pairings.csv"
 };
 
 // The copy in sheets/, used for local testing (add ?local to the address) and as a last resort

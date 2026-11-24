@@ -87,12 +87,18 @@ test("types come from the subsection", () => {
   assert.equal(price(""), null);
 });
 
-test("the real sheets: 148 rows make 136 wines, every one with notes", () => {
-  assert.equal(WINE.length, 148);
+// A snapshot of the wine sheet as published on 24 Nov 2026: if these numbers change, the list has changed.
+test("the real sheets: 169 rows make 156 wines; 22 new ones still need notes", () => {
+  assert.equal(WINE.length, 169);
   const { wines, report } = buildWines(WINE, STUDY);
-  assert.equal(wines.length, 136);
-  assert.deepEqual(report.needsNotes.map(w => w.key), []);
-  assert.deepEqual(report.unmatchedStudy, []);
+  assert.equal(wines.length, 156);
+  assert.equal(report.needsNotes.length, 22);
+  // the wines the pairing bible brought in all have notes
+  ["du grappin maconvillages", "roc des anges alquimia", "montanetthoden garance", "melsheimer spatlese", "domaine du traginier banyuls rimage"]
+    .forEach(k => assert.ok(wines.find(w => w.key === k && w.hasNotes), k));
+  // wines that left the list keep their study rows, for if they come back
+  assert.deepEqual(report.unmatchedStudy.map(s => s.key).sort(), ["domaine breton le grolleau", "domaine henri bourgeois sancerre la vigne blanche", "domaine rietsch cremant dalsace",
+    "fanny sabre bourgogne xxiv", "ferdinando principiano langhe nebbiolo", "token ribolla gialla", "vignes du maynes aligorhythm"]);
   assert.deepEqual(report.duplicates.map(w => w.key), []);
   assert.deepEqual(report.brokenCompare, []);
   assert.deepEqual(report.clashes, []);
@@ -101,18 +107,18 @@ test("the real sheets: 148 rows make 136 wines, every one with notes", () => {
 test("the real sheets: glass list, anchors and comparison links", () => {
   const { wines, links } = buildWines(WINE, STUDY);
   const glass = wines.filter(w => w.glass != null);
-  assert.equal(glass.length, 19); // 14 by the glass + 5 sweet wines by the glass
-  assert.equal(glass.filter(w => w.type === "sweet").length, 5);
+  assert.equal(glass.length, 24); // 17 by the glass + 7 sweet wines by the glass
+  assert.equal(glass.filter(w => w.type === "sweet").length, 7);
   assert.equal(wines.filter(w => w.anchor).length, 5);
-  assert.equal(links.length, 212); // the prototype's comparison links
+  assert.equal(links.length, 194); // the prototype's comparison links, less those to wines that left the list
   const galerne = wines.find(w => w.key === "montanetthoden vezelay galerne");
-  assert.deepEqual([galerne.glass, galerne.bottle], [20, 110]);
-  assert.equal(wines.filter(w => w.check).length, 34);
+  assert.deepEqual([galerne.glass, galerne.bottle], [null, 110]); // no longer by the glass
+  assert.equal(wines.filter(w => w.check).length, 29);
 });
 
 test("styles keep the wine sheet's bottle order", () => {
   const { sections } = buildWines(WINE, STUDY);
   assert.deepEqual(sections, ["Sparkling", "Champagne", "White — Aromatic & Fresh", "White — Round & Textured", "Rosé",
     "Orange / Skin Contact", "Red — Soft & Juicy", "Red — Rich & Structured", "Sweet & Afters",
-    "White"]); // Gili Villo is only sold by the glass, so its style is the glass row's
+    "White", "Red"]); // wines only sold by the glass take the glass row's style: Gili Villo, Du Grappin, Alquimia, La Ciaude
 });

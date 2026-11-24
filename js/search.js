@@ -62,7 +62,7 @@ function wordMatch(q, w) {
 
 const FIELDS = [
   { key: "name", weight: 10 }, { key: "grape", weight: 6 }, { key: "region", weight: 5 }, { key: "misspelling", weight: 5 }, { key: "regionAlias", weight: 4 },
-  { key: "style", weight: 3 }, { key: "ifYouLike", weight: 2 }, { key: "flavour", weight: 1 }
+  { key: "style", weight: 3 }, { key: "dish", weight: 3 }, { key: "ifYouLike", weight: 2 }, { key: "flavour", weight: 1 }
 ];
 
 // Builds what search looks at for each wine. `regions` is the Wine regions tab (ctx.regions), for the regions' other
@@ -79,6 +79,7 @@ export function searchIndex(wines, regions = null) {
       misspelling: reg ? reg.misspellings || [] : [],
       style: [w.section, w.type],
       ifYouLike: w.ifYouLike || [],
+      dish: (w.pairings || []).flatMap(p => [p.dish, p.detail]).concat(w.pairsWith || []),
       flavour: (w.flavours || []).concat(w.making || [])
     };
     const fields = FIELDS.map(f => ({ ...f, texts: parts[f.key].filter(Boolean), words: [...new Set(parts[f.key].flatMap(t => words(t, { joined: true })))] }));
@@ -100,6 +101,7 @@ function reason(field, q, entry) {
   if (!hit) return "";
   if (field.key === "regionAlias") return `From ${entry.regionName}, which includes ${hit}`;
   if (field.key === "ifYouLike") return `For guests who like ${hit}`;
+  if (field.key === "dish") return `On the tasting menu with the ${hit.toLowerCase()}`;
   if (field.key === "flavour") return `Notes: ${hit}`;
   return "";
 }

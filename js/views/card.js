@@ -54,6 +54,18 @@ function whereBlock(w, ctx) {
   return `<p class="where"><span class="where-label">From</span> ${esc(parts.join(", "))}${w.pin && !w.pin.exact ? ' <span class="approx">(region only)</span>' : ""}${link}</p>`;
 }
 
+// The tasting menu: which course and dish the wine goes with, and the script to say at the table (folded away).
+// Dishes that share a script (the ox terrine and the carrot) show together.
+function pairingBlock(w, L) {
+  if (!w.pairings || !w.pairings.length) return "";
+  const groups = [];
+  w.pairings.forEach(p => { const g = groups.find(x => x.script === p.script); if (g) g.list.push(p); else groups.push({ script: p.script, list: [p] }); });
+  return `<h3>On the tasting menu</h3>${groups.map(g => `<div class="pairing">
+    ${g.list.map(p => `<p class="pair-dish"><strong>${esc(p.course)}</strong>${p.choose ? ' <span class="pair-choose">choose one</span>' : ""}: ${esc(p.dish)}${p.detail ? ` <span class="pair-detail">· ${esc(p.detail)}</span>` : ""}</p>`).join("")}
+    ${g.list[0].note ? `<p class="pair-note">${esc(g.list[0].note)}</p>` : ""}
+    ${g.script ? `<details class="script"><summary>Script for the table</summary><p>${L(g.script)}</p></details>` : ""}</div>`).join("")}`;
+}
+
 function sourceLine(w) {
   if (!w.hasNotes) return "This wine is on the list but has no study notes yet. Add a row for it in the study sheet.";
   if (w.tasted) return "Tasted by the team: " + esc(w.source.replace(/^tasted[,:\s]*/i, ""));
@@ -78,6 +90,7 @@ export function renderCard(w, ctx) {
     ${whereBlock(w, ctx)}
     ${openBlock(w)}
     ${w.guestLine ? `<h3>To the guest</h3><p class="guestline">“${L(w.guestLine)}”</p>` : ""}
+    ${pairingBlock(w, L)}
     ${scoresBlock(w, L)}
     ${w.note ? `<h3>Style</h3><p class="note">${L(w.note)}</p>` : ""}
     ${tagRow("Flavours", w.flavours)}${tagRow("Making", w.making)}${tagRow("If they like", w.ifYouLike)}

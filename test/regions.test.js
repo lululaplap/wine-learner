@@ -26,7 +26,7 @@ test("every wine on the list is placed on the map", () => {
   const { wines, unplaced, regions } = real();
   assert.deepEqual(unplaced.map(w => w.name), []);
   assert.ok(wines.every(w => w.pin && w.regionId));
-  assert.equal(regions.filter(r => r.wines.length).length, 41);
+  assert.equal(regions.filter(r => r.wines.length).length, 42);
   assert.equal(regions.reduce((n, r) => n + r.wines.length, 0), wines.length);
 });
 

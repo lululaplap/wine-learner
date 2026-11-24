@@ -5,11 +5,12 @@ import { money } from "../ui.js";
 import { parseGrapes, canonGrape, vocabulary, fold } from "./answer.js";
 
 export const TYPES = ["identify", "pickWine", "describe", "reverse", "price", "stepUp", "guestRequest", "headsUp", "oddOneOut", "match", "sayIt",
-  "missingGrape", "typeGrape", "typeRegion", "typeWine", "typePrice"];
+  "missingGrape", "typeGrape", "typeRegion", "typeWine", "typePrice", "pairWine", "pairDish"];
 export const TYPE_NAMES = {
   identify: "Identify", pickWine: "Pick the wine", describe: "Describe", reverse: "Reverse", price: "Price",
   stepUp: "Step up", guestRequest: "Guest request", headsUp: "Heads-up", oddOneOut: "Odd one out", match: "Match", sayIt: "Say it",
-  missingGrape: "Missing grape", typeGrape: "Name the grape", typeRegion: "Where from", typeWine: "Name the wine", typePrice: "Type the price"
+  missingGrape: "Missing grape", typeGrape: "Name the grape", typeRegion: "Where from", typeWine: "Name the wine", typePrice: "Type the price",
+  pairWine: "Pairing", pairDish: "Pairing"
 };
 // Typed questions test recall, so they wait until a wine has been met in multiple choice (left box 1).
 export const TYPED = new Set(["missingGrape", "typeGrape", "typeRegion", "typeWine", "typePrice"]);
@@ -240,8 +241,31 @@ function typePrice(w, all, rng) {
     input: "number", accept: [String(val)], answer: money(val), estimate: false };
 }
 
+// ---------- the tasting menu ----------
+// Pairings come from the pairing bible, so they are never estimates. A dish served with either of two wines (the
+// mousse: Maury or Banyuls) never offers the other one as a wrong answer.
+const menuPairings = all => all.flatMap(x => (x.pairings || []).map(p => ({ p, wine: x })));
+const dishLabel = p => (p.dish.toLowerCase() === p.course.toLowerCase() ? p.dish : `${p.dish} (${p.course.toLowerCase()})`);
+
+// "Venison (main): which wine is it paired with?"
+function pairWine(w, all, rng) {
+  if (!w.pairings || !w.pairings.length) return null;
+  const p = w.pairings[Math.floor(rng() * w.pairings.length)];
+  const menu = menuPairings(all), alsoRight = new Set(menu.filter(x => x.p.dish === p.dish && x.p.course === p.course).map(x => x.wine.short));
+  const wrong = shuffle([...new Set(menu.map(x => x.wine.short))].filter(s => !alsoRight.has(s)), rng);
+  return make("pairWine", w, `${dishLabel(p)}: which wine is it paired with on the tasting menu?`, w.short, wrong, rng, { dish: p.dish });
+}
+
+// "Garance: which dish is it paired with on the tasting menu?"
+function pairDish(w, all, rng) {
+  if (!w.pairings || !w.pairings.length) return null;
+  const p = w.pairings[Math.floor(rng() * w.pairings.length)], mine = new Set(w.pairings.map(x => x.dish));
+  const wrong = shuffle([...new Set(menuPairings(all).map(x => x.p.dish))].filter(d => !mine.has(d)), rng);
+  return make("pairDish", w, `${w.short}: which dish is it paired with on the tasting menu?`, p.dish, wrong, rng);
+}
+
 export const GENERATORS = { identify, pickWine, describe, reverse, price, stepUp, guestRequest, headsUp, oddOneOut, match, sayIt,
-  missingGrape, typeGrape, typeRegion, typeWine, typePrice };
+  missingGrape, typeGrape, typeRegion, typeWine, typePrice, pairWine, pairDish };
 export { vocabulary };
 
 // Builds one question about wine w. `prefer` puts some types first (a new wine starts with Identify);

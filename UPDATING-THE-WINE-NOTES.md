@@ -35,6 +35,7 @@ The wine study tool reads two sheets. Change either sheet and the tool updates b
 | **Wine lists** | The fixed words for *Flavours*, *Making* and *If you like*, one per row, so the quiz and the Finder use the same words as you |
 | **Wine regions** | The wine regions of the world for the Regions map: where each sits, what it is known for, its grapes |
 | **Wine glossary** | Wine jargon and what it means. The tool turns these words into blue links in the notes; hover or tap one to read the definition |
+| **Wine pairings** | The tasting menu, course by course: each dish, its wine and the script to say at the table. It comes from the *Pairing + BTG Bible* |
 
 ## Column guide
 
@@ -107,11 +108,29 @@ Capitals, accents and hyphens don't matter: `pet nat` also finds "Pét-nat". Onl
 
 **Add a term.** Add a row. It is linked everywhere it appears from the next time the tool loads.
 
+### Wine pairings
+
+One row per dish and wine. A dish served with either of two wines (the cheese: the Maury or the Banyuls, whichever is on) has a row for each wine. The wine card shows the course, the dish and the script; lessons ask which wine goes with each dish and which dish with each wine; search finds a wine by its dish.
+
+| Column | What to type | Example |
+| --- | --- | --- |
+| Order | The course's place on the menu: 1 for the first course | 4 |
+| Course | The course's name | Main |
+| Choose one | `yes` when guests pick one dish from the course | yes |
+| Dish | The dish's short name, as staff say it | Venison |
+| Dish detail | The full dish, if the short name isn't enough (optional) | Pollack with sardine emulsion, borlotti beans and tomato |
+| Wine | The wine's study *Key* | montanetthoden garance |
+| Status | `On` for tonight's menu; `Retired` for a pairing kept for reference | On |
+| Note | Anything staff need to know (optional) | Serve the Maury or the Banyuls, whichever is on |
+| Script | What to say at the table, written to be spoken | Garance comes from Domaine Montanet-Thoden… |
+
+**The menu changes.** Set the old pairing's *Status* to `Retired` and add the new one. Lessons stop asking about the retired one straight away. **Data check** lists any pairing whose wine isn't on the list.
+
 ## Setting up the study sheet (once)
 
-1. In the **Apricity menus** Google Sheet, add four tabs: **Wine study**, **Wine lists**, **Wine glossary** and **Wine regions**.
-2. Import `sheets/study.csv` into *Wine study*, `sheets/lists.csv` into *Wine lists*, `sheets/glossary.csv` into *Wine glossary* and `sheets/regions.csv` into *Wine regions* (File → Import → Upload → *Replace current sheet*).
+1. In the **Apricity menus** Google Sheet, add five tabs: **Wine study**, **Wine lists**, **Wine glossary**, **Wine regions** and **Wine pairings**.
+2. Import `sheets/study.csv` into *Wine study*, `sheets/lists.csv` into *Wine lists*, `sheets/glossary.csv` into *Wine glossary*, `sheets/regions.csv` into *Wine regions* and `sheets/pairings.csv` into *Wine pairings* (File → Import → Upload → *Replace current sheet*).
 3. File → Share → Publish to web. Publish each tab as *Comma-separated values (.csv)* and copy its link.
-4. Paste the links into `STUDY_CSV`, `LISTS_CSV`, `GLOSSARY_CSV` and `REGIONS_CSV` in `build.sh`, run `./build.sh`, and commit.
+4. Paste the links into `STUDY_CSV`, `LISTS_CSV`, `GLOSSARY_CSV`, `REGIONS_CSV` and `PAIRINGS_CSV` in `build.sh`, run `./build.sh`, and commit.
 
 Until then the tool reads the copies in `sheets/`, which only change when someone edits them in the repo.

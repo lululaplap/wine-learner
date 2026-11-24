@@ -2,7 +2,7 @@
 import { SHEETS, localCopy } from "./config.js";
 import { loadSheet } from "./load.js";
 import { toRows } from "./csv.js";
-import { buildWines, buildRegions } from "./data.js";
+import { buildWines, buildRegions, buildPairings } from "./data.js";
 import { store } from "./store.js";
 import { esc, timeOf } from "./ui.js";
 import { renderCard } from "./views/card.js";
@@ -66,7 +66,7 @@ function go(hash) {
 
 // ---------- loading ----------
 async function load() {
-  const names = [["wine", "Wine sheet"], ["study", "Study sheet"], ["glossary", "Glossary"], ["regions", "Wine regions"], ["lists", "Lists"]];
+  const names = [["wine", "Wine sheet"], ["study", "Study sheet"], ["glossary", "Glossary"], ["regions", "Wine regions"], ["lists", "Lists"], ["pairings", "Wine pairings"]];
   const local = new URLSearchParams(location.search).has("local");
   const url = n => (local ? localCopy(n) : SHEETS[n]);
   const results = await Promise.allSettled(names.map(([n]) => loadSheet(n, url(n), localCopy(n))));
@@ -84,6 +84,7 @@ async function load() {
   ctx.lists = {};
   (results[4].status === "fulfilled" ? toRows(results[4].value.text) : []).forEach(r => { if (r.list && r.value) (ctx.lists[r.list] = ctx.lists[r.list] || []).push(r.value); });
   ctx.regions = buildRegions(results[3].status === "fulfilled" ? toRows(results[3].value.text) : [], ctx.data.wines);
+  ctx.pairings = buildPairings(results[5].status === "fulfilled" ? toRows(results[5].value.text) : [], ctx.data.wines);
   ctx.loadedAt = Date.now();
   renderStatus(failed);
 }

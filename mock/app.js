@@ -12,13 +12,14 @@ const ctx = (() => {
   c.lists = {}; rows(SHEETS.lists).forEach(r => { if (r.list && r.value) (c.lists[r.list] = c.lists[r.list] || []).push(r.value); });
   c.lists.Team = PEOPLE.slice();
   c.regions = Study.buildRegions(rows(SHEETS.regions), c.data.wines);
+  c.pairings = Study.buildPairings(rows(SHEETS.pairings), c.data.wines);
   return c;
 })();
 const sw = id => ctx.byId.get(id); // the study side of a wine: notes, scores, comparisons
 const listState = { types: new Set() };
 
 // The examples the mock tells its story with.
-const OFF_EXAMPLE = "gili-villo", NEW_EXAMPLE = "token-ribolla-gialla", TASTE_EXAMPLE = "envinate-palo-blanco";
+const OFF_EXAMPLE = "gili-villo", NEW_EXAMPLE = "montanetthoden-garance", TASTE_EXAMPLE = "envinate-palo-blanco";
 Object.assign(state, {
   acct: null,                         // which example account is signed in
   area: "guest",                      // service, learn, office or me
@@ -39,7 +40,7 @@ state.stock[TASTE_EXAMPLE] = Math.max(0, state.stock[TASTE_EXAMPLE] - 1);
 
 // Example learning progress for the team, so the path and the team overview have something to show.
 (function seedProgress() {
-  const S = Study.store, VERSION = 5;
+  const S = Study.store, VERSION = 6;
   if (S.get("mockseed", 0) === VERSION) return;
   const order = Study.buildStages(ctx.data.wines).flatMap(s => s.lessons).flatMap(l => l.wines);
   const sig = w => [w.vintage, w.bottle, w.glass].join("|");

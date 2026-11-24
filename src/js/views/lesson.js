@@ -62,6 +62,8 @@ function start(id, ctx) {
     plan = planLesson({ newWines: lesson.wines, wines: all, progress: p, now });
     allowEstimates = !tastedIn(stage.wines);
     tasteFrom = lesson.wines;
+    // The tasting menu unit asks about the pairings: after a wine's first question, which dish and which wine.
+    if (stage.id === "pairings") plan = plan.map(it => (it.wine && !it.first ? { ...it, prefer: shuffle(["pairWine", "pairDish"], Math.random) } : it));
     // Wine words where they fit: terms the lesson's own wines use, due ones first. How many depends on how well
     // this person knows wine words (wordQuota): two while finding out, none for someone who knows them.
     if (terms) { const quota = wordQuota(p); plan = withTerms(plan, pickTerms(terms, p, { wines: lesson.wines, n: quota.n, newMax: quota.newMax, now }), LESSON_LENGTH); }

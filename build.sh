@@ -14,6 +14,7 @@ STUDY_CSV=''
 LISTS_CSV=''
 GLOSSARY_CSV=''
 REGIONS_CSV=''
+PAIRINGS_CSV=''   # the "Wine pairings" tab, once it is made and published
 
 rm -rf js && mkdir -p js && cp -R src/js/. js/
 cp src/index.html index.html
@@ -28,4 +29,5 @@ point study study.csv "$STUDY_CSV"
 point lists lists.csv "$LISTS_CSV"
 point glossary glossary.csv "$GLOSSARY_CSV"
 point regions regions.csv "$REGIONS_CSV"
+point pairings pairings.csv "$PAIRINGS_CSV"
 echo "Built index.html and js/. Sheets:"; grep -E '^\s+(wine|study|lists|glossary|regions):' js/config.js

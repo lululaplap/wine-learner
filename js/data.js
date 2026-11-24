@@ -200,3 +200,28 @@ export function buildRegions(regionRows, wines) {
 }
 
 const slugify = s => normalise(s).replace(/ /g, "-");
+
+// ---------- the tasting menu's pairings ----------
+// The Pairings tab (from the pairing bible): course by course, each dish, its wine and the script to say at the table.
+// Each wine on the menu gets its pairings as w.pairings, in menu order. Retired pairings are kept apart, for reference.
+export function buildPairings(rows, wines) {
+  const byKey = new Map();
+  wines.forEach(w => { w.pairings = []; [w.key, ...(w.sheetKeys || [])].forEach(k => byKey.set(k, w)); });
+  const all = (rows || []).map((r, row) => {
+    const key = keyList(col(r, "wine"))[0] || "";
+    return { row, order: Number(col(r, "order")) || 99, course: col(r, "course"), choose: /^(yes|y|true)$/i.test(col(r, "choose one")),
+      dish: col(r, "dish"), detail: col(r, "dish detail"), note: col(r, "note"), script: col(r, "script"),
+      retired: /retired/i.test(col(r, "status")), key, wine: byKey.get(key) || null };
+  }).filter(p => p.dish && p.key);
+  const on = all.filter(p => !p.retired).sort((a, b) => a.order - b.order || a.row - b.row);
+  on.forEach(p => { if (p.wine) p.wine.pairings.push(p); });
+  const courses = [];
+  on.forEach(p => {
+    let c = courses.find(x => x.order === p.order && x.course === p.course);
+    if (!c) courses.push(c = { order: p.order, course: p.course, choose: p.choose, dishes: [] });
+    let d = c.dishes.find(x => x.dish === p.dish);
+    if (!d) c.dishes.push(d = { dish: p.dish, detail: p.detail, pairings: [] });
+    d.pairings.push(p);
+  });
+  return { pairings: on, courses, retired: all.filter(p => p.retired), unmatched: on.filter(p => !p.wine) };
+}
