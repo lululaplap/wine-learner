@@ -5,12 +5,12 @@ import { money } from "../ui.js";
 import { parseGrapes, canonGrape, vocabulary, fold } from "./answer.js";
 
 export const TYPES = ["identify", "pickWine", "describe", "reverse", "price", "stepUp", "guestRequest", "headsUp", "oddOneOut", "match", "sayIt",
-  "missingGrape", "typeGrape", "typeRegion", "typeWine", "typePrice", "pairWine", "pairDish"];
+  "missingGrape", "typeGrape", "typeRegion", "typeWine", "typePrice", "pairWine", "pairDish", "pairWhy", "pairWhich"];
 export const TYPE_NAMES = {
   identify: "Identify", pickWine: "Pick the wine", describe: "Describe", reverse: "Reverse", price: "Price",
   stepUp: "Step up", guestRequest: "Guest request", headsUp: "Heads-up", oddOneOut: "Odd one out", match: "Match", sayIt: "Say it",
   missingGrape: "Missing grape", typeGrape: "Name the grape", typeRegion: "Where from", typeWine: "Name the wine", typePrice: "Type the price",
-  pairWine: "Pairing", pairDish: "Pairing"
+  pairWine: "Pairing", pairDish: "Pairing", pairWhy: "Why it works", pairWhich: "Which pairing"
 };
 // Typed questions test recall, so they wait until a wine has been met in multiple choice (left box 1).
 export const TYPED = new Set(["missingGrape", "typeGrape", "typeRegion", "typeWine", "typePrice"]);
@@ -253,7 +253,7 @@ function pairWine(w, all, rng) {
   const p = w.pairings[Math.floor(rng() * w.pairings.length)];
   const menu = menuPairings(all), alsoRight = new Set(menu.filter(x => x.p.dish === p.dish && x.p.course === p.course).map(x => x.wine.short));
   const wrong = shuffle([...new Set(menu.map(x => x.wine.short))].filter(s => !alsoRight.has(s)), rng);
-  return make("pairWine", w, `${dishLabel(p)}: which wine is it paired with on the tasting menu?`, w.short, wrong, rng, { dish: p.dish });
+  return make("pairWine", w, `${dishLabel(p)}: which wine is it paired with on the tasting menu?`, w.short, wrong, rng, { dish: p.dish, why: p.why });
 }
 
 // "Garance: which dish is it paired with on the tasting menu?"
@@ -261,11 +261,34 @@ function pairDish(w, all, rng) {
   if (!w.pairings || !w.pairings.length) return null;
   const p = w.pairings[Math.floor(rng() * w.pairings.length)], mine = new Set(w.pairings.map(x => x.dish));
   const wrong = shuffle([...new Set(menuPairings(all).map(x => x.p.dish))].filter(d => !mine.has(d)), rng);
-  return make("pairDish", w, `${w.short}: which dish is it paired with on the tasting menu?`, p.dish, wrong, rng);
+  return make("pairDish", w, `${w.short}: which dish is it paired with on the tasting menu?`, p.dish, wrong, rng, { dish: p.dish, why: p.why });
+}
+
+// Why a pairing works, from the bible's scripts. The reasons never name the dish, so they don't give it away.
+// A dish with two wines (the mousse) never offers the other wine's reason, and a blank reason asks nothing.
+const withWhy = w => (w.pairings || []).filter(p => p.why);
+const pairingLabel = (wine, p) => `${wine.short} with the ${p.dish.toLowerCase()}`;
+
+// "Garance with the venison: why does it work?"
+function pairWhy(w, all, rng) {
+  const mine = withWhy(w);
+  if (!mine.length) return null;
+  const p = mine[Math.floor(rng() * mine.length)];
+  const wrong = shuffle([...new Set(menuPairings(all).filter(x => x.p.why && x.p.dish !== p.dish).map(x => x.p.why))].filter(y => y !== p.why), rng);
+  return make("pairWhy", w, `${pairingLabel(w, p)}: why does it work?`, p.why, wrong, rng, { dish: p.dish });
+}
+
+// "Its fresh, lifted Pinot acidity suits the rich, gamey depth…": which pairing is this?
+function pairWhich(w, all, rng) {
+  const mine = withWhy(w);
+  if (!mine.length) return null;
+  const p = mine[Math.floor(rng() * mine.length)];
+  const wrong = shuffle([...new Set(menuPairings(all).filter(x => x.p.dish !== p.dish).map(x => pairingLabel(x.wine, x.p)))], rng);
+  return make("pairWhich", w, `“${p.why}” Which pairing is this?`, pairingLabel(w, p), wrong, rng, { dish: p.dish });
 }
 
 export const GENERATORS = { identify, pickWine, describe, reverse, price, stepUp, guestRequest, headsUp, oddOneOut, match, sayIt,
-  missingGrape, typeGrape, typeRegion, typeWine, typePrice, pairWine, pairDish };
+  missingGrape, typeGrape, typeRegion, typeWine, typePrice, pairWine, pairDish, pairWhy, pairWhich };
 export { vocabulary };
 
 // Builds one question about wine w. `prefer` puts some types first (a new wine starts with Identify);

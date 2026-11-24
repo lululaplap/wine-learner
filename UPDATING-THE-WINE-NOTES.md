@@ -110,7 +110,7 @@ Capitals, accents and hyphens don't matter: `pet nat` also finds "Pét-nat". Onl
 
 ### Wine pairings
 
-One row per dish and wine. A dish served with either of two wines (the cheese: the Maury or the Banyuls, whichever is on) has a row for each wine. The **Pairings** screen shows the whole menu course by course, and the wine card shows the course, the dish and the script; lessons ask which wine goes with each dish and which dish with each wine; search finds a wine by its dish.
+One row per dish and wine. A dish served with either of two wines (the cheese: the Maury or the Banyuls, whichever is on) has a row for each wine. The **Pairings** screen shows the whole menu course by course, and the wine card shows the course, the dish, why it works and the script; lessons ask which wine goes with each dish, which dish with each wine, and why the pairing works; *Before service* asks two questions on the tasting menu; search finds a wine by its dish.
 
 | Column | What to type | Example |
 | --- | --- | --- |
@@ -122,9 +122,12 @@ One row per dish and wine. A dish served with either of two wines (the cheese: t
 | Wine | The wine's study *Key* | montanetthoden garance |
 | Status | `On` for tonight's menu; `Retired` for a pairing kept for reference | On |
 | Note | Anything staff need to know (optional) | Serve the Maury or the Banyuls, whichever is on |
+| Why | One line on why the pairing works, **without naming the dish**: lessons show it and ask which pairing it describes. Leave it blank if you're not sure; lessons then ask only which wine and which dish (optional) | Its fresh, lifted Pinot acidity suits the rich, gamey depth of the meat without overpowering it. |
 | Script | What to say at the table, written to be spoken | Garance comes from Domaine Montanet-Thoden… |
 
-**The menu changes.** Set the old pairing's *Status* to `Retired` and add the new one. Lessons stop asking about the retired one straight away. **Data check** lists any pairing whose wine isn't on the list.
+**The menu changes.** Set the old pairing's *Status* to `Retired` and add the new one. Lessons stop asking about the retired one straight away.
+
+**Why it works, for now.** Ten pairings have a reason, each taken from the bible's script. The trout, the cheese, the mousse and the treacle pudding are blank, because the bible's scripts for them don't say why; add a line for each when you can. **Data check** lists any pairing whose wine isn't on the list.
 
 ## Setting up the study sheet (once)
 

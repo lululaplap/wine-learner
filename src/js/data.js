@@ -210,7 +210,7 @@ export function buildPairings(rows, wines) {
   const all = (rows || []).map((r, row) => {
     const key = keyList(col(r, "wine"))[0] || "";
     return { row, order: Number(col(r, "order")) || 99, course: col(r, "course"), choose: /^(yes|y|true)$/i.test(col(r, "choose one")),
-      dish: col(r, "dish"), detail: col(r, "dish detail"), note: col(r, "note"), script: col(r, "script"),
+      dish: col(r, "dish"), detail: col(r, "dish detail"), note: col(r, "note"), why: col(r, "why"), script: col(r, "script"),
       retired: /retired/i.test(col(r, "status")), key, wine: byKey.get(key) || null };
   }).filter(p => p.dish && p.key);
   const on = all.filter(p => !p.retired).sort((a, b) => a.order - b.order || a.row - b.row);

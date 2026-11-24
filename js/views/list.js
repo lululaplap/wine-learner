@@ -7,7 +7,7 @@ const TYPES = ["sparkling", "white", "rose", "orange", "red", "sweet"];
 
 // The search box at the top: the shared wine search, kept per load of the data.
 let finder = null;
-const finderFor = ctx => (finder && finder.data === ctx.data && finder.n === ctx.data.wines.length ? finder.idx : (finder = { data: ctx.data, n: ctx.data.wines.length, idx: searchIndex(ctx.data.wines, ctx.regions) }).idx);
+const finderFor = ctx => (finder && finder.data === ctx.data && finder.n === ctx.data.wines.length && finder.pairings === ctx.pairings ? finder.idx : (finder = { data: ctx.data, n: ctx.data.wines.length, pairings: ctx.pairings, idx: searchIndex(ctx.data.wines, ctx.regions) }).idx);
 export function listMatches(ctx, state) {
   const on = state.types || new Set();
   return search(finderFor(ctx), state.q || "", { limit: 0, filter: w => !on.size || on.has(w.type) });

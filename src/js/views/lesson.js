@@ -13,6 +13,8 @@ import { termIndexFor, wordQuota, pickTerms, withTerms, TERM_TYPE_NAMES, shortDe
 import { isOpen, openExtras, askToday, dontAskToday, SCALE_WORDS, SCORE_NAMES, gridScores, compareTasting, tastingText, saveTasting } from "../quiz/tasting.js";
 
 const MAX_TASTE = 4;
+const SERVICE_GLASS = 3; // of Before service's five questions, the rest come from the tasting menu
+const PAIRING_TYPES = ["pairWine", "pairDish", "pairWhy", "pairWhich"];
 
 
 let active = null; // { id, session, name, phase: "ask" | "feedback" | "end", picked, result }
@@ -43,9 +45,7 @@ function start(id, ctx) {
     tasteFrom = extras;
   } else if (id === "service") {
     kind = "service"; title = "Before service";
-    const glass = shuffle(all.filter(w => w.glass != null), Math.random).slice(0, BEFORE_SERVICE_LENGTH);
-    plan = glass.map(w => ({ wine: w, prefer: shuffle(["price", "guestRequest", "identify", "sayIt"], Math.random).slice(0, 2) }));
-    tasteFrom = glass;
+    ({ plan, tasteFrom } = beforeServicePlan(all));
   } else if (id.startsWith("review")) {
     kind = "review";
     const stage = stages.find(s => "review-" + s.id === id);
@@ -62,8 +62,8 @@ function start(id, ctx) {
     plan = planLesson({ newWines: lesson.wines, wines: all, progress: p, now });
     allowEstimates = !tastedIn(stage.wines);
     tasteFrom = lesson.wines;
-    // The tasting menu unit asks about the pairings: after a wine's first question, which dish and which wine.
-    if (stage.id === "pairings") plan = plan.map(it => (it.wine && !it.first ? { ...it, prefer: shuffle(["pairWine", "pairDish"], Math.random) } : it));
+    // The tasting menu unit asks about the pairings: after a wine's first question, which dish, which wine and why.
+    if (stage.id === "pairings") plan = plan.map(it => (it.wine && !it.first ? { ...it, prefer: shuffle(PAIRING_TYPES, Math.random) } : it));
     // Wine words where they fit: terms the lesson's own wines use, due ones first. How many depends on how well
     // this person knows wine words (wordQuota): two while finding out, none for someone who knows them.
     if (terms) { const quota = wordQuota(p); plan = withTerms(plan, pickTerms(terms, p, { wines: lesson.wines, n: quota.n, newMax: quota.newMax, now }), LESSON_LENGTH); }
@@ -74,6 +74,19 @@ function start(id, ctx) {
   const ask = toTaste.length && session.current && (id === "open" || askToday(now));
   return { id, name, title, session, phase: !session.current ? "empty" : ask ? "tasteAsk" : "ask", picked: null, result: null,
     taste: { list: toTaste, i: 0, draft: newDraft() } };
+}
+
+// Before service: three from the glass list and two from the tasting menu (more of one if the other is short).
+// Glass questions are about price, guest requests and what it is; tasting-menu ones about the pairing and why it works.
+export function beforeServicePlan(all, rng = Math.random) {
+  const glass = shuffle(all.filter(w => w.glass != null), rng);
+  const firstGlass = glass.slice(0, SERVICE_GLASS);
+  const menu = shuffle(all.filter(w => w.pairings && w.pairings.length && !firstGlass.includes(w)), rng);
+  const fromMenu = menu.slice(0, BEFORE_SERVICE_LENGTH - firstGlass.length);
+  const fromGlass = glass.filter(w => !fromMenu.includes(w)).slice(0, BEFORE_SERVICE_LENGTH - fromMenu.length);
+  const plan = shuffle([...fromGlass.map(w => ({ wine: w, prefer: shuffle(["price", "guestRequest", "identify", "sayIt"], rng).slice(0, 2) })),
+    ...fromMenu.map(w => ({ wine: w, prefer: shuffle(PAIRING_TYPES, rng) }))], rng);
+  return { plan, tasteFrom: fromGlass, fromGlass, fromMenu };
 }
 
 const newDraft = () => ({ scores: {}, flavours: [], note: "" });
@@ -283,9 +296,11 @@ function feedbackHTML(q, ctx) {
   if (q.input && !ok) answer = `<p class="fb-answer">You typed <strong>${esc(active.typed)}</strong>. The answer: <strong>${esc(q.answer)}</strong></p>`;
   if (q.type === "match") answer = ok ? "" : `<p class="fb-answer">${active.match.mistakes} mismatch${active.match.mistakes > 1 ? "es" : ""}. ${esc(q.answer)}</p>`;
   const cmp = comparatorLine(w, ctx.byId);
+  // Pairing questions say why the pairing works, unless the reason was the question or the answer.
+  const why = (q.type === "pairWine" || q.type === "pairDish") && q.why ? `<p class="fb-why"><strong>Why it works:</strong> ${linkTerms(ctx.glossary, q.why, used)}</p>` : "";
   return `<div class="feedback ${isSay ? "say" : ok ? "ok" : "no"}" role="status">
     <div class="fb-inner">
-      <p class="fb-head">${head}</p>${answer}
+      <p class="fb-head">${head}</p>${answer}${why}
       ${w.guestLine ? `<p class="fb-guest">“${linkTerms(ctx.glossary, w.guestLine, used)}”</p>` : ""}
       ${cmp ? `<p class="fb-cmp">${esc(cmp)} <a class="winelink" href="#/wine/${encodeURIComponent(w.id)}">${esc(w.short)}: open the card</a></p>` : `<p class="fb-cmp"><a class="winelink" href="#/wine/${encodeURIComponent(w.id)}">${esc(w.short)}: open the card</a></p>`}
       ${q.estimate ? '<p class="fb-est">Based on estimated notes, not yet tasted by the team.</p>' : ""}

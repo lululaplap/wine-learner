@@ -13,6 +13,7 @@ export function renderPairings(ctx) {
     // Pairings that share a script (the Maury with the cheese and the mousse) show their script once per wine.
     const wines = d.pairings.map(p => `<div class="pp-wine">${p.wine ? wineRow(p.wine) : `<p class="pp-missing">Not on the list: <code>${esc(p.key)}</code></p>`}
       ${p.wine && extra ? extra(p.wine) : ""}
+      ${p.why ? `<p class="pair-why"><strong>Why it works:</strong> ${L(p.why)}</p>` : ""}
       ${p.script ? `<details class="script"><summary>Script for the table</summary><p>${L(p.script)}</p></details>` : ""}</div>`).join(d.pairings.length > 1 ? '<p class="pp-or">or</p>' : "");
     const note = d.pairings.map(p => p.note).find(Boolean);
     return `<li class="pp-dish"><h3 class="pp-name">${esc(d.dish)}${d.detail ? ` <span class="pp-detail">${esc(d.detail)}</span>` : ""}</h3>${note ? `<p class="pp-note">${esc(note)}</p>` : ""}${wines}</li>`;

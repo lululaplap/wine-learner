@@ -441,12 +441,12 @@ document.addEventListener("keydown", e => {
 
 // ---------- Office → Pairings: edit the tasting menu ----------
 // The wine lead edits the Wine pairings tab here: courses, dishes, the wine (or either/or wines) for each, notes and
-// scripts. Each dish reads as it will in Service; Edit opens a form; Save rebuilds the pairings, so the Service
+// reasons and scripts. Each dish reads as it will in Service; Edit opens a form; Save rebuilds the pairings, so the Service
 // Pairings screen, wine cards, lessons and search show the change at once. Retired dishes are kept and can come back.
 // The pours of a tracked pairing (the 7-course pairing) are the second part of the screen.
 const pe = { tab: "menu", edit: null, draft: null, editCourse: null, courseDraft: null, showRetired: false };
 const canEditPairings = () => isWineLead();
-const PCOLS = ["order", "course", "choose one", "dish", "dish detail", "wine", "status", "note", "script"];
+const PCOLS = ["order", "course", "choose one", "dish", "dish detail", "wine", "status", "note", "why", "script"];
 const isOn = r => !/retired/i.test(r.status || "");
 const wineIdOfKey = k => { const w = ctx.data.wines.find(x => x.key === k || (x.sheetKeys || []).includes(k)); return w ? w.id : null; };
 const dishKey = r => [r.order, r.course, r.dish, isOn(r) ? "on" : "retired"].join("|");
@@ -471,6 +471,7 @@ AFTER.pairings = () => { if (!canEditPairings() || pe.tab === "pours") AFTER.pai
 function pairWinesHTML(g) {
   return ctx.pairRows.filter((r, i) => g.rows.includes(i)).map(r => { const id = wineIdOfKey(r.wine), w = id && byId.get(id);
     return `<div class="pe-wine">${w ? `${glyph(w.t)} <a class="winelink" href="#/wine/${encodeURIComponent(id)}">${esc(w.s)}</a> <span class="muted num">${esc(w.v)}</span> ${state.off.has(id) || isOut(id) ? '<span class="badge out">Off tonight</span>' : ""}` : `<span class="badge low">Not on the list: ${esc(r.wine)}</span>`}
+      ${r.why ? `<p class="pair-why"><strong>Why it works:</strong> ${esc(r.why)}</p>` : '<p class="pe-script muted">No reason yet: lessons ask why it works once there is one.</p>'}
       ${r.script ? `<p class="pe-script">“${esc(r.script.slice(0, 150))}${r.script.length > 150 ? "…" : ""}”</p>` : '<p class="pe-script muted">No script yet.</p>'}</div>`; }).join('<p class="pp-or">or</p>');
 }
 function pairFormHTML(d, isNew) {
@@ -480,6 +481,7 @@ function pairFormHTML(d, isNew) {
     <div class="formgrid">${field("dish", "Dish, as staff say it", "e.g. Venison")}${field("detail", "Full dish (optional)", "e.g. Venison, beetroot, blackberry")}</div>
     ${d.wines.map((x, i) => `<div class="pe-wineform"><span class="lab">${i ? "Or this wine (either/or)" : "Wine"}</span>
       ${winePicker("pe-w" + i, { value: x.id, label: i ? "Second wine" : "Wine", onPick: id => { pe.draft.wines[i].id = id; render(); } })}
+      <div class="field"><label for="pe-y${i}">Why it works <span class="muted">(one line, without naming the dish: lessons ask it)</span></label><textarea class="input" id="pe-y${i}" data-pe-why="${i}" rows="2" placeholder="e.g. Its fresh acidity cuts through the richness">${esc(x.why || "")}</textarea></div>
       <div class="field"><label for="pe-s${i}">Script for the table</label><textarea class="input" id="pe-s${i}" data-pe-script="${i}" rows="4" placeholder="What to say when pouring it with this dish">${esc(x.script || "")}</textarea></div>
       ${d.wines.length > 1 ? `<button type="button" class="btn ghost" data-pe-dropwine="${i}">Remove this wine</button>` : ""}</div>`).join("")}
     ${d.wines.length < 3 ? '<p><button type="button" class="btn ghost" data-pe-addwine>Add an either/or wine</button></p>' : ""}
@@ -511,7 +513,7 @@ function pairEditorHTML() {
 }
 function draftFrom(g) {
   return { course: g.course, order: g.order, choose: g.choose, dish: g.dish, detail: g.detail, note: g.note,
-    wines: ctx.pairRows.filter((r, i) => g.rows.includes(i)).map(r => ({ id: wineIdOfKey(r.wine), script: r.script })) };
+    wines: ctx.pairRows.filter((r, i) => g.rows.includes(i)).map(r => ({ id: wineIdOfKey(r.wine), why: r.why || "", script: r.script })) };
 }
 function savePairDraft() {
   const d = pe.draft, undo = pairSnapshot();
@@ -519,7 +521,7 @@ function savePairDraft() {
   if (!d.wines.some(x => x.id)) { toast("Choose a wine for the dish"); return; }
   if (d.newCourse && !d.course.trim()) { toast("Give the course a name"); return; }
   const rowsFor = d.wines.filter(x => x.id).map(x => ({ order: String(d.order), course: d.course.trim(), "choose one": d.choose ? "yes" : "", dish: d.dish.trim(), "dish detail": d.detail.trim(),
-    wine: (sw(x.id) || {}).key || x.id, status: "On", note: d.note.trim(), script: (x.script || "").trim() }));
+    wine: (sw(x.id) || {}).key || x.id, status: "On", note: d.note.trim(), why: (x.why || "").trim(), script: (x.script || "").trim() }));
   let at = ctx.pairRows.length;
   if (pe.edit !== "new-course" && !String(pe.edit).startsWith("new:")) {
     const g = pairGroups(true).find(x => x.key === pe.edit); at = g.rows[0];
@@ -535,6 +537,7 @@ function savePairDraft() {
 document.addEventListener("input", e => {
   const f = e.target.closest("[data-pe-field]"); if (f && pe.draft) pe.draft[f.dataset.peField] = f.type === "checkbox" ? f.checked : f.value;
   const s = e.target.closest("[data-pe-script]"); if (s && pe.draft) pe.draft.wines[+s.dataset.peScript].script = s.value;
+  const y = e.target.closest("[data-pe-why]"); if (y && pe.draft) pe.draft.wines[+y.dataset.peWhy].why = y.value;
   const c = e.target.closest("[data-pe-cfield]"); if (c && pe.courseDraft) pe.courseDraft[c.dataset.peCfield] = c.type === "checkbox" ? c.checked : c.value;
 });
 document.addEventListener("change", e => {

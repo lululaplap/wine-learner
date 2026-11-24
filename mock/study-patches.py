@@ -19,8 +19,10 @@ patch("js/quiz/tasting.js","export const openExtras = (wines, now = Date.now()) 
  "export const openExtras = (wines, now = Date.now()) => { if (" + H + ".openExtras) return " + H + ".openExtras(wines); const m = marks(now);")
 patch("js/views/card.js","function openBlock(w) {\n", "function openBlock(w) {\n  if (" + H + ".cardExtra) return " + H + ".cardExtra(w);\n")
 patch("js/views/card.js",'    ${!service ? yourTasting(w) : ""}', '    ${!service ? yourTasting(w) : ""}\n    ${' + H + '.cardFoot ? ' + H + '.cardFoot(w) : ""}')
-patch("js/views/lesson.js","const glass = shuffle(all.filter(w => w.glass != null), Math.random)",
- "const glass = shuffle(all.filter(w => w.glass != null && !(" + H + ".isOff && " + H + ".isOff(w))), Math.random)")
+patch("js/views/lesson.js","all.filter(w => w.pairings && w.pairings.length && !firstGlass.includes(w))",
+ "all.filter(w => w.pairings && w.pairings.length && !firstGlass.includes(w) && !(" + H + ".isOff && " + H + ".isOff(w)))")
+patch("js/views/lesson.js","const glass = shuffle(all.filter(w => w.glass != null), rng)",
+ "const glass = shuffle(all.filter(w => w.glass != null && !(" + H + ".isOff && " + H + ".isOff(w))), rng)")
 patch("js/views/lesson.js",'<button type="button" class="btn ghost big" data-copy>Copy my notes</button>',
  '<button type="button" class="btn ghost big" data-copy>Send to the sommelier</button>')
 patch("js/views/lesson.js","""    const text = tastingText(tt.draft, w, active.name), done = msg => { const el = document.querySelector(".copied"); if (el) el.textContent = msg; };
@@ -37,7 +39,7 @@ patch("js/views/path.js","the glass list, and any bottle marked <em>Open to tast
 patch("js/views/path.js","<p>Lessons on this device: ${sessToday} today, ${sessWeek} in the last 7 days.</p>","<p>Your lessons: ${sessToday} today, ${sessWeek} in the last 7 days. Saved to your account.</p>")
 patch("js/views/path.js","Reset all of ${learner()}'s progress on this device?","Reset all of ${learner()}'s progress?")
 patch("js/views/path.js","<h2>Open to taste today</h2>","<h2>Opened for a tasting today</h2>")
-patch("js/views/path.js",'href="#/lesson/service">Before service: 5 on the glass list</a>','href="#/lesson/service">Before service: 5 on tonight&#39;s glass list</a>')
+patch("js/views/path.js",'href="#/lesson/service">Before service: the glass list and the tasting menu</a>','href="#/lesson/service">Before service: tonight&#39;s glass list and the tasting menu</a>')
 # The tablet's "Who's learning?" before a lesson lists the venue's people only, as the path's does.
 patch("js/views/lesson.js", '''    <form class="nameform" id="lessonNameForm"><label for="lessonName">${team.length ? "Not listed? Your first name" : "Your first name"}</label>
       <div class="namerow"><input id="lessonName" name="name" autocomplete="given-name" maxlength="30" required><button type="submit" class="btn">Start</button></div></form>''', "")

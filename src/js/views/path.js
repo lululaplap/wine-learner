@@ -93,7 +93,7 @@ export function renderPath(ctx) {
       <p class="hello">Hi ${esc(name)} <button type="button" class="linkbtn" data-switch>Not you?</button></p>
       <div class="pathactions">
         ${next ? `<a class="btn big" href="#/lesson/${next.id}">Start today's lesson</a>` : ""}
-        <a class="btn ghost" href="#/lesson/service">Before service: 5 on the glass list</a>
+        <a class="btn ghost" href="#/lesson/service">Before service: the glass list and the tasting menu</a>
         ${due.length ? `<a class="btn ghost" href="#/lesson/review">Review ${due.length} due</a>` : ""}
         ${wordsButton(ctx, p)}
       </div>
