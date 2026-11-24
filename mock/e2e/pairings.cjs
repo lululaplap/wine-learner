@@ -34,7 +34,7 @@ const http = require('http'), fs = require('fs'), path = require('path');
   const pollack = await p.locator('#pp-3 .pp-dish').first().innerText();
   check(/Off tonight/.test(pollack) && /Offer .+ instead/.test(pollack), 'app: the pollack pairing shows Off tonight and what to offer');
   check(/On tonight/.test(await p.locator('#pp-3 .pp-dish').nth(1).innerText()), 'app: the venison pairing is on tonight');
-  check(await p.locator('#nav a[href="#pairings"]').innerText() === 'Pairing pours', 'app: the Office screen is now Pairing pours');
+  check(await p.locator('#nav a[href="#pairings"]').innerText() === 'Pairings', 'app: Office has Pairings too (the editor, and the pours)');
   if (D) await p.screenshot({ path: D + '/app-pairings.png', fullPage: false });
   if (e2.length) { failed = true; console.log('app errors', e2); }
   await b.close(); process.exit(failed ? 1 : 0);

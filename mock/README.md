@@ -29,7 +29,7 @@ Stock changes last until the page is reloaded. Learning progress is kept in the 
 | File | What it is |
 | --- | --- |
 | `base.html` | The page: styles, layout, and the office and service screens (stock, take off, editor, deliveries, stock take, pairings, Lightspeed, menus, venue) |
-| `app.js` | The combined app: accounts and roles, areas and navigation, search, *Tonight*, *Tasting notes*, *Team learning*, *Me*, the example data, and the hooks that connect stock to the study tool |
+| `app.js` | The combined app (including Office → Pairings, the tasting-menu editor): accounts and roles, areas and navigation, search, *Tonight*, *Tasting notes*, *Team learning*, *Me*, the example data, and the hooks that connect stock to the study tool |
 | `app.css` | Styles for the combined app, added after the study tool's own |
 | `study-entry.js` | What the bundle of the study tool exposes to the page (`globalThis.Study`) |
 | `study-patches.py` | The small changes made to a temporary copy of `src/js` before bundling: bundled maps, stock-driven *open to taste*, tastings sent to the inbox, account wording |

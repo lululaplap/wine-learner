@@ -12,7 +12,8 @@ const ctx = (() => {
   c.lists = {}; rows(SHEETS.lists).forEach(r => { if (r.list && r.value) (c.lists[r.list] = c.lists[r.list] || []).push(r.value); });
   c.lists.Team = PEOPLE.slice();
   c.regions = Study.buildRegions(rows(SHEETS.regions), c.data.wines);
-  c.pairings = Study.buildPairings(rows(SHEETS.pairings), c.data.wines);
+  c.pairRows = rows(SHEETS.pairings); // the Wine pairings tab, edited in Office → Pairings
+  c.pairings = Study.buildPairings(c.pairRows, c.data.wines);
   return c;
 })();
 const sw = id => ctx.byId.get(id); // the study side of a wine: notes, scores, comparisons
@@ -153,7 +154,7 @@ const SCREENS = [
   { id: "tastings", label: "Tasting notes", area: "office", roles: WINELEAD },
   { id: "check", label: "Data check", area: "office", roles: WINELEAD },
   { id: "team", label: "Team learning", area: "office", roles: OFFICE, grp: "Team" },
-  { id: "pairings", label: "Pairing pours", area: "office", roles: ALL },
+  { id: "pairings", label: "Pairings", area: "office", roles: ALL },
   { id: "lightspeed", label: "Lightspeed", area: "office", roles: OFFICE, grp: "Set-up" },
   { id: "menus", label: "Guest menus", area: "office", roles: OFFICE },
   { id: "venue", label: "Venue and people", area: "office", roles: ["manager"] },
@@ -436,4 +437,134 @@ document.addEventListener("keydown", e => {
   else if (e.key === "ArrowDown") { e.preventDefault(); (opts[i + 1] || opts[0] || {}).focus?.(); }
   else if (e.key === "ArrowUp") { e.preventDefault(); if (i > 0) opts[i - 1].focus(); else if (inp || i === 0) view.querySelector(`[data-wpick-q="${id}"]`).focus(); }
   else if (e.key === "Escape" && picks[id].reopened) { picks[id].open = false; picks[id].reopened = false; picks[id].q = ""; render(); }
+});
+
+// ---------- Office → Pairings: edit the tasting menu ----------
+// The wine lead edits the Wine pairings tab here: courses, dishes, the wine (or either/or wines) for each, notes and
+// scripts. Each dish reads as it will in Service; Edit opens a form; Save rebuilds the pairings, so the Service
+// Pairings screen, wine cards, lessons and search show the change at once. Retired dishes are kept and can come back.
+// The pours of a tracked pairing (the 7-course pairing) are the second part of the screen.
+const pe = { tab: "menu", edit: null, draft: null, editCourse: null, courseDraft: null, showRetired: false };
+const canEditPairings = () => isWineLead();
+const PCOLS = ["order", "course", "choose one", "dish", "dish detail", "wine", "status", "note", "script"];
+const isOn = r => !/retired/i.test(r.status || "");
+const wineIdOfKey = k => { const w = ctx.data.wines.find(x => x.key === k || (x.sheetKeys || []).includes(k)); return w ? w.id : null; };
+const dishKey = r => [r.order, r.course, r.dish, isOn(r) ? "on" : "retired"].join("|");
+function pairGroups(on = true) {
+  const out = [];
+  ctx.pairRows.forEach((r, i) => { if (isOn(r) !== on) return; const k = dishKey(r); let g = out.find(x => x.key === k); if (!g) out.push(g = { key: k, order: Number(r.order) || 99, course: r.course, choose: /^(yes|y|true)$/i.test(r["choose one"]), dish: r.dish, detail: r["dish detail"], note: r.note, rows: [] }); g.rows.push(i); });
+  return on ? out.sort((a, b) => a.order - b.order || a.rows[0] - b.rows[0]) : out;
+}
+function rebuildPairings(msg, undo) {
+  ctx.pairings = Study.buildPairings(ctx.pairRows, ctx.data.wines); finder = null;
+  if (msg) toast(msg, undo);
+}
+function pairSnapshot() { const copy = ctx.pairRows.map(r => Object.assign({}, r)); return () => { ctx.pairRows = copy; rebuildPairings(); }; }
+
+RENDER.pairings = c => {
+  const tabs = canEditPairings() ? `<div class="seg" role="group" aria-label="Pairings" style="margin-bottom:14px"><button type="button" data-pe-tab="menu" aria-pressed="${pe.tab === "menu"}">Tasting menu</button><button type="button" data-pe-tab="pours" aria-pressed="${pe.tab === "pours"}">Pours</button></div>` : "";
+  if (!canEditPairings() || pe.tab === "pours") return tabs + RENDER.pairingPours();
+  return tabs + pairEditorHTML();
+};
+AFTER.pairings = () => { if (!canEditPairings() || pe.tab === "pours") AFTER.pairingPours(); };
+
+function pairWinesHTML(g) {
+  return ctx.pairRows.filter((r, i) => g.rows.includes(i)).map(r => { const id = wineIdOfKey(r.wine), w = id && byId.get(id);
+    return `<div class="pe-wine">${w ? `${glyph(w.t)} <a class="winelink" href="#/wine/${encodeURIComponent(id)}">${esc(w.s)}</a> <span class="muted num">${esc(w.v)}</span> ${state.off.has(id) || isOut(id) ? '<span class="badge out">Off tonight</span>' : ""}` : `<span class="badge low">Not on the list: ${esc(r.wine)}</span>`}
+      ${r.script ? `<p class="pe-script">“${esc(r.script.slice(0, 150))}${r.script.length > 150 ? "…" : ""}”</p>` : '<p class="pe-script muted">No script yet.</p>'}</div>`; }).join('<p class="pp-or">or</p>');
+}
+function pairFormHTML(d, isNew) {
+  const field = (k, label, ph = "") => `<div class="field"><label for="pe-${k}">${label}</label><input class="input" id="pe-${k}" data-pe-field="${k}" value="${esc(d[k] || "")}" placeholder="${esc(ph)}"></div>`;
+  return `<div class="pe-form">
+    ${d.newCourse ? `<div class="formgrid">${field("course", "Course name", "e.g. Pre-dessert")}<label class="pe-check"><input type="checkbox" data-pe-field="choose" ${d.choose ? "checked" : ""}> Guests choose one dish</label></div>` : ""}
+    <div class="formgrid">${field("dish", "Dish, as staff say it", "e.g. Venison")}${field("detail", "Full dish (optional)", "e.g. Venison, beetroot, blackberry")}</div>
+    ${d.wines.map((x, i) => `<div class="pe-wineform"><span class="lab">${i ? "Or this wine (either/or)" : "Wine"}</span>
+      ${winePicker("pe-w" + i, { value: x.id, label: i ? "Second wine" : "Wine", onPick: id => { pe.draft.wines[i].id = id; render(); } })}
+      <div class="field"><label for="pe-s${i}">Script for the table</label><textarea class="input" id="pe-s${i}" data-pe-script="${i}" rows="4" placeholder="What to say when pouring it with this dish">${esc(x.script || "")}</textarea></div>
+      ${d.wines.length > 1 ? `<button type="button" class="btn ghost" data-pe-dropwine="${i}">Remove this wine</button>` : ""}</div>`).join("")}
+    ${d.wines.length < 3 ? '<p><button type="button" class="btn ghost" data-pe-addwine>Add an either/or wine</button></p>' : ""}
+    ${field("note", "Note for staff (optional)", "e.g. Serve whichever is on")}
+    <div class="row"><button type="button" class="btn" data-pe-save>${isNew ? "Add to the menu" : "Save"}</button><button type="button" class="btn ghost" data-pe-cancel>Cancel</button></div>
+  </div>`;
+}
+function pairEditorHTML() {
+  const groups = pairGroups(true), retired = pairGroups(false);
+  const courses = []; groups.forEach(g => { let co = courses.find(x => x.order === g.order && x.course === g.course); if (!co) courses.push(co = { order: g.order, course: g.course, choose: g.choose, dishes: [] }); co.dishes.push(g); });
+  const dishHTML = g => pe.edit === g.key ? `<li class="pe-dish editing">${pairFormHTML(pe.draft, false)}</li>` : `<li class="pe-dish">
+      <div class="pe-head"><div><h3 class="pp-name">${esc(g.dish)}${g.detail ? ` <span class="pp-detail">${esc(g.detail)}</span>` : ""}</h3>${g.note ? `<p class="pp-note">${esc(g.note)}</p>` : ""}</div>
+        <div class="row"><button type="button" class="btn ghost" data-pe-edit="${esc(g.key)}">Edit</button><button type="button" class="btn ghost" data-pe-retire="${esc(g.key)}">Retire</button></div></div>
+      ${pairWinesHTML(g)}</li>`;
+  const courseHTML = (co, i) => `<section class="pp-course pe-course">
+      ${pe.editCourse === co.order ? `<div class="pe-form row"><input class="input" style="max-width:260px" data-pe-cfield="course" value="${esc(pe.courseDraft.course)}" aria-label="Course name"><label class="pe-check"><input type="checkbox" data-pe-cfield="choose" ${pe.courseDraft.choose ? "checked" : ""}> Guests choose one</label><button type="button" class="btn" data-pe-csave>Save</button><button type="button" class="btn ghost" data-pe-ccancel>Cancel</button></div>`
+        : `<div class="pe-head"><h2>${esc(co.course)}${co.choose ? ' <span class="pair-choose">choose one</span>' : ""}</h2>
+          <div class="row"><button type="button" class="btn ghost" data-pe-move="${co.order}" data-dir="-1" ${i ? "" : "disabled"} aria-label="Move ${esc(co.course)} earlier">↑</button><button type="button" class="btn ghost" data-pe-move="${co.order}" data-dir="1" ${i < courses.length - 1 ? "" : "disabled"} aria-label="Move ${esc(co.course)} later">↓</button><button type="button" class="btn ghost" data-pe-course="${co.order}">Rename</button></div></div>`}
+      <ul class="pp-dishes">${co.dishes.map(dishHTML).join("")}${pe.edit === "new:" + co.order ? `<li class="pe-dish editing">${pairFormHTML(pe.draft, true)}</li>` : `<li><button type="button" class="btn ghost" data-pe-add="${co.order}">Add a dish to ${esc(co.course)}</button></li>`}</ul></section>`;
+  return `<div class="pairingsview pe">
+    <p class="muted" style="margin-top:0">The tasting menu as Service shows it. Changes show at once on the Service <a href="#/pairings">Pairings</a> screen, on the wine cards, in lessons and in search.</p>
+    ${courses.map(courseHTML).join("")}
+    ${pe.edit === "new-course" ? `<section class="pp-course"><h2>New course</h2><ul class="pp-dishes"><li class="pe-dish editing">${pairFormHTML(pe.draft, true)}</li></ul></section>` : '<p><button type="button" class="btn" data-pe-newcourse>Add a course</button></p>'}
+    <section class="panel" style="margin-top:20px"><h2>Retired <span class="muted">${retired.length}</span></h2>
+      ${pe.showRetired ? `<ul class="plainlist">${retired.map(g => `<li class="pe-head"><span><b>${esc(g.dish)}</b> <span class="muted">${esc(ctx.pairRows.filter((r, i) => g.rows.includes(i)).map(r => (byId.get(wineIdOfKey(r.wine)) || {}).s || r.wine).join(" or "))}</span></span>
+        <span class="row"><label class="lab" for="pe-back-${esc(g.key)}">Bring back to</label><select class="input" style="width:auto" id="pe-back-${esc(g.key)}">${courses.map(co => `<option value="${co.order}">${esc(co.course)}</option>`).join("")}</select><button type="button" class="btn ghost" data-pe-back="${esc(g.key)}">Bring back</button></span></li>`).join("") || '<li class="muted">None.</li>'}</ul>`
+        : `<p class="small muted">Dishes taken off the menu keep their wine and script, in case they come back.</p><button type="button" class="btn ghost" data-pe-showretired>Show retired dishes</button>`}</section>
+  </div>`;
+}
+function draftFrom(g) {
+  return { course: g.course, order: g.order, choose: g.choose, dish: g.dish, detail: g.detail, note: g.note,
+    wines: ctx.pairRows.filter((r, i) => g.rows.includes(i)).map(r => ({ id: wineIdOfKey(r.wine), script: r.script })) };
+}
+function savePairDraft() {
+  const d = pe.draft, undo = pairSnapshot();
+  if (!d.dish.trim()) { toast("Give the dish a name"); return; }
+  if (!d.wines.some(x => x.id)) { toast("Choose a wine for the dish"); return; }
+  if (d.newCourse && !d.course.trim()) { toast("Give the course a name"); return; }
+  const rowsFor = d.wines.filter(x => x.id).map(x => ({ order: String(d.order), course: d.course.trim(), "choose one": d.choose ? "yes" : "", dish: d.dish.trim(), "dish detail": d.detail.trim(),
+    wine: (sw(x.id) || {}).key || x.id, status: "On", note: d.note.trim(), script: (x.script || "").trim() }));
+  let at = ctx.pairRows.length;
+  if (pe.edit !== "new-course" && !String(pe.edit).startsWith("new:")) {
+    const g = pairGroups(true).find(x => x.key === pe.edit); at = g.rows[0];
+    ctx.pairRows = ctx.pairRows.filter((r, i) => !g.rows.includes(i));
+  } else if (String(pe.edit).startsWith("new:")) {
+    const last = ctx.pairRows.map((r, i) => [r, i]).filter(([r]) => isOn(r) && Number(r.order) === d.order).pop(); at = last ? last[1] + 1 : at;
+  }
+  ctx.pairRows.splice(at, 0, ...rowsFor);
+  Object.keys(picks).filter(k => k.startsWith("pe-w")).forEach(k => delete picks[k]);
+  pe.edit = null; pe.draft = null;
+  rebuildPairings(`${esc(rowsFor[0].dish)} saved. Service, the wine cards and lessons show it now`, undo); render();
+}
+document.addEventListener("input", e => {
+  const f = e.target.closest("[data-pe-field]"); if (f && pe.draft) pe.draft[f.dataset.peField] = f.type === "checkbox" ? f.checked : f.value;
+  const s = e.target.closest("[data-pe-script]"); if (s && pe.draft) pe.draft.wines[+s.dataset.peScript].script = s.value;
+  const c = e.target.closest("[data-pe-cfield]"); if (c && pe.courseDraft) pe.courseDraft[c.dataset.peCfield] = c.type === "checkbox" ? c.checked : c.value;
+});
+document.addEventListener("change", e => {
+  const f = e.target.closest('input[type="checkbox"][data-pe-field]'); if (f && pe.draft) pe.draft[f.dataset.peField] = f.checked;
+  const c = e.target.closest('input[type="checkbox"][data-pe-cfield]'); if (c && pe.courseDraft) pe.courseDraft[c.dataset.peCfield] = c.checked;
+});
+document.addEventListener("click", e => {
+  const t = e.target; if (cur().id !== "pairings" || !view.contains(t)) return;
+  const tab = t.closest("[data-pe-tab]"); if (tab) { pe.tab = tab.dataset.peTab; render(); return; }
+  const ed = t.closest("[data-pe-edit]"); if (ed) { const g = pairGroups(true).find(x => x.key === ed.dataset.peEdit); pe.edit = g.key; pe.draft = draftFrom(g); render(); const n = document.getElementById("pe-dish"); if (n) n.focus(); return; }
+  const add = t.closest("[data-pe-add]"); if (add) { const o = +add.dataset.peAdd, g = pairGroups(true).find(x => x.order === o); pe.edit = "new:" + o; pe.draft = { course: g.course, order: o, choose: g.choose, dish: "", detail: "", note: "", wines: [{ id: null, script: "" }] }; render(); document.getElementById("pe-dish").focus(); return; }
+  if (t.closest("[data-pe-newcourse]")) { const max = Math.max(0, ...ctx.pairRows.filter(isOn).map(r => Number(r.order) || 0)); pe.edit = "new-course"; pe.draft = { newCourse: true, course: "", order: max + 1, choose: false, dish: "", detail: "", note: "", wines: [{ id: null, script: "" }] }; render(); document.getElementById("pe-course").focus(); return; }
+  if (t.closest("[data-pe-addwine]")) { pe.draft.wines.push({ id: null, script: "" }); render(); return; }
+  const dw = t.closest("[data-pe-dropwine]"); if (dw) { const i = +dw.dataset.peDropwine; pe.draft.wines.splice(i, 1); Object.keys(picks).filter(k => k.startsWith("pe-w")).forEach(k => delete picks[k]); render(); return; }
+  if (t.closest("[data-pe-save]")) { savePairDraft(); return; }
+  if (t.closest("[data-pe-cancel]")) { pe.edit = null; pe.draft = null; Object.keys(picks).filter(k => k.startsWith("pe-w")).forEach(k => delete picks[k]); render(); return; }
+  const rt = t.closest("[data-pe-retire]"); if (rt) { const g = pairGroups(true).find(x => x.key === rt.dataset.peRetire), undo = pairSnapshot();
+    g.rows.forEach(i => { ctx.pairRows[i] = Object.assign({}, ctx.pairRows[i], { status: "Retired", order: "", course: "Retired" }); });
+    rebuildPairings(`${esc(g.dish)} retired: off the Service screen, cards and lessons. It is kept under Retired`, undo); render(); return; }
+  if (t.closest("[data-pe-showretired]")) { pe.showRetired = true; render(); return; }
+  const bk = t.closest("[data-pe-back]"); if (bk) { const g = pairGroups(false).find(x => x.key === bk.dataset.peBack), o = +document.getElementById("pe-back-" + g.key).value, target = pairGroups(true).find(x => x.order === o), undo = pairSnapshot();
+    g.rows.forEach(i => { ctx.pairRows[i] = Object.assign({}, ctx.pairRows[i], { status: "On", order: String(o), course: target.course, "choose one": target.choose ? "yes" : "" }); });
+    rebuildPairings(`${esc(g.dish)} is back on the menu, in ${esc(target.course)}`, undo); render(); return; }
+  const mv = t.closest("[data-pe-move]"); if (mv) { const o = +mv.dataset.peMove, orders = [...new Set(pairGroups(true).map(g => g.order))], j = orders.indexOf(o) + +mv.dataset.dir;
+    if (j < 0 || j >= orders.length) return; const other = orders[j], undo = pairSnapshot();
+    ctx.pairRows.forEach(r => { if (!isOn(r)) return; if (Number(r.order) === o) r.order = String(other); else if (Number(r.order) === other) r.order = String(o); });
+    rebuildPairings("Course moved", undo); render(); return; }
+  const rc = t.closest("[data-pe-course]"); if (rc) { const o = +rc.dataset.peCourse, g = pairGroups(true).find(x => x.order === o); pe.editCourse = o; pe.courseDraft = { course: g.course, choose: g.choose }; render(); return; }
+  if (t.closest("[data-pe-csave]")) { const o = pe.editCourse, d = pe.courseDraft, undo = pairSnapshot(); if (!d.course.trim()) { toast("Give the course a name"); return; }
+    ctx.pairRows.forEach(r => { if (isOn(r) && Number(r.order) === o) { r.course = d.course.trim(); r["choose one"] = d.choose ? "yes" : ""; } });
+    pe.editCourse = null; pe.courseDraft = null; rebuildPairings("Course saved", undo); render(); return; }
+  if (t.closest("[data-pe-ccancel]")) { pe.editCourse = null; pe.courseDraft = null; render(); }
 });

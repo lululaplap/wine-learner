@@ -37,6 +37,7 @@ Six phases, each ending in something the team can use. The order follows the com
 - [ ] `src/js/shell.js` from `mock/app.js`: areas, sidebar and bottom bar, search, accounts, roles that add up.
 - [ ] Learn on the API: progress sync, *Bring this device's progress into your account?*, and *Who's learning?* on the tablet from the venue's people.
 - [ ] Office, Wines: *Add a wine* and *Edit a wine* with photos to R2, *Data check*, and glossary and regions editing.
+- [ ] Office → Pairings: the tasting-menu editor (courses, dishes, either/or wines, notes, scripts, retire and bring back), imported from the *Wine pairings* tab, feeding Service → Pairings, the wine cards, lessons and search.
 - [ ] The public guest menu, plus the sheet-shaped feed for the current menu site.
 - [ ] The offline cache for reading. Writes queue from phase 2.
 

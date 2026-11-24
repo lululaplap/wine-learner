@@ -711,7 +711,7 @@ const pr = { mode: "tracked", courses: [
   { course: "Second starter", id: "radikon-pop-bianco", ml: 75 }, { course: "Fish", id: "montanetthoden-vezelay-galerne", ml: 75 },
   { course: "Main", id: "matthieu-cosse-fronsac", ml: 100 }, { course: "Pre-dessert", id: "mas-amiel-maury-vintage", ml: 50 }, { course: "Dessert", id: "domaine-de-souch-cuvee-mariekattalin", ml: 50 }
 ].filter(c => byId.has(c.id)), covers: 14, actual: {} };
-RENDER.pairings = () => {
+RENDER.pairingPours = () => {
   const total = pr.courses.reduce((a, c) => a + c.ml, 0);
   return `<div class="row" style="margin-bottom:12px"><div class="seg" role="group" aria-label="Pairing mode"><button type="button" data-pmode="simple" aria-pressed="${pr.mode === "simple"}">Simple (now)</button><button type="button" data-pmode="tracked" aria-pressed="${pr.mode === "tracked"}">Tracked (later)</button></div></div>
   ${pr.mode === "simple" ? `<div class="panel"><h2>Simple pairings</h2><p>Nothing to set up. When a bottle is opened for the pairing, take it off: <b>Take off stock → the wine → a bottle → Pairing</b>. Partly used bottles count as gone that night.</p><a class="btn big" href="#take-off">Take off stock</a>
@@ -726,7 +726,7 @@ RENDER.pairings = () => {
       <button type="button" class="btn" data-pcheck>Save check</button></aside></div>`}
   ${questions(["Do the pairings change nightly or by menu? Would you set them up before each service?", "Is the pairing sold as one item in Lightspeed, per cover?", "Would an end-of-night check like this be realistic, or one step too many?"])}`;
 };
-AFTER.pairings = () => {
+AFTER.pairingPours = () => {
   view.querySelectorAll("[data-pml]").forEach(el => el.onchange = () => { pr.courses[+el.dataset.pml].ml = +el.value; render(); });
   view.querySelectorAll("[data-pact]").forEach(el => el.oninput = () => { pr.actual[+el.dataset.pact] = +el.value; const hint = el.nextElementSibling; const i = +el.dataset.pact, c = pr.courses[i], used = c.ml * pr.covers, exp = Math.max(0, (Math.ceil(used / BOTTLE) * BOTTLE) - used); hint.innerHTML = `Looks like ${el.value} ml${Math.abs(el.value - exp) > 125 ? ' · <b style="color:var(--warn)">more than a glass out: add a reason</b>' : ""}`; });
 };

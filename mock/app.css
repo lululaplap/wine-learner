@@ -80,3 +80,15 @@ body[data-device="tablet"] .tabletonly{display:inline}
 .wpick-list .why{font-style:italic}
 .pp-stock{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0 2px}
 .pp-stock .swap{flex-basis:100%;margin:0}
+/* Office → Pairings: the tasting menu editor */
+.pe .pe-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:8px}
+.pe .pe-head h2{font-size:22px;margin:0}
+.pe-course .pe-head{border-bottom:2px solid var(--line);padding-bottom:6px;margin-bottom:10px}
+.pe-dish{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.pe-dish.editing{border:2px solid var(--accent)}
+.pe-wine{margin:8px 0 0}
+.pe-script{margin:4px 0 0;color:var(--ink-2);font-size:14px;font-style:italic}
+.pe-form{display:grid;gap:12px}
+.pe-wineform{display:grid;gap:8px;padding:10px;border:1px dashed var(--line);border-radius:12px}
+.pe-check{display:flex;gap:8px;align-items:center;font-weight:600;min-height:44px}
+.pe-check input{width:20px;height:20px;accent-color:var(--accent)}

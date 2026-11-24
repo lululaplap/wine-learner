@@ -20,7 +20,7 @@ const { chromium, devices } = require('playwright');
     await p.press('[data-wpick-q="editwine"]', 'Enter'); await p.waitForTimeout(80);
     out('editing now:', await p.locator('.wpick.chosen b').first().innerText(), '| cuvée field:', await p.inputValue('#fCuvee'));
     // pairings: suggestions before typing, then pick one
-    await go('#pairings'); if (await p.locator('[data-pmode="tracked"][aria-pressed="false"]').count()) await tap('[data-pmode="tracked"]');
+    await go('#pairings'); if (await p.locator('[data-pe-tab="pours"]').count()) await tap('[data-pe-tab="pours"]'); if (await p.locator('[data-pmode="tracked"][aria-pressed="false"]').count()) await tap('[data-pmode="tracked"]');
     await tap('[data-wpick-change="pc4"]'); out('pairing suggestions:', await p.locator('#wpl-pc4 [data-wpick-opt]').count());
     await tap('#wpl-pc4 [data-wpick-opt]'); out('toast:', await p.locator('.toast span').innerText(), '| main course now:', await p.locator('.wpick.chosen b').nth(4).innerText());
     // lightspeed: the item name is searched for you

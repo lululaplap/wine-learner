@@ -82,7 +82,8 @@ Every table except `people` and `regions` has a `venue_id`. Ids are text ULIDs, 
 | `off_tonight` | vintage_id, service_day, person_id, at | Cleared by the 4am job |
 | `suppliers`, `deliveries`, `delivery_lines` | as in the inventory spec | A delivery writes `delivery` movements |
 | `stock_takes`, `stock_take_counts` | started_at, approved_by; counted ml per vintage and person | Approval writes `count` movements for the differences |
-| `pairings`, `pairing_courses` | as in the inventory spec | Tracked pairings only |
+| `menu_pairings` | course_order, course, choose_one, dish, dish_detail, wine_id, note, script, status (`on`, `retired`), updated_by, updated_at | The tasting menu, as the *Wine pairings* tab holds it today: one row per dish and wine, so a dish served with either of two wines has two rows. Edited in Office → Pairings |
+| `pairings`, `pairing_courses` | as in the inventory spec | The pours of a tracked pairing (stock), not the menu |
 | `lightspeed_items` | ls_item_id, name, vintage_id or pairing_id, pour_ml | Item linking |
 | `photos` | wine_id or vintage_id, r2_key, credit | |
 | `menu_profiles` | name, fields (JSON), sold_out (`hide`, `show`), look | |
@@ -120,6 +121,8 @@ JSON over HTTPS. Reads return an `ETag`. Writes that may be retried carry a `cli
 | `POST /api/stock-takes`, `PUT .../counts`, `POST .../approve` | counting: any member; approving: wine lead, manager | |
 | `GET /api/progress`, `POST /api/progress/sync` | the person themselves | Sync sends changed rows since the last sync; per wine, the row with the later `last` wins |
 | `POST /api/tastings` | any member | From a lesson's tasting step |
+| `GET /api/menu-pairings` | any member | The tasting menu, course by course, for Service → Pairings, the wine cards, lessons and search |
+| `POST /api/menu-pairings`, `PUT /api/menu-pairings/:id`, `POST .../:id/retire`, `.../:id/restore`, `PUT /api/menu-pairings/courses` | wine lead | Add, edit, retire and bring back dishes; rename and reorder courses. Every change goes in `audit_log` |
 | `GET /api/tastings?status=waiting`, `POST /api/tastings/:wine/use`, `.../keep` | wine lead | The inbox; *use* averages the scores into the notes and marks the wine tasted |
 | `GET /api/team-learning` | wine lead, manager | Totals per wine and per unit only. No per-person rows |
 | `GET /api/venue`, `PUT /api/venue`, `GET/PUT /api/people` | manager | Settings, people and roles |
@@ -135,6 +138,7 @@ JSON over HTTPS. Reads return an `ETag`. Writes that may be retried carry a `cli
   - Movements are append-only, so they never conflict.
   - Progress merges per wine by the latest answer.
   - Wine edits are online-only, because only the wine lead makes them and a 409 is clearer than a silent merge.
+- **Office → Pairings** is where the wine lead edits the tasting menu (`mock/app.js`, *Office → Pairings*). Each dish reads as Service shows it; *Edit* opens a form for the dish, its full description, its wine (or either/or wines, each with its own script) and a note. Courses can be renamed, reordered and marked *choose one*, and dishes added, retired and brought back. A save updates Service → Pairings, the wine cards, lessons and search at once. The pours of a tracked pairing are the second part of the same screen. Floor staff see the pours only.
 - **Choosing a wine is always a search.** No dropdown lists every wine: with about 140 wines and more vintages, a long list is slow to scroll and easy to mis-tap. Every place a wine is chosen uses one component, `winePicker`, which `mock/app.js` already has. That covers editing a wine, a pairing's course, linking a Lightspeed item, adding a wine to a delivery and taking off stock.
   - Type any part of the producer, wine, grape, region or vintage. Capitals and accents don't matter, and every word typed must match. Up to 8 results show, each with its vintage, section and stock.
   - Before typing it offers suggestions where there is a sensible set. A pairing course suggests that wine's comparisons, a delivery suggests what is running low from that supplier, and a Lightspeed item is searched by its own name.
