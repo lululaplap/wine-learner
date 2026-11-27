@@ -18,7 +18,7 @@ patch("js/quiz/tasting.js","export function isOpen(w, now = Date.now()) {\n",
 patch("js/quiz/tasting.js","export const openExtras = (wines, now = Date.now()) => { const m = marks(now);",
  "export const openExtras = (wines, now = Date.now()) => { if (" + H + ".openExtras) return " + H + ".openExtras(wines); const m = marks(now);")
 patch("js/views/card.js","function openBlock(w) {\n", "function openBlock(w) {\n  if (" + H + ".cardExtra) return " + H + ".cardExtra(w);\n")
-patch("js/views/card.js",'    ${!service ? yourTasting(w) : ""}', '    ${!service ? yourTasting(w) : ""}\n    ${' + H + '.cardFoot ? ' + H + '.cardFoot(w) : ""}')
+patch("js/views/card.js",'    ${yourTasting(w)}', '    ${yourTasting(w)}\n    ${' + H + '.cardFoot ? ' + H + '.cardFoot(w) : ""}')
 patch("js/views/lesson.js","all.filter(w => w.pairings && w.pairings.length && !firstGlass.includes(w))",
  "all.filter(w => w.pairings && w.pairings.length && !firstGlass.includes(w) && !(" + H + ".isOff && " + H + ".isOff(w)))")
 patch("js/views/lesson.js","const glass = shuffle(all.filter(w => w.glass != null), rng)",

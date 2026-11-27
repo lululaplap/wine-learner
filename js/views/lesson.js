@@ -43,6 +43,14 @@ function start(id, ctx) {
     if (!extras.length) return null;
     plan = planLesson({ newWines: extras, wines: extras, progress: p, now });
     tasteFrom = extras;
+  } else if (id.startsWith("taste-")) {
+    // Taste it, from a wine's card: straight to the tasting grid for that wine, whether or not it is marked open
+    // (the learner has a glass in front of them). Then the notes beside theirs, and two questions if they want them.
+    const w = ctx.byId.get(id.slice(6).split("~")[0]); // "~<time>" makes each tap on Taste it a fresh tasting
+    if (!w) return null;
+    kind = "taste"; title = `Taste ${w.short}`;
+    plan = [{ wine: w, prefer: ["describe", "reverse"] }, { wine: w, prefer: ["identify", "sayIt"] }];
+    tasteFrom = [w];
   } else if (id === "service") {
     kind = "service"; title = "Before service";
     ({ plan, tasteFrom } = beforeServicePlan(all));
@@ -70,9 +78,10 @@ function start(id, ctx) {
   }
   const session = new Session({ kind, lessonId: id, plan, all, progress: p, allowEstimates, kb: { regionsById: ctx.regions ? ctx.regions.byId : null, terms } });
   session.next();
+  if (kind === "taste") return { id, name, title, session, kind, phase: "taste", picked: null, result: null, taste: { list: tasteFrom, i: 0, draft: newDraft() } };
   const toTaste = tasteFrom.filter(w => isOpen(w, now)).slice(0, MAX_TASTE);
   const ask = toTaste.length && session.current && (id === "open" || askToday(now));
-  return { id, name, title, session, phase: !session.current ? "empty" : ask ? "tasteAsk" : "ask", picked: null, result: null,
+  return { id, name, title, session, kind, phase: !session.current ? "empty" : ask ? "tasteAsk" : "ask", picked: null, result: null,
     taste: { list: toTaste, i: 0, draft: newDraft() } };
 }
 
@@ -111,14 +120,14 @@ function gridHTML(ctx) {
     `<button type="button" class="gchip" data-score="${n}" data-v="${i + 1}" aria-pressed="${d.scores[n] === i + 1}"><span class="gnum">${i + 1}</span>${esc(word)}</button>`).join("")}</div></fieldset>`).join("");
   const chips = flav.map(f => `<button type="button" class="gchip flav" data-flav="${esc(f)}" aria-pressed="${d.flavours.includes(f)}"${!d.flavours.includes(f) && d.flavours.length >= 4 ? " disabled" : ""}>${esc(f)}</button>`).join("");
   return `<div class="tastegrid">
-    <p class="qtype">Taste first · ${t.i + 1} of ${t.list.length}</p>
+    <p class="qtype">${active.kind === "taste" ? "Your tasting" : `Taste first · ${t.i + 1} of ${t.list.length}`}</p>
     <h1 class="qprompt">${glyph(w.type, 26)} ${esc(w.name)}${w.vintage ? ` <span class="vintage">${esc(w.vintage)}</span>` : ""}</h1>
     <p class="intro">Pour a taste. Pick what you find; leave out anything you're unsure of.</p>
     ${rows}
     <fieldset class="gridrow"><legend>Flavours <span class="n">(up to 4)</span></legend><div class="gridchips flavs">${chips}</div></fieldset>
     <label class="notelabel" for="tasteNote">Anything else <span class="n">(optional)</span></label>
     <textarea id="tasteNote" rows="2" maxlength="300">${esc(d.note)}</textarea>
-    <div class="fb-actions"><button type="button" class="btn big" data-taste-done>Compare with the notes</button><button type="button" class="btn ghost big" data-taste-skip>Skip this wine</button></div>
+    <div class="fb-actions"><button type="button" class="btn big" data-taste-done>Compare with the notes</button>${active.kind === "taste" ? `<a class="btn ghost big" href="#/wine/${encodeURIComponent(w.id)}">Not now</a>` : '<button type="button" class="btn ghost big" data-taste-skip>Skip this wine</button>'}</div>
   </div>`;
 }
 
@@ -128,14 +137,14 @@ function resultHTML(ctx) {
     <td>${r.notes != null ? `<span class="nw">${r.notes} · ${esc(SCALE_WORDS[r.name][r.notes - 1])}</span>` : "–"}</td><td class="v-${r.verdict}"><span aria-hidden="true">${MARKS[r.verdict][0]}</span> ${MARKS[r.verdict][1]}</td></tr>`).join("");
   const words = list => list.map(esc).join(", ");
   return `<div class="tasteresult">
-    <p class="qtype">Your tasting · ${t.i + 1} of ${t.list.length}</p>
+    <p class="qtype">Your tasting${t.list.length > 1 ? ` · ${t.i + 1} of ${t.list.length}` : ""}</p>
     <h1 class="qprompt">${esc(w.short)}: you and the notes</h1>
     ${c.compared ? `<p class="endscore">${c.matched} of ${c.compared} within a step of the notes</p>` : ""}
     ${rows ? `<table class="cmptable"><thead><tr><th scope="col"></th><th scope="col">You</th><th scope="col">Notes</th><th scope="col"></th></tr></thead><tbody>${rows}</tbody></table>` : '<p class="intro">You left the scores blank, so there is nothing to compare.</p>'}
     ${(t.draft.flavours.length || w.flavours.length) ? `<p class="flavcmp">${c.shared.length ? `<strong>You both found:</strong> ${words(c.shared)}. ` : ""}${c.onlyMine.length ? `<strong>Only you:</strong> ${words(c.onlyMine)}. ` : ""}${c.onlyNotes.length ? `<strong>Only the notes:</strong> ${words(c.onlyNotes)}.` : ""}</p>` : ""}
     ${w.note ? `<p class="note"><strong>The notes say:</strong> ${linkTerms(ctx.glossary, w.note)}</p>` : ""}
     ${!w.tasted ? '<p class="fb-est">These notes are estimates, not yet tasted by the team. If you are confident they are wrong, send your notes to the wine lead.</p>' : ""}
-    <div class="fb-actions"><button type="button" class="btn ghost big" data-copy>Copy my notes</button><button type="button" class="btn big" data-taste-next>${last ? "Start the questions" : "Next wine"}</button></div>
+    <div class="fb-actions"><button type="button" class="btn ghost big" data-copy>Copy my notes</button>${active.kind === "taste" ? `<a class="btn big" href="#/wine/${encodeURIComponent(w.id)}">Back to the wine</a><button type="button" class="btn ghost big" data-taste-next>Two questions on it</button>` : `<button type="button" class="btn big" data-taste-next>${last ? "Start the questions" : "Next wine"}</button>`}</div>
     <p class="copied" role="status"></p>
   </div>`;
 }
@@ -346,7 +355,8 @@ export function renderLesson(id, ctx) {
   const s = active.session;
   if (active.phase.startsWith("taste")) {
     const body = active.phase === "tasteAsk" ? tasteAskHTML(ctx) : active.phase === "taste" ? gridHTML(ctx) : resultHTML(ctx);
-    return `<div class="lessonview tasting"><p class="lessontitle">${esc(active.title)}</p><div class="lessontop"><a class="closebtn" href="#/learn" aria-label="Leave the lesson">×</a></div>${body}</div>`;
+    const close = active.kind === "taste" ? `#/wine/${encodeURIComponent(active.taste.list[0].id)}` : "#/learn";
+    return `<div class="lessonview tasting"><p class="lessontitle">${esc(active.title)}</p><div class="lessontop"><a class="closebtn" href="${close}" aria-label="${active.kind === "taste" ? "Back to the wine" : "Leave the lesson"}">×</a></div>${body}</div>`;
   }
   const pct = Math.round((s.index / Math.max(1, s.total)) * 100);
   const top = `<div class="lessontop"><a class="closebtn" href="#/learn" aria-label="Leave the lesson">×</a>

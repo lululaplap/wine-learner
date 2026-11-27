@@ -35,7 +35,14 @@ function openBlock(w) {
   return `<p class="openline"><span class="openstate${open ? " on" : ""}">${label}</span> <button type="button" class="btn ghost small" data-open-toggle aria-pressed="${open}">${action}</button></p>`;
 }
 
-// The learner's own latest tasting of this wine, beside the notes (Learn mode only).
+// Taste it: straight to the tasting grid for this wine, then the notes beside the learner's own.
+function tasteButton(w) {
+  const name = store.get("learner", "");
+  const again = name && latestTasting(loadProgress(name), w.id);
+  return `<p class="tasteline"><a class="btn" href="#/lesson/taste-${encodeURIComponent(w.id)}~${Date.now().toString(36)}" data-taste-it>${again ? "Taste it again" : "Taste it"}</a> <span class="muted small">Your own notes first, then see how they compare</span></p>`;
+}
+
+// The learner's own latest tasting of this wine, beside the notes (both modes: they may have just tasted it).
 function yourTasting(w) {
   const name = store.get("learner", "");
   const t = name ? latestTasting(loadProgress(name), w.id) : null;
@@ -89,6 +96,7 @@ export function renderCard(w, ctx) {
     <p class="prices">${priceLine(w)}</p>
     ${whereBlock(w, ctx)}
     ${openBlock(w)}
+    ${tasteButton(w)}
     ${w.guestLine ? `<h3>To the guest</h3><p class="guestline">“${L(w.guestLine)}”</p>` : ""}
     ${pairingBlock(w, L)}
     ${scoresBlock(w, L)}
@@ -96,7 +104,7 @@ export function renderCard(w, ctx) {
     ${tagRow("Flavours", w.flavours)}${tagRow("Making", w.making)}${tagRow("If they like", w.ifYouLike)}
     ${w.serve ? `<h3>Serve</h3><p>${L(w.serve)}</p>` : ""}
     ${!service && w.story ? `<h3>Story</h3><p>${L(w.story)}</p>` : ""}
-    ${!service ? yourTasting(w) : ""}
+    ${yourTasting(w)}
     ${cmp.length ? `<h3>Compare with</h3><div class="cmp">${cmp.map(c => `<a class="cmpbtn" href="#/wine/${encodeURIComponent(c.id)}">${glyph(c.type, 20)}<span><span class="nm">${esc(c.short)}</span><span class="ds">${esc([c.leadGrape, c.regionGroup, c.bottle != null ? money(c.bottle) : money(c.glass) + " glass"].filter(Boolean).join(" · "))}</span></span></a>`).join("")}</div>` : ""}
     ${!service && w.check ? `<h3>Check with the supplier</h3><p class="checkq">${L(w.check)}</p>` : ""}
     ${!service ? `<p class="source">${sourceLine(w)}</p>` : (!w.tasted && w.hasNotes ? '<p class="source">Estimated notes, not yet tasted by the team.</p>' : "")}
